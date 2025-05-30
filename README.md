@@ -1,9 +1,5 @@
-This project was created by John T. Murray as a demo for the DHSI 2025 course "Digital Humanities Programming Pedagogy in the Age of AI" to show off AI-assisted coding, code pedagogy, and integration of a local LLM (through Ollama).
-
-Workspace: Collecting workspace information# AICodePedagogy Project
-
 ## Overview
-This project is a demonstration created by John T. Murray for the DHSI 2025 course "Digital Humanities Programming Pedagogy in the Age of AI". It showcases AI-assisted coding, code pedagogy concepts, and integration with local LLMs through Ollama.
+This project is a demonstration for the DHSI Course "Digital Humanities Programming Pedagogy in the Age of AI". It showcases AI-assisted coding, code pedagogy concepts, and integration with local LLMs through Ollama.
 
 ## Project Structure
 ```
