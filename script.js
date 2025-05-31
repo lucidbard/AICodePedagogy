@@ -414,9 +414,24 @@ function setupSingleCellStage (stage) {
     matchBrackets: true,
     autoCloseBrackets: true,
     viewportMargin: Infinity, // Auto-resize height
+    lineWrapping: true, // Enable line wrapping for mobile
+    hintOptions: {
+      hint: CodeMirror.hint.python,
+      completeSingle: false
+    },
     extraKeys: {
       'Ctrl-Enter': function () {
         runPythonCode(editor.getValue(), stage.solution)
+      },
+      'Ctrl-Space': 'autocomplete', // Auto-completion trigger
+      'Tab': function(cm) {
+        // Better tab handling for mobile - autocomplete if popup is open, otherwise indent
+        if (cm.state.completionActive) return CodeMirror.Pass;
+        if (cm.somethingSelected()) {
+          cm.indentSelection('add');
+        } else {
+          cm.replaceSelection(cm.getOption('indentWithTabs') ? '\t' : ' '.repeat(cm.getOption('indentUnit')));
+        }
       }
     }
   })
@@ -428,6 +443,24 @@ function setupSingleCellStage (stage) {
     editor.saveTimeout = setTimeout(() => {
       saveGameState()
     }, 1000) // Save after 1 second of no changes
+  })
+
+  // Mobile-friendly auto-completion: trigger completion after typing certain characters
+  editor.on('inputRead', function(cm, event) {
+    // Auto-trigger completion on mobile after typing letters, dots, or underscores
+    if (!cm.state.completionActive && 
+        event.text && event.text.length === 1 && 
+        /[a-zA-Z._]/.test(event.text[0])) {
+      // Get current line content to check context
+      const cursor = cm.getCursor()
+      const line = cm.getLine(cursor.line)
+      const beforeCursor = line.slice(0, cursor.ch)
+      
+      // Trigger completion if we have at least 2 characters of a word
+      if (/[a-zA-Z_][a-zA-Z0-9_]*$/.test(beforeCursor) && beforeCursor.match(/[a-zA-Z_][a-zA-Z0-9_]*$/)[0].length >= 2) {
+        setTimeout(() => cm.showHint({completeSingle: false}), 100)
+      }
+    }
   })
 
   // Set up cell number click to run code (replacing separate run button)
@@ -607,6 +640,11 @@ function createCodeCell (cell, index, totalCells) {
       matchBrackets: true,
       autoCloseBrackets: true,
       viewportMargin: Infinity, // Auto-resize height
+      lineWrapping: true, // Enable line wrapping for mobile
+      hintOptions: {
+        hint: CodeMirror.hint.python,
+        completeSingle: false
+      },
       extraKeys: {
         'Ctrl-Enter': function () {
           runCellCode(
@@ -615,6 +653,16 @@ function createCodeCell (cell, index, totalCells) {
             index,
             totalCells
           )
+        },
+        'Ctrl-Space': 'autocomplete', // Auto-completion trigger
+        'Tab': function(cm) {
+          // Better tab handling for mobile - autocomplete if popup is open, otherwise indent
+          if (cm.state.completionActive) return CodeMirror.Pass;
+          if (cm.somethingSelected()) {
+            cm.indentSelection('add');
+          } else {
+            cm.replaceSelection(cm.getOption('indentWithTabs') ? '\t' : ' '.repeat(cm.getOption('indentUnit')));
+          }
         }
       }
     }
@@ -628,6 +676,24 @@ function createCodeCell (cell, index, totalCells) {
     cellEditor.saveTimeout = setTimeout(() => {
       saveGameState()
     }, 1000) // Save after 1 second of no changes
+  })
+
+  // Mobile-friendly auto-completion: trigger completion after typing certain characters
+  cellEditor.on('inputRead', function(cm, event) {
+    // Auto-trigger completion on mobile after typing letters, dots, or underscores
+    if (!cm.state.completionActive && 
+        event.text && event.text.length === 1 && 
+        /[a-zA-Z._]/.test(event.text[0])) {
+      // Get current line content to check context
+      const cursor = cm.getCursor()
+      const line = cm.getLine(cursor.line)
+      const beforeCursor = line.slice(0, cursor.ch)
+      
+      // Trigger completion if we have at least 2 characters of a word
+      if (/[a-zA-Z_][a-zA-Z0-9_]*$/.test(beforeCursor) && beforeCursor.match(/[a-zA-Z_][a-zA-Z0-9_]*$/)[0].length >= 2) {
+        setTimeout(() => cm.showHint({completeSingle: false}), 100)
+      }
+    }
   })
 
   // Set up cell number click to run code (replacing separate run button)
