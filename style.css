@@ -1487,3 +1487,69 @@ body {
   cursor: not-allowed;
   transform: none;
 }
+
+/* Provider selection and API key styling */
+.provider-selection {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.provider-selection label {
+  color: #e6d19a;
+  font-size: 12px;
+  min-width: 60px;
+}
+
+.provider-selection select {
+  flex: 1;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid #8b7355;
+  border-radius: 4px;
+  color: #e6d19a;
+  font-size: 12px;
+}
+
+.provider-selection select option {
+  background: #2a2a2a;
+  color: #e6d19a;
+}
+
+.api-key-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.api-key-container input {
+  flex: 1;
+  padding: 4px 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid #8b7355;
+  border-radius: 4px;
+  color: #e6d19a;
+  font-size: 12px;
+}
+
+.api-key-container input::placeholder {
+  color: #999;
+}
+
+.save-key-btn {
+  padding: 4px 12px;
+  background: #c9b037;
+  border: none;
+  border-radius: 4px;
+  color: #2a2a2a;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: bold;
+  transition: background 0.2s;
+}
+
+.save-key-btn:hover {
+  background: #e6d19a;
+}
