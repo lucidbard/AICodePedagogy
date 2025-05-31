@@ -52,7 +52,11 @@
                 }
                 
                 log('<br><strong>Sample Test Configuration:</strong>', 'info');
-                log('<pre>' + JSON.stringify(TEST_CONFIG.RUNTIME_ERRORS.syntaxErrors[0], null, 2) + '</pre>', 'info');
+                if (Array.isArray(TEST_CONFIG.RUNTIME_ERRORS.syntaxErrors) && TEST_CONFIG.RUNTIME_ERRORS.syntaxErrors.length > 0) {
+                    log('<pre>' + JSON.stringify(TEST_CONFIG.RUNTIME_ERRORS.syntaxErrors[0], null, 2) + '</pre>', 'info');
+                } else {
+                    log('No syntax errors available to display.', 'info');
+                }
                 
                 log('<br>🎯 <strong>Test configuration is ready for comprehensive testing!</strong>', 'success');
                 
