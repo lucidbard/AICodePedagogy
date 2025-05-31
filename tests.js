@@ -757,6 +757,110 @@ print(data['text'].upper())
         });
     }
 
+    // Offline Storage Tests
+    async testOfflineStorage() {
+        this.createTestSuite('Offline Storage Tests');
+
+        await this.runTest('LocalStorage Save/Load Game State', async () => {
+            // Mock localStorage if it doesn't exist
+            if (typeof localStorage === 'undefined') {
+                global.localStorage = {
+                    data: {},
+                    getItem: function(key) { return this.data[key] || null; },
+                    setItem: function(key, value) { this.data[key] = value; },
+                    removeItem: function(key) { delete this.data[key]; }
+                };
+            }
+
+            // Test saving state
+            const originalCurrentStage = window.currentStage || 1;
+            const originalCompletedStages = window.completedStages || [];
+            const originalSuccessfulCellExecutions = window.successfulCellExecutions || {};
+
+            // Set test state
+            window.currentStage = 3;
+            window.completedStages = [1, 2];
+            window.successfulCellExecutions = { 1: new Set([0]), 2: new Set([0, 1]) };
+
+            // Test save function
+            if (typeof saveGameState === 'function') {
+                saveGameState();
+                
+                // Verify data was saved
+                const savedData = localStorage.getItem('aicodepedagogy_progress');
+                if (!savedData) {
+                    throw new Error('Game state was not saved to localStorage');
+                }
+
+                const parsedData = JSON.parse(savedData);
+                if (parsedData.currentStage !== 3) {
+                    throw new Error('Current stage not saved correctly');
+                }
+                if (!parsedData.completedStages.includes(1) || !parsedData.completedStages.includes(2)) {
+                    throw new Error('Completed stages not saved correctly');
+                }
+            }
+
+            // Test load function
+            if (typeof loadGameState === 'function') {
+                // Reset values
+                window.currentStage = 1;
+                window.completedStages = [];
+                window.successfulCellExecutions = {};
+
+                // Load saved state
+                const loadedState = loadGameState();
+                if (!loadedState) {
+                    throw new Error('Failed to load game state');
+                }
+
+                if (window.currentStage !== 3) {
+                    throw new Error('Current stage not loaded correctly');
+                }
+                if (window.completedStages.length !== 2) {
+                    throw new Error('Completed stages not loaded correctly');
+                }
+            }
+
+            // Restore original state
+            window.currentStage = originalCurrentStage;
+            window.completedStages = originalCompletedStages;
+            window.successfulCellExecutions = originalSuccessfulCellExecutions;
+        });
+
+        await this.runTest('Clear Progress Functionality', async () => {
+            // Mock localStorage if it doesn't exist
+            if (typeof localStorage === 'undefined') {
+                global.localStorage = {
+                    data: {},
+                    getItem: function(key) { return this.data[key] || null; },
+                    setItem: function(key, value) { this.data[key] = value; },
+                    removeItem: function(key) { delete this.data[key]; }
+                };
+            }
+
+            if (typeof clearGameProgress === 'function') {
+                // Set some progress
+                localStorage.setItem('aicodepedagogy_progress', JSON.stringify({
+                    currentStage: 5,
+                    completedStages: [1, 2, 3, 4]
+                }));
+
+                // Clear progress
+                const result = clearGameProgress();
+                if (!result) {
+                    throw new Error('Clear progress function returned false');
+                }
+
+                // Verify progress was cleared
+                const savedData = localStorage.getItem('aicodepedagogy_progress');
+                if (savedData !== null) {
+                    throw new Error('Progress was not cleared from localStorage');
+                }
+            }
+        });
+    }
+
     // Main test runner
     async runAllTests() {
         console.log('Starting AICodePedagogy Test Suite...');
@@ -771,6 +875,7 @@ print(data['text'].upper())
             await this.testCoreFunctionality();
             await this.testErrorRecovery();
             await this.testValidationSystem();
+            await this.testOfflineStorage();
             
             // Run enhanced tests if TEST_CONFIG is available
             if (typeof TEST_CONFIG !== 'undefined') {

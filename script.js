@@ -9,6 +9,113 @@ let skulptLoadPromise = null
 let skulptEnvironment = null // Persistent Skulpt environment for multi-cell stages
 let successfulCellExecutions = {} // Track which cells have executed successfully by stage
 
+// Offline storage utility functions
+function saveGameState() {
+  try {
+    const gameState = {
+      currentStage: currentStage,
+      completedStages: completedStages,
+      successfulCellExecutions: Object.fromEntries(
+        Object.entries(successfulCellExecutions).map(([key, value]) => [key, Array.from(value)])
+      ),
+      cellContent: getCellContentForAllStages(),
+      lastSaved: Date.now()
+    }
+    localStorage.setItem('aicodepedagogy_progress', JSON.stringify(gameState))
+    console.log('Game state saved to localStorage')
+  } catch (error) {
+    console.warn('Failed to save game state:', error)
+  }
+}
+
+function loadGameState() {
+  try {
+    const saved = localStorage.getItem('aicodepedagogy_progress')
+    if (!saved) return false
+    
+    const gameState = JSON.parse(saved)
+    
+    // Restore basic state
+    currentStage = gameState.currentStage || 1
+    completedStages = gameState.completedStages || []
+    
+    // Restore successful cell executions (convert arrays back to Sets)
+    successfulCellExecutions = {}
+    if (gameState.successfulCellExecutions) {
+      Object.entries(gameState.successfulCellExecutions).forEach(([key, value]) => {
+        successfulCellExecutions[key] = new Set(value)
+      })
+    }
+    
+    console.log('Game state loaded from localStorage')
+    return gameState
+  } catch (error) {
+    console.warn('Failed to load game state:', error)
+    return false
+  }
+}
+
+function getCellContentForAllStages() {
+  const cellContent = {}
+  
+  // Save single-cell content if editor exists
+  if (editor && document.getElementById('single-cell-container').style.display !== 'none') {
+    cellContent[currentStage] = {
+      type: 'single',
+      content: editor.getValue()
+    }
+  }
+  
+  // Save multi-cell content if editors exist
+  if (cellEditors.length > 0 && document.getElementById('cells-container').style.display !== 'none') {
+    cellContent[currentStage] = {
+      type: 'multi',
+      content: cellEditors.map(cellEditor => cellEditor.getValue())
+    }
+  }
+  
+  return cellContent
+}
+
+function restoreCellContent(gameState) {
+  if (!gameState.cellContent) return
+  
+  const stageContent = gameState.cellContent[currentStage]
+  if (!stageContent) return
+  
+  // Use setTimeout to ensure editors are created first
+  setTimeout(() => {
+    try {
+      if (stageContent.type === 'single' && editor) {
+        editor.setValue(stageContent.content || '')
+      } else if (stageContent.type === 'multi' && cellEditors.length > 0) {
+        stageContent.content.forEach((content, index) => {
+          if (cellEditors[index]) {
+            cellEditors[index].setValue(content || '')
+          }
+        })
+      }
+    } catch (error) {
+      console.warn('Failed to restore cell content:', error)
+    }
+  }, 100)
+}
+
+function clearGameProgress() {
+  try {
+    localStorage.removeItem('aicodepedagogy_progress')
+    // Reset to initial state
+    currentStage = 1
+    completedStages = []
+    successfulCellExecutions = {}
+    console.log('Game progress cleared')
+    return true
+  } catch (error) {
+    console.warn('Failed to clear game progress:', error)
+    return false
+  }
+}
+
 // Create a promise that resolves when Skulpt is ready
 function createSkulptLoadPromise () {
   if (skulptLoadPromise) {
@@ -85,8 +192,18 @@ async function initializeGame () {
       gameContent.gameInfo.subtitle
 
     // Create developer navigation
-    createDevNav() // Load the first stage
-    loadStage(1)
+    createDevNav()
+    
+    // Try to load saved progress
+    const savedState = loadGameState()
+    
+    // Load the appropriate stage (saved or default)
+    loadStage(savedState ? currentStage : 1)
+    
+    // Restore cell content if available
+    if (savedState) {
+      restoreCellContent(savedState)
+    }
 
     console.log('Game initialized successfully')
 
@@ -129,6 +246,11 @@ function loadStage (stageId) {
   }
 
   currentStage = stageId
+  
+  // Save state when stage changes (but not during initial load)
+  if (gameContent && currentStage > 1) {
+    saveGameState()
+  }
   // Update UI elements with stage content (convert \n to <br> for proper line breaks)
   document.getElementById('story-content').innerHTML = stage.story.replace(
     /\n/g,
@@ -277,6 +399,15 @@ function setupSingleCellStage (stage) {
         runPythonCode(editor.getValue(), stage.solution)
       }
     }
+  })
+
+  // Add change listener to save state when content changes
+  editor.on('change', function() {
+    // Debounce the save to avoid too frequent saves
+    clearTimeout(editor.saveTimeout)
+    editor.saveTimeout = setTimeout(() => {
+      saveGameState()
+    }, 1000) // Save after 1 second of no changes
   })
 
   // Set up cell number click to run code (replacing separate run button)
@@ -469,6 +600,15 @@ function createCodeCell (cell, index, totalCells) {
     }
   )
   cellEditors.push(cellEditor)
+
+  // Add change listener to save state when content changes
+  cellEditor.on('change', function() {
+    // Debounce the save to avoid too frequent saves
+    clearTimeout(cellEditor.saveTimeout)
+    cellEditor.saveTimeout = setTimeout(() => {
+      saveGameState()
+    }, 1000) // Save after 1 second of no changes
+  })
 
   // Set up cell number click to run code (replacing separate run button)
   cellNumber.onclick = function () {
@@ -848,6 +988,7 @@ async function runCellCode (code, expectedOutput, cellIndex, totalCells) {
             successfulCellExecutions[currentStage] = new Set()
           }
           successfulCellExecutions[currentStage].add(cellIndex)
+          saveGameState()
 
           // Reset cell number to normal state
           cellNumber.classList.remove('running')
@@ -1379,6 +1520,7 @@ function checkAllCellsCompleted (totalCells) {
     if (!completedStages.includes(currentStage)) {
       completedStages.push(currentStage)
       updateDevNav()
+      saveGameState()
     }
     console.log(
       `Stage ${currentStage} completed! All ${totalCells} cells done.`
@@ -1549,6 +1691,7 @@ async function checkCompletion (code, solution, actualOutput) {
       if (!completedStages.includes(currentStage)) {
         completedStages.push(currentStage)
         updateDevNav()
+        saveGameState()
       }
     } else {
       // Solution is incorrect - provide specific feedback
@@ -1604,6 +1747,7 @@ async function checkCompletion (code, solution, actualOutput) {
     if (!completedStages.includes(currentStage)) {
       completedStages.push(currentStage)
       updateDevNav()
+      saveGameState()
     }
   }
 }
@@ -1832,6 +1976,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const restartButton = document.getElementById('restart-runtime-button')
   if (restartButton) {
     restartButton.addEventListener('click', restartRuntime)
+  }
+  
+  // Set up clear progress button
+  const clearProgressButton = document.getElementById('clear-progress-button')
+  if (clearProgressButton) {
+    clearProgressButton.addEventListener('click', () => {
+      if (confirm('Are you sure you want to clear all saved progress? This action cannot be undone.')) {
+        clearGameProgress()
+        // Reload the page to start fresh
+        window.location.reload()
+      }
+    })
   }
 })
 

@@ -516,6 +516,7 @@ h1 {
   margin: 15px 0;
   display: flex;
   justify-content: center;
+  gap: 10px;
 }
 
 .restart-runtime-button {
@@ -545,6 +546,47 @@ h1 {
 
 /* Tooltip styling for restart button */
 .restart-runtime-button:hover::after {
+  content: attr(title);
+  position: absolute;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 1000;
+  transform: translateY(-100%) translateX(-50%);
+  margin-top: -8px;
+  margin-left: 50%;
+}
+
+.clear-progress-button {
+  background: #f44336;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.3s ease;
+  border: 1px solid transparent;
+}
+
+.clear-progress-button:hover {
+  background: #d32f2f;
+  border-color: #d32f2f;
+}
+
+.clear-progress-button:active {
+  background: #b71c1c;
+}
+
+/* Tooltip styling for clear progress button */
+.clear-progress-button:hover::after {
   content: attr(title);
   position: absolute;
   background: rgba(0, 0, 0, 0.8);
