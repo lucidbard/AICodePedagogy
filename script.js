@@ -228,7 +228,7 @@ async function initializeGame () {
 
     // Initialize LLM integration
     console.log('Initializing LLM integration...')
-    ollamaLLM = new OllamaLLMIntegration()
+    ollamaLLM = new LLMIntegration()
     console.log('LLM integration initialized')
   } catch (error) {
     console.error('Error initializing game:', error)
@@ -2043,11 +2043,13 @@ window.addEventListener('load', () => {
   }, 3000)
 })
 
-// LLM Integration with Ollama
-class OllamaLLMIntegration {
+// LLM Integration with multiple providers
+class LLMIntegration {
   constructor () {
     this.selectedModel = null
     this.models = []
+    this.provider = 'ollama' // Default to ollama
+    this.apiKeys = this.loadApiKeys()
     this.setupEventListeners()
 
     // Show the footer by default (remove hidden class)
@@ -2069,6 +2071,7 @@ class OllamaLLMIntegration {
     const modelSelect = document.getElementById('model-select')
     const refreshBtn = document.getElementById('refresh-models')
     const changeModelBtn = document.getElementById('change-model')
+    const providerSelect = document.getElementById('provider-select')
 
     toggle.addEventListener('change', e => {
       this.toggleLLM(e.target.checked)
@@ -2091,6 +2094,81 @@ class OllamaLLMIntegration {
     changeModelBtn.addEventListener('click', () => {
       this.showModelSelection()
     })
+
+    if (providerSelect) {
+      providerSelect.addEventListener('change', e => {
+        this.provider = e.target.value
+        this.onProviderChange()
+      })
+    }
+  }
+
+  // API Key management methods
+  loadApiKeys() {
+    try {
+      const keys = localStorage.getItem('aicodepedagogy_api_keys')
+      return keys ? JSON.parse(keys) : {}
+    } catch (error) {
+      console.warn('Failed to load API keys:', error)
+      return {}
+    }
+  }
+
+  saveApiKeys() {
+    try {
+      localStorage.setItem('aicodepedagogy_api_keys', JSON.stringify(this.apiKeys))
+    } catch (error) {
+      console.warn('Failed to save API keys:', error)
+    }
+  }
+
+  setApiKey(provider, key) {
+    this.apiKeys[provider] = key
+    this.saveApiKeys()
+  }
+
+  getApiKey(provider) {
+    return this.apiKeys[provider]
+  }
+
+  onProviderChange() {
+    this.selectedModel = null
+    this.updateProviderUI()
+    this.loadModels()
+  }
+
+  updateProviderUI() {
+    const apiKeyContainer = document.getElementById('api-key-container')
+    
+    if (this.provider === 'ollama') {
+      if (apiKeyContainer) apiKeyContainer.style.display = 'none'
+    } else {
+      if (apiKeyContainer) {
+        apiKeyContainer.style.display = 'block'
+        this.setupApiKeyInput()
+      }
+    }
+  }
+
+  setupApiKeyInput() {
+    const apiKeyInput = document.getElementById('api-key-input')
+    const saveKeyBtn = document.getElementById('save-api-key')
+    
+    if (apiKeyInput) {
+      apiKeyInput.value = this.getApiKey(this.provider) || ''
+      apiKeyInput.placeholder = `Enter your ${this.provider === 'openai' ? 'OpenAI' : 'Anthropic'} API key`
+    }
+    
+    if (saveKeyBtn) {
+      saveKeyBtn.onclick = () => {
+        const key = apiKeyInput.value.trim()
+        if (key) {
+          this.setApiKey(this.provider, key)
+          this.updateStatus('success', 'API key saved securely')
+          this.loadModels()
+        }
+      }
+    }
   }
   toggleLLM (enabled) {
     this.isEnabled = enabled
@@ -2100,6 +2178,7 @@ class OllamaLLMIntegration {
     if (enabled) {
       settings.style.display = 'block'
       // if (footer) footer.classList.remove('hidden')
+      this.updateProviderUI()
       this.loadModels()
       this.updateHintSystem()
       // Hide model selection initially, just show the selected model info
@@ -2115,18 +2194,37 @@ class OllamaLLMIntegration {
     this.updateStatus('connecting', 'Loading models...')
 
     try {
-      const response = await fetch(`http://localhost:11434/api/tags`)
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`)
+      let models = []
+      
+      if (this.provider === 'ollama') {
+        const response = await fetch(`http://localhost:11434/api/tags`)
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`)
+        }
+        const data = await response.json()
+        models = data.models || []
+      } else if (this.provider === 'openai') {
+        // OpenAI has predefined models
+        models = [
+          { name: 'gpt-4', size: 0 },
+          { name: 'gpt-4-turbo-preview', size: 0 },
+          { name: 'gpt-3.5-turbo', size: 0 }
+        ]
+      } else if (this.provider === 'anthropic') {
+        // Anthropic has predefined models
+        models = [
+          { name: 'claude-3-opus-20240229', size: 0 },
+          { name: 'claude-3-sonnet-20240229', size: 0 },
+          { name: 'claude-3-haiku-20240307', size: 0 }
+        ]
       }
 
-      const data = await response.json()
-      this.populateModelSelect(data.models || [])
+      this.populateModelSelect(models)
       this.isConnected = true
 
-      if (data.models && data.models.length > 0) {
+      if (models && models.length > 0) {
         // Auto-select the first available model
-        this.selectedModel = data.models[0].name
+        this.selectedModel = models[0].name
         document.getElementById('model-select').value = this.selectedModel
         this.updateModelInfo()
         this.updateStatus('connected', `Connected to ${this.selectedModel}`)
@@ -2135,12 +2233,17 @@ class OllamaLLMIntegration {
         this.updateStatus('error', 'No models available')
       }
     } catch (error) {
-      console.error('Failed to load Ollama models:', error)
+      console.error(`Failed to load ${this.provider} models:`, error)
       this.isConnected = false
-      this.updateStatus(
-        'error',
-        "Ollama not available - check if it's running on localhost:11434"
-      )
+      
+      let errorMessage = ''
+      if (this.provider === 'ollama') {
+        errorMessage = "Ollama not available - check if it's running on localhost:11434"
+      } else {
+        errorMessage = `${this.provider} API not available - check your API key`
+      }
+      
+      this.updateStatus('error', errorMessage)
       this.populateModelSelect([])
     }
   }
@@ -2251,7 +2354,7 @@ class OllamaLLMIntegration {
     this.showLLMResponse('loading', 'Thinking... 🤔')
 
     try {
-      const response = await this.sendOllamaRequest(query)
+      const response = await this.sendLLMRequest(query)
       this.showLLMResponse('success', response)
     } catch (error) {
       console.error('LLM query failed:', error)
@@ -2358,6 +2461,18 @@ Think about it step by step, and don't hesitate to ask for clarification if you 
       return allCode
     }
   }
+  async sendLLMRequest (prompt) {
+    if (this.provider === 'ollama') {
+      return this.sendOllamaRequest(prompt)
+    } else if (this.provider === 'openai') {
+      return this.sendOpenAIRequest(prompt)
+    } else if (this.provider === 'anthropic') {
+      return this.sendAnthropicRequest(prompt)
+    } else {
+      throw new Error(`Unsupported provider: ${this.provider}`)
+    }
+  }
+
   async sendOllamaRequest (prompt) {
     const response = await fetch(`http://localhost:11434/api/generate`, {
       method: 'POST',
@@ -2370,7 +2485,7 @@ Think about it step by step, and don't hesitate to ask for clarification if you 
         stream: false,
         options: {
           temperature: 0.7,
-          num_predict: 500, // Increased slightly for better responses
+          num_predict: 500,
           top_p: 0.9,
           stop: [
             '```python',
@@ -2381,7 +2496,7 @@ Think about it step by step, and don't hesitate to ask for clarification if you 
             "Here's the solution:",
             'The answer is:',
             'Solution:'
-          ] // Enhanced stop tokens to prevent thinking tags and solutions
+          ]
         }
       })
     })
@@ -2391,6 +2506,83 @@ Think about it step by step, and don't hesitate to ask for clarification if you 
     }
     const data = await response.json()
     return this.processLLMResponse(data.response)
+  }
+
+  async sendOpenAIRequest (prompt) {
+    const apiKey = this.getApiKey('openai')
+    if (!apiKey) {
+      throw new Error('OpenAI API key not provided')
+    }
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: this.selectedModel,
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.7,
+        max_tokens: 500,
+        stop: [
+          '```python',
+          'def ',
+          'print(',
+          '# Solution:',
+          'The complete code is:',
+          "Here's the solution:",
+          'The answer is:',
+          'Solution:'
+        ]
+      })
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(`OpenAI API error: ${errorData.error?.message || response.statusText}`)
+    }
+    const data = await response.json()
+    return this.processLLMResponse(data.choices[0].message.content)
+  }
+
+  async sendAnthropicRequest (prompt) {
+    const apiKey = this.getApiKey('anthropic')
+    if (!apiKey) {
+      throw new Error('Anthropic API key not provided')
+    }
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: this.selectedModel,
+        max_tokens: 500,
+        temperature: 0.7,
+        messages: [{ role: 'user', content: prompt }],
+        stop_sequences: [
+          '```python',
+          'def ',
+          'print(',
+          '# Solution:',
+          'The complete code is:',
+          "Here's the solution:",
+          'The answer is:',
+          'Solution:'
+        ]
+      })
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(`Anthropic API error: ${errorData.error?.message || response.statusText}`)
+    }
+    const data = await response.json()
+    return this.processLLMResponse(data.content[0].text)
   }
   processLLMResponse (rawResponse) {
     console.log('Raw LLM response:', rawResponse)

@@ -861,6 +861,70 @@ print(data['text'].upper())
         });
     }
 
+    // LLM Integration Tests
+    async testLLMIntegration() {
+        this.createTestSuite('LLM Integration Tests');
+
+        await this.runTest('API Key Storage and Retrieval', async () => {
+            // Mock localStorage if it doesn't exist
+            if (typeof localStorage === 'undefined') {
+                global.localStorage = {
+                    data: {},
+                    getItem: function(key) { return this.data[key] || null; },
+                    setItem: function(key, value) { this.data[key] = value; },
+                    removeItem: function(key) { delete this.data[key]; }
+                };
+            }
+
+            // Test LLMIntegration class if available
+            if (typeof LLMIntegration !== 'undefined') {
+                const llm = new LLMIntegration();
+                
+                // Test API key setting and getting
+                llm.setApiKey('openai', 'test-key-123');
+                const retrievedKey = llm.getApiKey('openai');
+                
+                if (retrievedKey !== 'test-key-123') {
+                    throw new Error('API key was not stored or retrieved correctly');
+                }
+                
+                // Test key persistence
+                const newLLM = new LLMIntegration();
+                const persistedKey = newLLM.getApiKey('openai');
+                
+                if (persistedKey !== 'test-key-123') {
+                    throw new Error('API key was not persisted across instances');
+                }
+                
+                // Test multiple provider keys
+                llm.setApiKey('anthropic', 'test-anthropic-key');
+                const anthropicKey = llm.getApiKey('anthropic');
+                const openaiKey = llm.getApiKey('openai');
+                
+                if (anthropicKey !== 'test-anthropic-key' || openaiKey !== 'test-key-123') {
+                    throw new Error('Multiple API keys not stored correctly');
+                }
+            }
+        });
+
+        await this.runTest('Provider Selection', async () => {
+            if (typeof LLMIntegration !== 'undefined') {
+                const llm = new LLMIntegration();
+                
+                // Test default provider
+                if (llm.provider !== 'ollama') {
+                    throw new Error('Default provider should be ollama');
+                }
+                
+                // Test provider changing
+                llm.provider = 'openai';
+                if (llm.provider !== 'openai') {
+                    throw new Error('Provider change failed');
+                }
+            }
+        });
+    }
+
     // Main test runner
     async runAllTests() {
         console.log('Starting AICodePedagogy Test Suite...');
@@ -876,6 +940,7 @@ print(data['text'].upper())
             await this.testErrorRecovery();
             await this.testValidationSystem();
             await this.testOfflineStorage();
+            await this.testLLMIntegration();
             
             // Run enhanced tests if TEST_CONFIG is available
             if (typeof TEST_CONFIG !== 'undefined') {

@@ -59,15 +59,40 @@ This project is a demonstration for the DHSI Course "Digital Humanities Programm
   - Writing documentation
   - Optimizing performance
 
-### Ollama Integration
-If the project integrates with Ollama:
+### LLM Provider Setup
+
+The application supports multiple AI providers for the coding assistant:
+
+#### Ollama (Local)
 1. Install Ollama: https://ollama.ai
 2. Pull required models:
    ```bash
    ollama pull llama2  # or appropriate model
    ```
 3. Ensure Ollama is running locally
-4. Check script.js for API endpoint configuration
+4. Select "Ollama (Local)" in the provider dropdown
+
+#### OpenAI
+1. Create an account at https://platform.openai.com
+2. Navigate to API Keys: https://platform.openai.com/api-keys
+3. Click "Create new secret key"
+4. Copy the key (starts with `sk-`)
+5. In the application:
+   - Select "OpenAI" as provider
+   - Paste your API key and click "Save"
+   - Keys are stored securely in your browser's local storage
+
+#### Anthropic
+1. Create an account at https://console.anthropic.com
+2. Navigate to API Keys: https://console.anthropic.com/settings/keys
+3. Click "Create Key"
+4. Copy the key (starts with `sk-ant-`)
+5. In the application:
+   - Select "Anthropic" as provider
+   - Paste your API key and click "Save"
+   - Keys are stored securely in your browser's local storage
+
+**Security Note**: API keys are stored in your browser's local storage and never sent to external servers except the respective AI provider's APIs.
 
 ## Deployment Guide
 
