@@ -2208,6 +2208,8 @@ class LLMIntegration {
         models = [
           { name: 'gpt-4', size: 0 },
           { name: 'gpt-4-turbo-preview', size: 0 },
+          { name: 'gpt-4.1', size: 0 },
+          { name: 'o4-mini', size: 0 },
           { name: 'gpt-3.5-turbo', size: 0 }
         ]
       } else if (this.provider === 'anthropic') {
@@ -2215,6 +2217,8 @@ class LLMIntegration {
         models = [
           { name: 'claude-3-opus-20240229', size: 0 },
           { name: 'claude-3-sonnet-20240229', size: 0 },
+          { name: 'claude-3.7-sonnet', size: 0 },
+          { name: 'claude-4-sonnet', size: 0 },
           { name: 'claude-3-haiku-20240307', size: 0 }
         ]
       }
@@ -2354,7 +2358,7 @@ class LLMIntegration {
     this.showLLMResponse('loading', 'Thinking... 🤔')
 
     try {
-      const response = await this.sendLLMRequest(query)
+      const response = await this.sendLLMRequestWithFollowup(query)
       this.showLLMResponse('success', response)
     } catch (error) {
       console.error('LLM query failed:', error)
@@ -2524,17 +2528,7 @@ Think about it step by step, and don't hesitate to ask for clarification if you 
         model: this.selectedModel,
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.7,
-        max_tokens: 500,
-        stop: [
-          '```python',
-          'def ',
-          'print(',
-          '# Solution:',
-          'The complete code is:',
-          "Here's the solution:",
-          'The answer is:',
-          'Solution:'
-        ]
+        max_tokens: 500
       })
     })
 
@@ -2563,17 +2557,7 @@ Think about it step by step, and don't hesitate to ask for clarification if you 
         model: this.selectedModel,
         max_tokens: 500,
         temperature: 0.7,
-        messages: [{ role: 'user', content: prompt }],
-        stop_sequences: [
-          '```python',
-          'def ',
-          'print(',
-          '# Solution:',
-          'The complete code is:',
-          "Here's the solution:",
-          'The answer is:',
-          'Solution:'
-        ]
+        messages: [{ role: 'user', content: prompt }]
       })
     })
 
@@ -2627,14 +2611,12 @@ Think about it step by step, and don't hesitate to ask for clarification if you 
     const filteredLines = lines.filter(line => {
       const trimmed = line.trim()
 
-      // Only skip lines that are clearly complete Python code solutions
-      // Be more selective to avoid removing educational content
+      // Only skip lines that are clearly complete standalone solution code
+      // Be much more selective to preserve educational content like "def" explanations
       if (
-        (trimmed.startsWith('def ') && trimmed.includes('():')) ||
-        trimmed.match(/^\s*\w+\s*=\s*input\(.*\)\s*$/) ||
-        trimmed.match(/^\s*for\s+\w+\s+in\s+.*:\s*$/) ||
-        (trimmed.match(/^\s*if\s+.*:\s*$/) && line.length > 50) ||
-        trimmed.match(/^\s*print\([^)]*\)\s*$/)
+        (trimmed.startsWith('def ') && trimmed.includes('():') && trimmed.includes('return')) ||
+        (trimmed.match(/^\s*\w+\s*=\s*input\(.*\)\s*$/) && line.includes('int(')) ||
+        (trimmed.startsWith('print(') && trimmed.includes('input(') && trimmed.endsWith(')'))
       ) {
         return false
       }
@@ -2655,6 +2637,50 @@ Think about it step by step, and don't hesitate to ask for clarification if you 
     // Convert markdown to HTML
     return this.markdownToHtml(cleanedResponse)
   }
+
+  containsSolution(response) {
+    // Check if response contains solution indicators that should trigger a followup
+    const solutionIndicators = [
+      /```python[\s\S]*?```/i,  // Python code blocks
+      /def\s+\w+\s*\([^)]*\)\s*:/i,  // Function definitions (complete syntax)
+      /print\s*\([^)]*\)\s*$/im,  // Print statements at end of line
+      /input\s*\([^)]*\)\s*$/im,  // Input statements
+      /for\s+\w+\s+in\s+.*:\s*$/im,  // For loops
+      /if\s+.*:\s*$/im,  // If statements
+      /while\s+.*:\s*$/im,  // While loops
+      /The\s+(answer|solution)\s+is[:\s]/i,  // Direct solution statements
+      /Here['']?s\s+the\s+(complete\s+)?code/i,  // Code revelation statements
+      /The\s+complete\s+code\s+is/i
+    ];
+
+    // Check for multiple indicators to avoid false positives on educational content
+    let indicatorCount = 0;
+    for (const pattern of solutionIndicators) {
+      if (pattern.test(response)) {
+        indicatorCount++;
+      }
+    }
+
+    // Trigger followup if we find 2 or more indicators, or 1 strong indicator (code block)
+    return indicatorCount >= 2 || /```python[\s\S]*?```/i.test(response);
+  }
+
+  async sendLLMRequestWithFollowup(prompt) {
+    // First attempt - get initial response
+    let response = await this.sendLLMRequest(prompt);
+    
+    // Check if response contains solution and send followup if needed
+    if (this.containsSolution(response)) {
+      const followupPrompt = `${prompt}
+
+IMPORTANT: Please provide guidance and hints without giving away the complete solution. Help the student think through the problem step by step, but let them write the code themselves. Avoid showing complete code blocks or giving direct answers.`;
+      
+      response = await this.sendLLMRequest(followupPrompt);
+    }
+    
+    return response;
+  }
+
   markdownToHtml (markdown) {
     // Simple markdown to HTML converter for common formatting
     let html = markdown
