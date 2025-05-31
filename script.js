@@ -8,6 +8,7 @@ let skulptReady = false
 let skulptLoadPromise = null
 let skulptEnvironment = null // Persistent Skulpt environment for multi-cell stages
 let successfulCellExecutions = {} // Track which cells have executed successfully by stage
+let savedCellContent = {} // Track cell content across all stages
 
 // Offline storage utility functions
 function saveGameState() {
@@ -47,6 +48,9 @@ function loadGameState() {
       })
     }
     
+    // Restore saved cell content
+    savedCellContent = gameState.cellContent || {}
+    
     console.log('Game state loaded from localStorage')
     return gameState
   } catch (error) {
@@ -56,11 +60,17 @@ function loadGameState() {
 }
 
 function getCellContentForAllStages() {
-  const cellContent = {}
+  // Update the current stage's content before saving
+  updateCurrentStageCellContent()
+  return savedCellContent
+}
+
+function updateCurrentStageCellContent() {
+  if (!currentStage) return
   
   // Save single-cell content if editor exists
   if (editor && document.getElementById('single-cell-container').style.display !== 'none') {
-    cellContent[currentStage] = {
+    savedCellContent[currentStage] = {
       type: 'single',
       content: editor.getValue()
     }
@@ -68,19 +78,15 @@ function getCellContentForAllStages() {
   
   // Save multi-cell content if editors exist
   if (cellEditors.length > 0 && document.getElementById('cells-container').style.display !== 'none') {
-    cellContent[currentStage] = {
+    savedCellContent[currentStage] = {
       type: 'multi',
       content: cellEditors.map(cellEditor => cellEditor.getValue())
     }
   }
-  
-  return cellContent
 }
 
 function restoreCellContent(gameState) {
-  if (!gameState.cellContent) return
-  
-  const stageContent = gameState.cellContent[currentStage]
+  const stageContent = savedCellContent[currentStage]
   if (!stageContent) return
   
   // Use setTimeout to ensure editors are created first
@@ -108,6 +114,7 @@ function clearGameProgress() {
     currentStage = 1
     completedStages = []
     successfulCellExecutions = {}
+    savedCellContent = {}
     console.log('Game progress cleared')
     return true
   } catch (error) {
@@ -206,6 +213,9 @@ async function initializeGame () {
     }
 
     console.log('Game initialized successfully')
+    
+    // Mark game as initialized to enable auto-saving on stage changes
+    window.gameInitialized = true
 
     // Initialize Skulpt in the background (don't block game loading)
     createSkulptLoadPromise()
@@ -247,8 +257,13 @@ function loadStage (stageId) {
 
   currentStage = stageId
   
+  // Save current stage cell content before switching
+  if (window.gameInitialized) {
+    updateCurrentStageCellContent()
+  }
+  
   // Save state when stage changes (but not during initial load)
-  if (gameContent && currentStage > 1) {
+  if (gameContent && window.gameInitialized) {
     saveGameState()
   }
   // Update UI elements with stage content (convert \n to <br> for proper line breaks)
@@ -287,6 +302,11 @@ function loadStage (stageId) {
   // Reset next button
   const nextButton = document.getElementById('next-button')
   nextButton.classList.remove('active')
+
+  // Restore cell content for this stage if available
+  if (window.gameInitialized) {
+    restoreCellContent()
+  }
 
   console.log(`Loaded stage ${stageId}: ${stage.title}`)
 }
