@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Configuration Validation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>AICodePedagogy Test Configuration Validation</h1>
+    <div id="results"></div>
+    
+    <script src="test-config.js"></script>
+    <script>
+        const results = document.getElementById('results');
+        
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = type;
+            div.innerHTML = message;
+            results.appendChild(div);
+        }
+        
+        try {
+            // Check if TEST_CONFIG is available
+            if (typeof TEST_CONFIG !== 'undefined') {
+                log('✅ TEST_CONFIG successfully loaded', 'success');
+                
+                // Validate structure
+                if (TEST_CONFIG.RUNTIME_ERRORS) {
+                    log(`✅ Runtime errors: ${TEST_CONFIG.RUNTIME_ERRORS.syntaxErrors.length} syntax errors, ${TEST_CONFIG.RUNTIME_ERRORS.runtimeErrors.length} runtime errors`, 'success');
+                }
+                
+                if (TEST_CONFIG.CELL_EXECUTION_SCENARIOS) {
+                    log(`✅ Cell execution scenarios: ${TEST_CONFIG.CELL_EXECUTION_SCENARIOS.length} scenarios`, 'success');
+                }
+                
+                if (TEST_CONFIG.VALIDATION_SCENARIOS) {
+                    log('✅ Validation scenarios available', 'success');
+                }
+                
+                if (TEST_CONFIG.EDGE_CASES) {
+                    log(`✅ Edge cases: ${TEST_CONFIG.EDGE_CASES.length} cases`, 'success');
+                }
+                
+                if (TEST_CONFIG.STRESS_TESTS) {
+                    log(`✅ Stress tests: ${TEST_CONFIG.STRESS_TESTS.length} tests`, 'success');
+                }
+                
+                log('<br><strong>Sample Test Configuration:</strong>', 'info');
+                log('<pre>' + JSON.stringify(TEST_CONFIG.RUNTIME_ERRORS.syntaxErrors[0], null, 2) + '</pre>', 'info');
+                
+                log('<br>🎯 <strong>Test configuration is ready for comprehensive testing!</strong>', 'success');
+                
+            } else {
+                log('❌ TEST_CONFIG is not available', 'error');
+            }
+            
+        } catch (error) {
+            log('❌ Error validating test configuration: ' + error.message, 'error');
+        }
+    </script>
+</body>
+</html>
