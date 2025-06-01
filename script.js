@@ -8,6 +8,120 @@ let skulptReady = false
 let skulptLoadPromise = null
 let skulptEnvironment = null // Persistent Skulpt environment for multi-cell stages
 let successfulCellExecutions = {} // Track which cells have executed successfully by stage
+let savedCellContent = {} // Track cell content across all stages
+
+// Offline storage utility functions
+function saveGameState() {
+  try {
+    const gameState = {
+      currentStage: currentStage,
+      completedStages: completedStages,
+      successfulCellExecutions: Object.fromEntries(
+        Object.entries(successfulCellExecutions).map(([key, value]) => [key, Array.from(value)])
+      ),
+      cellContent: getCellContentForAllStages(),
+      lastSaved: Date.now()
+    }
+    localStorage.setItem('aicodepedagogy_progress', JSON.stringify(gameState))
+    console.log('Game state saved to localStorage')
+  } catch (error) {
+    console.warn('Failed to save game state:', error)
+  }
+}
+
+function loadGameState() {
+  try {
+    const saved = localStorage.getItem('aicodepedagogy_progress')
+    if (!saved) return false
+    
+    const gameState = JSON.parse(saved)
+    
+    // Restore basic state
+    currentStage = gameState.currentStage || 1
+    completedStages = gameState.completedStages || []
+    
+    // Restore successful cell executions (convert arrays back to Sets)
+    successfulCellExecutions = {}
+    if (gameState.successfulCellExecutions) {
+      Object.entries(gameState.successfulCellExecutions).forEach(([key, value]) => {
+        successfulCellExecutions[key] = new Set(value)
+      })
+    }
+    
+    // Restore saved cell content
+    savedCellContent = gameState.cellContent || {}
+    
+    console.log('Game state loaded from localStorage')
+    return gameState
+  } catch (error) {
+    console.warn('Failed to load game state:', error)
+    return false
+  }
+}
+
+function getCellContentForAllStages() {
+  // Update the current stage's content before saving
+  updateCurrentStageCellContent()
+  return savedCellContent
+}
+
+function updateCurrentStageCellContent() {
+  if (!currentStage) return
+  
+  // Save single-cell content if editor exists
+  if (editor && document.getElementById('single-cell-container').style.display !== 'none') {
+    savedCellContent[currentStage] = {
+      type: 'single',
+      content: editor.getValue()
+    }
+  }
+  
+  // Save multi-cell content if editors exist
+  if (cellEditors.length > 0 && document.getElementById('cells-container').style.display !== 'none') {
+    savedCellContent[currentStage] = {
+      type: 'multi',
+      content: cellEditors.map(cellEditor => cellEditor.getValue())
+    }
+  }
+}
+
+function restoreCellContent(gameState) {
+  const stageContent = savedCellContent[currentStage]
+  if (!stageContent) return
+  
+  // Use setTimeout to ensure editors are created first
+  setTimeout(() => {
+    try {
+      if (stageContent.type === 'single' && editor) {
+        editor.setValue(stageContent.content || '')
+      } else if (stageContent.type === 'multi' && cellEditors.length > 0) {
+        stageContent.content.forEach((content, index) => {
+          if (cellEditors[index]) {
+            cellEditors[index].setValue(content || '')
+          }
+        })
+      }
+    } catch (error) {
+      console.warn('Failed to restore cell content:', error)
+    }
+  }, 100)
+}
+
+function clearGameProgress() {
+  try {
+    localStorage.removeItem('aicodepedagogy_progress')
+    // Reset to initial state
+    currentStage = 1
+    completedStages = []
+    successfulCellExecutions = {}
+    savedCellContent = {}
+    console.log('Game progress cleared')
+    return true
+  } catch (error) {
+    console.warn('Failed to clear game progress:', error)
+    return false
+  }
+}
 
 // Create a promise that resolves when Skulpt is ready
 function createSkulptLoadPromise () {
@@ -85,10 +199,23 @@ async function initializeGame () {
       gameContent.gameInfo.subtitle
 
     // Create developer navigation
-    createDevNav() // Load the first stage
-    loadStage(1)
+    createDevNav()
+    
+    // Try to load saved progress
+    const savedState = loadGameState()
+    
+    // Load the appropriate stage (saved or default)
+    loadStage(savedState ? currentStage : 1)
+    
+    // Restore cell content if available
+    if (savedState) {
+      restoreCellContent(savedState)
+    }
 
     console.log('Game initialized successfully')
+    
+    // Mark game as initialized to enable auto-saving on stage changes
+    window.gameInitialized = true
 
     // Initialize Skulpt in the background (don't block game loading)
     createSkulptLoadPromise()
@@ -101,7 +228,7 @@ async function initializeGame () {
 
     // Initialize LLM integration
     console.log('Initializing LLM integration...')
-    ollamaLLM = new OllamaLLMIntegration()
+    ollamaLLM = new LLMIntegration()
     console.log('LLM integration initialized')
   } catch (error) {
     console.error('Error initializing game:', error)
@@ -129,6 +256,16 @@ function loadStage (stageId) {
   }
 
   currentStage = stageId
+  
+  // Save current stage cell content before switching
+  if (window.gameInitialized) {
+    updateCurrentStageCellContent()
+  }
+  
+  // Save state when stage changes (but not during initial load)
+  if (gameContent && window.gameInitialized) {
+    saveGameState()
+  }
   // Update UI elements with stage content (convert \n to <br> for proper line breaks)
   document.getElementById('story-content').innerHTML = stage.story.replace(
     /\n/g,
@@ -165,6 +302,11 @@ function loadStage (stageId) {
   // Reset next button
   const nextButton = document.getElementById('next-button')
   nextButton.classList.remove('active')
+
+  // Restore cell content for this stage if available
+  if (window.gameInitialized) {
+    restoreCellContent()
+  }
 
   console.log(`Loaded stage ${stageId}: ${stage.title}`)
 }
@@ -272,9 +414,51 @@ function setupSingleCellStage (stage) {
     matchBrackets: true,
     autoCloseBrackets: true,
     viewportMargin: Infinity, // Auto-resize height
+    lineWrapping: true, // Enable line wrapping for mobile
+    hintOptions: {
+      hint: CodeMirror.hint.python,
+      completeSingle: false
+    },
     extraKeys: {
       'Ctrl-Enter': function () {
         runPythonCode(editor.getValue(), stage.solution)
+      },
+      'Ctrl-Space': 'autocomplete', // Auto-completion trigger
+      'Tab': function(cm) {
+        // Better tab handling for mobile - autocomplete if popup is open, otherwise indent
+        if (cm.state.completionActive) return CodeMirror.Pass;
+        if (cm.somethingSelected()) {
+          cm.indentSelection('add');
+        } else {
+          cm.replaceSelection(cm.getOption('indentWithTabs') ? '\t' : ' '.repeat(cm.getOption('indentUnit')));
+        }
+      }
+    }
+  })
+
+  // Add change listener to save state when content changes
+  editor.on('change', function() {
+    // Debounce the save to avoid too frequent saves
+    clearTimeout(editor.saveTimeout)
+    editor.saveTimeout = setTimeout(() => {
+      saveGameState()
+    }, 1000) // Save after 1 second of no changes
+  })
+
+  // Mobile-friendly auto-completion: trigger completion after typing certain characters
+  editor.on('inputRead', function(cm, event) {
+    // Auto-trigger completion on mobile after typing letters, dots, or underscores
+    if (!cm.state.completionActive && 
+        event.text && event.text.length === 1 && 
+        /[a-zA-Z._]/.test(event.text[0])) {
+      // Get current line content to check context
+      const cursor = cm.getCursor()
+      const line = cm.getLine(cursor.line)
+      const beforeCursor = line.slice(0, cursor.ch)
+      
+      // Trigger completion if we have at least 2 characters of a word
+      if (/[a-zA-Z_][a-zA-Z0-9_]*$/.test(beforeCursor) && beforeCursor.match(/[a-zA-Z_][a-zA-Z0-9_]*$/)[0].length >= 2) {
+        setTimeout(() => cm.showHint({completeSingle: false}), 100)
       }
     }
   })
@@ -456,6 +640,11 @@ function createCodeCell (cell, index, totalCells) {
       matchBrackets: true,
       autoCloseBrackets: true,
       viewportMargin: Infinity, // Auto-resize height
+      lineWrapping: true, // Enable line wrapping for mobile
+      hintOptions: {
+        hint: CodeMirror.hint.python,
+        completeSingle: false
+      },
       extraKeys: {
         'Ctrl-Enter': function () {
           runCellCode(
@@ -464,11 +653,48 @@ function createCodeCell (cell, index, totalCells) {
             index,
             totalCells
           )
+        },
+        'Ctrl-Space': 'autocomplete', // Auto-completion trigger
+        'Tab': function(cm) {
+          // Better tab handling for mobile - autocomplete if popup is open, otherwise indent
+          if (cm.state.completionActive) return CodeMirror.Pass;
+          if (cm.somethingSelected()) {
+            cm.indentSelection('add');
+          } else {
+            cm.replaceSelection(cm.getOption('indentWithTabs') ? '\t' : ' '.repeat(cm.getOption('indentUnit')));
+          }
         }
       }
     }
   )
   cellEditors.push(cellEditor)
+
+  // Add change listener to save state when content changes
+  cellEditor.on('change', function() {
+    // Debounce the save to avoid too frequent saves
+    clearTimeout(cellEditor.saveTimeout)
+    cellEditor.saveTimeout = setTimeout(() => {
+      saveGameState()
+    }, 1000) // Save after 1 second of no changes
+  })
+
+  // Mobile-friendly auto-completion: trigger completion after typing certain characters
+  cellEditor.on('inputRead', function(cm, event) {
+    // Auto-trigger completion on mobile after typing letters, dots, or underscores
+    if (!cm.state.completionActive && 
+        event.text && event.text.length === 1 && 
+        /[a-zA-Z._]/.test(event.text[0])) {
+      // Get current line content to check context
+      const cursor = cm.getCursor()
+      const line = cm.getLine(cursor.line)
+      const beforeCursor = line.slice(0, cursor.ch)
+      
+      // Trigger completion if we have at least 2 characters of a word
+      if (/[a-zA-Z_][a-zA-Z0-9_]*$/.test(beforeCursor) && beforeCursor.match(/[a-zA-Z_][a-zA-Z0-9_]*$/)[0].length >= 2) {
+        setTimeout(() => cm.showHint({completeSingle: false}), 100)
+      }
+    }
+  })
 
   // Set up cell number click to run code (replacing separate run button)
   cellNumber.onclick = function () {
@@ -848,6 +1074,7 @@ async function runCellCode (code, expectedOutput, cellIndex, totalCells) {
             successfulCellExecutions[currentStage] = new Set()
           }
           successfulCellExecutions[currentStage].add(cellIndex)
+          saveGameState()
 
           // Reset cell number to normal state
           cellNumber.classList.remove('running')
@@ -1379,6 +1606,7 @@ function checkAllCellsCompleted (totalCells) {
     if (!completedStages.includes(currentStage)) {
       completedStages.push(currentStage)
       updateDevNav()
+      saveGameState()
     }
     console.log(
       `Stage ${currentStage} completed! All ${totalCells} cells done.`
@@ -1549,6 +1777,7 @@ async function checkCompletion (code, solution, actualOutput) {
       if (!completedStages.includes(currentStage)) {
         completedStages.push(currentStage)
         updateDevNav()
+        saveGameState()
       }
     } else {
       // Solution is incorrect - provide specific feedback
@@ -1604,6 +1833,7 @@ async function checkCompletion (code, solution, actualOutput) {
     if (!completedStages.includes(currentStage)) {
       completedStages.push(currentStage)
       updateDevNav()
+      saveGameState()
     }
   }
 }
@@ -1833,6 +2063,18 @@ document.addEventListener('DOMContentLoaded', () => {
   if (restartButton) {
     restartButton.addEventListener('click', restartRuntime)
   }
+  
+  // Set up clear progress button
+  const clearProgressButton = document.getElementById('clear-progress-button')
+  if (clearProgressButton) {
+    clearProgressButton.addEventListener('click', () => {
+      if (confirm('Are you sure you want to clear all saved progress? This action cannot be undone.')) {
+        clearGameProgress()
+        // Reload the page to start fresh
+        window.location.reload()
+      }
+    })
+  }
 
   // Set up Ollama help modal
   setupOllamaHelpModal()
@@ -1870,11 +2112,13 @@ window.addEventListener('load', () => {
   }, 3000)
 })
 
-// LLM Integration with Ollama
-class OllamaLLMIntegration {
+// LLM Integration with multiple providers
+class LLMIntegration {
   constructor () {
     this.selectedModel = null
     this.models = []
+    this.provider = 'ollama' // Default to ollama
+    this.apiKeys = this.loadApiKeys()
     this.setupEventListeners()
 
     // Show the footer by default (remove hidden class)
@@ -1896,6 +2140,7 @@ class OllamaLLMIntegration {
     const modelSelect = document.getElementById('model-select')
     const refreshBtn = document.getElementById('refresh-models')
     const changeModelBtn = document.getElementById('change-model')
+    const providerSelect = document.getElementById('provider-select')
 
     toggle.addEventListener('change', e => {
       this.toggleLLM(e.target.checked)
@@ -1918,6 +2163,81 @@ class OllamaLLMIntegration {
     changeModelBtn.addEventListener('click', () => {
       this.showModelSelection()
     })
+
+    if (providerSelect) {
+      providerSelect.addEventListener('change', e => {
+        this.provider = e.target.value
+        this.onProviderChange()
+      })
+    }
+  }
+
+  // API Key management methods
+  loadApiKeys() {
+    try {
+      const keys = localStorage.getItem('aicodepedagogy_api_keys')
+      return keys ? JSON.parse(keys) : {}
+    } catch (error) {
+      console.warn('Failed to load API keys:', error)
+      return {}
+    }
+  }
+
+  saveApiKeys() {
+    try {
+      localStorage.setItem('aicodepedagogy_api_keys', JSON.stringify(this.apiKeys))
+    } catch (error) {
+      console.warn('Failed to save API keys:', error)
+    }
+  }
+
+  setApiKey(provider, key) {
+    this.apiKeys[provider] = key
+    this.saveApiKeys()
+  }
+
+  getApiKey(provider) {
+    return this.apiKeys[provider]
+  }
+
+  onProviderChange() {
+    this.selectedModel = null
+    this.updateProviderUI()
+    this.loadModels()
+  }
+
+  updateProviderUI() {
+    const apiKeyContainer = document.getElementById('api-key-container')
+    
+    if (this.provider === 'ollama') {
+      if (apiKeyContainer) apiKeyContainer.style.display = 'none'
+    } else {
+      if (apiKeyContainer) {
+        apiKeyContainer.style.display = 'block'
+        this.setupApiKeyInput()
+      }
+    }
+  }
+
+  setupApiKeyInput() {
+    const apiKeyInput = document.getElementById('api-key-input')
+    const saveKeyBtn = document.getElementById('save-api-key')
+    
+    if (apiKeyInput) {
+      apiKeyInput.value = this.getApiKey(this.provider) || ''
+      apiKeyInput.placeholder = `Enter your ${this.provider === 'openai' ? 'OpenAI' : 'Anthropic'} API key`
+    }
+    
+    if (saveKeyBtn) {
+      saveKeyBtn.onclick = () => {
+        const key = apiKeyInput.value.trim()
+        if (key) {
+          this.setApiKey(this.provider, key)
+          this.updateStatus('success', 'API key saved securely')
+          this.loadModels()
+        }
+      }
+    }
   }
   toggleLLM (enabled) {
     this.isEnabled = enabled
@@ -1927,6 +2247,7 @@ class OllamaLLMIntegration {
     if (enabled) {
       settings.style.display = 'block'
       // if (footer) footer.classList.remove('hidden')
+      this.updateProviderUI()
       this.loadModels()
       this.updateHintSystem()
       // Hide model selection initially, just show the selected model info
@@ -1942,18 +2263,41 @@ class OllamaLLMIntegration {
     this.updateStatus('connecting', 'Loading models...')
 
     try {
-      const response = await fetch(`http://localhost:11434/api/tags`)
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`)
+      let models = []
+      
+      if (this.provider === 'ollama') {
+        const response = await fetch(`http://localhost:11434/api/tags`)
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`)
+        }
+        const data = await response.json()
+        models = data.models || []
+      } else if (this.provider === 'openai') {
+        // OpenAI has predefined models
+        models = [
+          { name: 'gpt-4', size: 0 },
+          { name: 'gpt-4-turbo-preview', size: 0 },
+          { name: 'gpt-4.1', size: 0 },
+          { name: 'o4-mini', size: 0 },
+          { name: 'gpt-3.5-turbo', size: 0 }
+        ]
+      } else if (this.provider === 'anthropic') {
+        // Anthropic has predefined models
+        models = [
+          { name: 'claude-3-opus-20240229', size: 0 },
+          { name: 'claude-3-sonnet-20240229', size: 0 },
+          { name: 'claude-3.7-sonnet', size: 0 },
+          { name: 'claude-4-sonnet', size: 0 },
+          { name: 'claude-3-haiku-20240307', size: 0 }
+        ]
       }
 
-      const data = await response.json()
-      this.populateModelSelect(data.models || [])
+      this.populateModelSelect(models)
       this.isConnected = true
 
-      if (data.models && data.models.length > 0) {
+      if (models && models.length > 0) {
         // Auto-select the first available model
-        this.selectedModel = data.models[0].name
+        this.selectedModel = models[0].name
         document.getElementById('model-select').value = this.selectedModel
         this.updateModelInfo()
         this.updateStatus('connected', `Connected to ${this.selectedModel}`)
@@ -1962,12 +2306,17 @@ class OllamaLLMIntegration {
         this.updateStatus('error', 'No models available')
       }
     } catch (error) {
-      console.error('Failed to load Ollama models:', error)
+      console.error(`Failed to load ${this.provider} models:`, error)
       this.isConnected = false
-      this.updateStatus(
-        'error',
-        "Ollama not available - check if it's running on localhost:11434"
-      )
+      
+      let errorMessage = ''
+      if (this.provider === 'ollama') {
+        errorMessage = "Ollama not available - check if it's running on localhost:11434"
+      } else {
+        errorMessage = `${this.provider} API not available - check your API key`
+      }
+      
+      this.updateStatus('error', errorMessage)
       this.populateModelSelect([])
     }
   }
@@ -2076,9 +2425,8 @@ class OllamaLLMIntegration {
     this.showLLMResponse('loading', 'Thinking... 🤔')
 
     try {
-      const rawResponse = await this.sendOllamaRequest(query)
-      const processedResponse = await this.processLLMResponse(rawResponse, query)
-      this.showLLMResponse('success', processedResponse)
+      const response = await this.sendOllamaRequest(query)
+      this.showLLMResponse('success', response)
     } catch (error) {
       console.error('LLM query failed:', error)
       this.showLLMResponse(
@@ -2184,6 +2532,18 @@ Think about it step by step, and don't hesitate to ask for clarification if you 
       return allCode
     }
   }
+  async sendLLMRequest (prompt) {
+    if (this.provider === 'ollama') {
+      return this.sendOllamaRequest(prompt)
+    } else if (this.provider === 'openai') {
+      return this.sendOpenAIRequest(prompt)
+    } else if (this.provider === 'anthropic') {
+      return this.sendAnthropicRequest(prompt)
+    } else {
+      throw new Error(`Unsupported provider: ${this.provider}`)
+    }
+  }
+
   async sendOllamaRequest (prompt) {
     const response = await fetch(`http://localhost:11434/api/generate`, {
       method: 'POST',
@@ -2196,17 +2556,15 @@ Think about it step by step, and don't hesitate to ask for clarification if you 
         stream: false,
         options: {
           temperature: 0.7,
-          num_predict: 2000, // Further increased for longer educational responses
+          num_predict: 500,
           top_p: 0.9,
           stop: [
             '# Solution:',
             'The complete code is:',
             "Here's the solution:",
             'The answer is:',
-            'Solution:',
-            'Complete solution:',
-            'Full solution:',
-            'Working code:'          ] // More specific stop tokens that only prevent complete solutions
+            'Solution:'
+          ] // Enhanced stop tokens to prevent thinking tags and solutions
         }
       })
     })
@@ -2215,48 +2573,66 @@ Think about it step by step, and don't hesitate to ask for clarification if you 
       throw new Error(`HTTP ${response.status}: ${response.statusText}`)
     }
     const data = await response.json()
-    console.log('Raw Ollama response length:', data.response.length)
-    console.log('Response truncated by token limit:', data.done === false)
-    return data.response
+    return this.processLLMResponse(data.response)
   }
 
-  async sendDirectOllamaRequest (prompt) {
-    // Direct API call for revision requests - returns raw response without processing
-    const response = await fetch(`http://localhost:11434/api/generate`, {
+  async sendOpenAIRequest (prompt) {
+    const apiKey = this.getApiKey('openai')
+    if (!apiKey) {
+      throw new Error('OpenAI API key not provided')
+    }
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
         model: this.selectedModel,
-        prompt: prompt,
-        stream: false,
-        options: {
-          temperature: 0.7,
-          num_predict: 2000,
-          top_p: 0.9,
-          stop: [
-            '# Solution:',
-            'The complete code is:',
-            "Here's the solution:",
-            'The answer is:',
-            'Solution:',
-            'Complete solution:',
-            'Full solution:',
-            'Working code:'
-          ]
-        }
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.7,
+        max_tokens: 500
       })
     })
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      const errorData = await response.json()
+      throw new Error(`OpenAI API error: ${errorData.error?.message || response.statusText}`)
     }
     const data = await response.json()
-    return data.response
+    return this.processLLMResponse(data.choices[0].message.content)
   }
 
-  async processLLMResponse (rawResponse, originalPrompt = '') {
+  async sendAnthropicRequest (prompt) {
+    const apiKey = this.getApiKey('anthropic')
+    if (!apiKey) {
+      throw new Error('Anthropic API key not provided')
+    }
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: this.selectedModel,
+        max_tokens: 500,
+        temperature: 0.7,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(`Anthropic API error: ${errorData.error?.message || response.statusText}`)
+    }
+    const data = await response.json()
+    return this.processLLMResponse(data.content[0].text)
+  }
+  processLLMResponse (rawResponse) {
     console.log('Raw LLM response:', rawResponse)
     console.log('Raw response length:', rawResponse.length)
 
@@ -2329,12 +2705,13 @@ Provide an educational, encouraging response that helps them learn.`
     const lines = cleanedResponse.split('\n')
     const filteredLines = lines.filter(line => {
       const trimmed = line.trim()
-      // Only filter out extremely obvious complete solutions
+
+      // Only skip lines that are clearly complete standalone solution code
+      // Be much more selective to preserve educational content like "def" explanations
       if (
-        trimmed.match(/^def\s+solve.*\([^)]*\)\s*:\s*$/) ||
-        trimmed.match(/^answer\s*=.*/) ||
-        trimmed.match(/^result\s*=.*/) ||
-        trimmed.match(/^solution\s*=.*/)
+        (trimmed.startsWith('def ') && trimmed.includes('():') && trimmed.includes('return')) ||
+        (trimmed.match(/^\s*\w+\s*=\s*input\(.*\)\s*$/) && line.includes('int(')) ||
+        (trimmed.startsWith('print(') && trimmed.includes('input(') && trimmed.endsWith(')'))
       ) {
         return false
       }
@@ -2352,74 +2729,47 @@ Provide an educational, encouraging response that helps them learn.`
     return this.markdownToHtml(cleanedResponse)
   }
 
-  detectPotentialSolution (response) {
-    // Check for various indicators that the response might contain too much of the solution
+  containsSolution(response) {
+    // Check if response contains solution indicators that should trigger a followup
     const solutionIndicators = [
-      // Complete code blocks with Python
-      /```python[\s\S]*?```/i,
-      // Function definitions that look like solutions
-      /def\s+(solve|solution|answer|main|calculate|process|find|get).*\([^)]*\)\s*:/i,
-      // Variable assignments that look like final answers
-      /(answer|result|solution|final|output)\s*=\s*[^=]/i,
-      // Input/output patterns that show complete implementation
-      /input\s*\([^)]*\)[\s\S]*print\s*\(/i,
-      // Complete algorithmic patterns
-      /for.*in.*:[\s\S]*if.*:[\s\S]*return/i,
-      // Complete conditional logic with returns
-      /if.*:[\s\S]*return[\s\S]*else[\s\S]*return/i,
-      // List comprehensions or lambda functions that solve the problem
-      /\[.*for.*in.*if.*\]/i,
-      // Multiple lines that form a complete solution structure
-      /[\w\s]*=.*\n.*if.*:\n.*return/i
-    ]
+      /```python[\s\S]*?```/i,  // Python code blocks
+      /def\s+\w+\s*\([^)]*\)\s*:/i,  // Function definitions (complete syntax)
+      /print\s*\([^)]*\)\s*$/im,  // Print statements at end of line
+      /input\s*\([^)]*\)\s*$/im,  // Input statements
+      /for\s+\w+\s+in\s+.*:\s*$/im,  // For loops
+      /if\s+.*:\s*$/im,  // If statements
+      /while\s+.*:\s*$/im,  // While loops
+      /The\s+(answer|solution)\s+is[:\s]/i,  // Direct solution statements
+      /Here['']?s\s+the\s+(complete\s+)?code/i,  // Code revelation statements
+      /The\s+complete\s+code\s+is/i
+    ];
 
-    // Check for solution phrases
-    const solutionPhrases = [
-      'here is the complete',
-      'here\'s the complete', 
-      'the complete code',
-      'full solution',
-      'complete solution',
-      'working code',
-      'final answer',
-      'the answer is',
-      'solution:',
-      'here\'s how to solve',
-      'step-by-step solution',
-      'copy this code',
-      'use this code',
-      'this will work',
-      'this should work'
-    ]
-
-    // Check for indicators
-    for (const indicator of solutionIndicators) {
-      if (indicator.test(response)) {
-        console.log('Solution indicator detected:', indicator.source)
-        return true
+    // Check for multiple indicators to avoid false positives on educational content
+    let indicatorCount = 0;
+    for (const pattern of solutionIndicators) {
+      if (pattern.test(response)) {
+        indicatorCount++;
       }
     }
 
-    // Check for solution phrases
-    const lowerResponse = response.toLowerCase()
-    for (const phrase of solutionPhrases) {
-      if (lowerResponse.includes(phrase)) {
-        console.log('Solution phrase detected:', phrase)
-        return true
-      }
-    }
+    // Trigger followup if we find 2 or more indicators, or 1 strong indicator (code block)
+    return indicatorCount >= 2 || /```python[\s\S]*?```/i.test(response);
+  }
 
-    // Check response length and code density - very long responses with lots of code might be solutions
-    const codeLines = response.split('\n').filter(line => 
-      line.trim().match(/^(def |class |if |for |while |try |with |import |from |return |print\(|input\(|=)/)
-    )
+  async sendLLMRequestWithFollowup(prompt) {
+    // First attempt - get initial response
+    let response = await this.sendLLMRequest(prompt);
     
-    if (codeLines.length > 5 && response.length > 800) {
-      console.log('High code density detected - might be a complete solution')
-      return true
-    }
+    // Check if response contains solution and send followup if needed
+    if (this.containsSolution(response)) {
+      const followupPrompt = `${prompt}
 
-    return false
+IMPORTANT: Please provide guidance and hints without giving away the complete solution. Help the student think through the problem step by step, but let them write the code themselves. Avoid showing complete code blocks or giving direct answers.`;
+      
+      response = await this.sendLLMRequest(followupPrompt);
+    }
+    
+    return response;
   }
 
   markdownToHtml (markdown) {

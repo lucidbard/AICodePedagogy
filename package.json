@@ -1,0 +1,28 @@
+{
+  "name": "aicodepedagogy-tests",
+  "version": "1.0.0",
+  "description": "Test suite for AICodePedagogy educational programming game",
+  "main": "tests.js",
+  "scripts": {
+    "test": "node test-runner-node.js",
+    "test:browser": "echo 'Open test-runner.html in your browser to run tests'",
+    "test:serve": "python3 -m http.server 8000",
+    "lint": "echo 'No linting configured yet'"
+  },
+  "keywords": [
+    "education",
+    "programming",
+    "python",
+    "testing",
+    "digital-humanities"
+  ],
+  "author": "John T. Murray",
+  "license": "MIT",
+  "devDependencies": {
+    "jsdom": "^22.0.0",
+    "node-fetch": "^3.3.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
