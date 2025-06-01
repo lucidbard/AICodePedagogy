@@ -195,7 +195,7 @@ function setupSingleCellStage (stage) {
     <svg class="play-icon" viewBox="0 0 24 24">
       <path d="M8 5v14l11-7z"/>
     </svg>
-    <svg class="stop-icon" viewBox="0 0 24 24" style="display: none;">
+    <svg class="stop-icon" viewBox="0 24 24" style="display: none;">
       <rect x="6" y="6" width="12" height="12"/>
     </svg>
   `
@@ -1833,6 +1833,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if (restartButton) {
     restartButton.addEventListener('click', restartRuntime)
   }
+
+  // Set up Ollama help modal
+  setupOllamaHelpModal()
 })
 
 // Additional verification that Skulpt is working
@@ -2069,14 +2072,13 @@ class OllamaLLMIntegration {
     const stage = gameContent.stages.find(s => s.id === currentStage)
     if (!stage) return
 
-    const query = this.buildQuery(queryType, stage)
-
-    // Show loading state
+    const query = this.buildQuery(queryType, stage)    // Show loading state
     this.showLLMResponse('loading', 'Thinking... 🤔')
 
     try {
-      const response = await this.sendOllamaRequest(query)
-      this.showLLMResponse('success', response)
+      const rawResponse = await this.sendOllamaRequest(query)
+      const processedResponse = await this.processLLMResponse(rawResponse, query)
+      this.showLLMResponse('success', processedResponse)
     } catch (error) {
       console.error('LLM query failed:', error)
       this.showLLMResponse(
@@ -2159,7 +2161,7 @@ I'll look at where you are now and suggest what you should try next. I'll give y
 
 Think about it step by step, and don't hesitate to ask for clarification if you need it!`
     }
-
+    console.log(queryTypes[queryType] || queryTypes.general)
     return queryTypes[queryType] || queryTypes.general
   }
 
@@ -2194,18 +2196,17 @@ Think about it step by step, and don't hesitate to ask for clarification if you 
         stream: false,
         options: {
           temperature: 0.7,
-          num_predict: 500, // Increased slightly for better responses
+          num_predict: 2000, // Further increased for longer educational responses
           top_p: 0.9,
           stop: [
-            '```python',
-            'def ',
-            'print(',
             '# Solution:',
             'The complete code is:',
             "Here's the solution:",
             'The answer is:',
-            'Solution:'
-          ] // Enhanced stop tokens to prevent thinking tags and solutions
+            'Solution:',
+            'Complete solution:',
+            'Full solution:',
+            'Working code:'          ] // More specific stop tokens that only prevent complete solutions
         }
       })
     })
@@ -2214,35 +2215,105 @@ Think about it step by step, and don't hesitate to ask for clarification if you 
       throw new Error(`HTTP ${response.status}: ${response.statusText}`)
     }
     const data = await response.json()
-    return this.processLLMResponse(data.response)
+    console.log('Raw Ollama response length:', data.response.length)
+    console.log('Response truncated by token limit:', data.done === false)
+    return data.response
   }
-  processLLMResponse (rawResponse) {
+
+  async sendDirectOllamaRequest (prompt) {
+    // Direct API call for revision requests - returns raw response without processing
+    const response = await fetch(`http://localhost:11434/api/generate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: this.selectedModel,
+        prompt: prompt,
+        stream: false,
+        options: {
+          temperature: 0.7,
+          num_predict: 2000,
+          top_p: 0.9,
+          stop: [
+            '# Solution:',
+            'The complete code is:',
+            "Here's the solution:",
+            'The answer is:',
+            'Solution:',
+            'Complete solution:',
+            'Full solution:',
+            'Working code:'
+          ]
+        }
+      })
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+    }
+    const data = await response.json()
+    return data.response
+  }
+
+  async processLLMResponse (rawResponse, originalPrompt = '') {
     console.log('Raw LLM response:', rawResponse)
-    // Remove thinking tags and content - handle multiple variations and incomplete tags
+    console.log('Raw response length:', rawResponse.length)
+
+    // Remove thinking tags and content - be more precise to avoid over-removal
     let cleanedResponse = rawResponse
 
-    // Remove complete thinking tag pairs
+    // Only remove complete thinking tag pairs, not incomplete ones to avoid cutting off legitimate content
     cleanedResponse = cleanedResponse.replace(/<think>[\s\S]*?<\/think>/gi, '')
     cleanedResponse = cleanedResponse.replace(
       /<thinking>[\s\S]*?<\/thinking>/gi,
       ''
     )
 
-    // Remove incomplete thinking tags (just opening tags with content after)
-    cleanedResponse = cleanedResponse.replace(/<think>[\s\S]*/gi, '')
-    cleanedResponse = cleanedResponse.replace(/<thinking>[\s\S]*/gi, '')
-
     // Remove any remaining orphaned closing tags
     cleanedResponse = cleanedResponse.replace(/<\/think>/gi, '')
     cleanedResponse = cleanedResponse.replace(/<\/thinking>/gi, '')
 
-    // If the response is now empty or very short, provide a fallback
-    if (cleanedResponse.trim().length < 10) {
+    console.log('After thinking tag removal length:', cleanedResponse.length)
+
+    // Only apply fallback if response is truly empty after minimal cleaning
+    if (cleanedResponse.trim().length < 5) {
       cleanedResponse =
         "I'd be happy to help you with this challenge! Let me know what specific part you're struggling with and I'll guide you through it step by step."
     }
 
-    // Filter out potential code solutions that might slip through
+    // Check if the response contains potential solutions
+    const solutionDetected = this.detectPotentialSolution(cleanedResponse)
+    
+    if (solutionDetected && originalPrompt) {
+      console.log('Solution detected, requesting revision...')
+      try {
+        // Request a revised response that provides guidance without solutions
+        const revisionPrompt = `The previous response may have contained too much of the solution. Please provide a helpful response to this request that guides the student through the thinking process without giving away the complete answer or showing the actual code:
+
+Original request: "${originalPrompt}"
+
+Please:
+- Give conceptual hints and explain the approach
+- Ask guiding questions to help them think through the problem
+- Explain relevant concepts or methods they should consider
+- Suggest what type of Python functions or operations might be useful
+- DO NOT provide complete code solutions or show the exact implementation
+- DO NOT use code blocks with working solutions
+- Help them learn by thinking, not by copying
+
+Provide an educational, encouraging response that helps them learn.`
+
+        const revisedResponse = await this.sendDirectOllamaRequest(revisionPrompt)
+        console.log('Received revised response, length:', revisedResponse.length)
+        return this.markdownToHtml(revisedResponse)
+      } catch (error) {
+        console.warn('Failed to get revised response, falling back to filtered original:', error)
+        // Fall back to the original filtering approach if revision fails
+      }
+    }
+
+    // Original filtering logic as fallback
     const codeBlockRegex = /```python[\s\S]*?```/gi
     const hasCodeBlock = codeBlockRegex.test(cleanedResponse)
 
@@ -2254,39 +2325,103 @@ Think about it step by step, and don't hesitate to ask for clarification if you 
       )
     }
 
-    // Only filter out lines that are clearly complete solutions, not educational content
+    // Apply minimal filtering for obvious complete solutions
     const lines = cleanedResponse.split('\n')
     const filteredLines = lines.filter(line => {
       const trimmed = line.trim()
-
-      // Only skip lines that are clearly complete Python code solutions
-      // Be more selective to avoid removing educational content
+      // Only filter out extremely obvious complete solutions
       if (
-        (trimmed.startsWith('def ') && trimmed.includes('():')) ||
-        trimmed.match(/^\s*\w+\s*=\s*input\(.*\)\s*$/) ||
-        trimmed.match(/^\s*for\s+\w+\s+in\s+.*:\s*$/) ||
-        (trimmed.match(/^\s*if\s+.*:\s*$/) && line.length > 50) ||
-        trimmed.match(/^\s*print\([^)]*\)\s*$/)
+        trimmed.match(/^def\s+solve.*\([^)]*\)\s*:\s*$/) ||
+        trimmed.match(/^answer\s*=.*/) ||
+        trimmed.match(/^result\s*=.*/) ||
+        trimmed.match(/^solution\s*=.*/)
       ) {
         return false
       }
       return true
     })
 
-    cleanedResponse = filteredLines.join('\n')
-
-    // Clean up any extra whitespace
+    cleanedResponse = filteredLines.join('\n') // Clean up any extra whitespace
     cleanedResponse = cleanedResponse.trim()
 
-    // Final check for empty response after all filtering
+    // Only provide fallback if response is completely empty after all processing
     if (cleanedResponse.length === 0) {
       cleanedResponse =
         "I'm here to help! Could you tell me more about what you're trying to accomplish with this challenge?"
-    }
-
-    // Convert markdown to HTML
+    }    // Convert markdown to HTML
     return this.markdownToHtml(cleanedResponse)
   }
+
+  detectPotentialSolution (response) {
+    // Check for various indicators that the response might contain too much of the solution
+    const solutionIndicators = [
+      // Complete code blocks with Python
+      /```python[\s\S]*?```/i,
+      // Function definitions that look like solutions
+      /def\s+(solve|solution|answer|main|calculate|process|find|get).*\([^)]*\)\s*:/i,
+      // Variable assignments that look like final answers
+      /(answer|result|solution|final|output)\s*=\s*[^=]/i,
+      // Input/output patterns that show complete implementation
+      /input\s*\([^)]*\)[\s\S]*print\s*\(/i,
+      // Complete algorithmic patterns
+      /for.*in.*:[\s\S]*if.*:[\s\S]*return/i,
+      // Complete conditional logic with returns
+      /if.*:[\s\S]*return[\s\S]*else[\s\S]*return/i,
+      // List comprehensions or lambda functions that solve the problem
+      /\[.*for.*in.*if.*\]/i,
+      // Multiple lines that form a complete solution structure
+      /[\w\s]*=.*\n.*if.*:\n.*return/i
+    ]
+
+    // Check for solution phrases
+    const solutionPhrases = [
+      'here is the complete',
+      'here\'s the complete', 
+      'the complete code',
+      'full solution',
+      'complete solution',
+      'working code',
+      'final answer',
+      'the answer is',
+      'solution:',
+      'here\'s how to solve',
+      'step-by-step solution',
+      'copy this code',
+      'use this code',
+      'this will work',
+      'this should work'
+    ]
+
+    // Check for indicators
+    for (const indicator of solutionIndicators) {
+      if (indicator.test(response)) {
+        console.log('Solution indicator detected:', indicator.source)
+        return true
+      }
+    }
+
+    // Check for solution phrases
+    const lowerResponse = response.toLowerCase()
+    for (const phrase of solutionPhrases) {
+      if (lowerResponse.includes(phrase)) {
+        console.log('Solution phrase detected:', phrase)
+        return true
+      }
+    }
+
+    // Check response length and code density - very long responses with lots of code might be solutions
+    const codeLines = response.split('\n').filter(line => 
+      line.trim().match(/^(def |class |if |for |while |try |with |import |from |return |print\(|input\(|=)/)
+    )
+    
+    if (codeLines.length > 5 && response.length > 800) {
+      console.log('High code density detected - might be a complete solution')
+      return true
+    }
+
+    return false
+  }
+
   markdownToHtml (markdown) {
     // Simple markdown to HTML converter for common formatting
     let html = markdown
@@ -2402,6 +2537,71 @@ Think about it step by step, and don't hesitate to ask for clarification if you 
     // Scroll to the response
     llmHint.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
   }
+}
+
+// Ollama Help Modal Setup
+function setupOllamaHelpModal () {
+  const helpBtn = document.getElementById('ollama-help-btn')
+  const modal = document.getElementById('ollama-help-modal')
+  const closeBtn = document.getElementById('close-ollama-help')
+  const tabBtns = document.querySelectorAll('.tab-btn')
+  const platformContents = document.querySelectorAll('.platform-content')
+
+  // Open modal
+  if (helpBtn) {
+    helpBtn.addEventListener('click', e => {
+      e.preventDefault()
+      e.stopPropagation()
+      modal.style.display = 'flex'
+      document.body.style.overflow = 'hidden'
+    })
+  }
+
+  // Close modal
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      modal.style.display = 'none'
+      document.body.style.overflow = 'auto'
+    })
+  }
+
+  // Close modal when clicking overlay
+  if (modal) {
+    modal.addEventListener('click', e => {
+      if (e.target === modal) {
+        modal.style.display = 'none'
+        document.body.style.overflow = 'auto'
+      }
+    })
+  }
+
+  // Close modal with Escape key
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && modal.style.display === 'flex') {
+      modal.style.display = 'none'
+      document.body.style.overflow = 'auto'
+    }
+  })
+
+  // Platform tab switching
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const platform = btn.getAttribute('data-platform')
+
+      // Update active tab
+      tabBtns.forEach(tab => tab.classList.remove('active'))
+      btn.classList.add('active')
+
+      // Show corresponding content
+      platformContents.forEach(content => {
+        if (content.getAttribute('data-platform') === platform) {
+          content.style.display = 'block'
+        } else {
+          content.style.display = 'none'
+        }
+      })
+    })
+  })
 }
 
 // Initialize LLM integration when DOM is loaded
