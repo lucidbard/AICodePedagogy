@@ -2425,7 +2425,7 @@ class LLMIntegration {
     this.showLLMResponse('loading', 'Thinking... 🤔')
 
     try {
-      const response = await this.sendOllamaRequest(query)
+      const response = await this.sendLLMRequestWithFollowup(query)
       this.showLLMResponse('success', response)
     } catch (error) {
       console.error('LLM query failed:', error)
@@ -2564,7 +2564,7 @@ Think about it step by step, and don't hesitate to ask for clarification if you 
             "Here's the solution:",
             'The answer is:',
             'Solution:'
-          ] // Enhanced stop tokens to prevent thinking tags and solutions
+          ]
         }
       })
     })
