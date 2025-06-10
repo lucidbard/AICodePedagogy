@@ -11,13 +11,16 @@ let successfulCellExecutions = {} // Track which cells have executed successfull
 let savedCellContent = {} // Track cell content across all stages
 
 // Offline storage utility functions
-function saveGameState() {
+function saveGameState () {
   try {
     const gameState = {
       currentStage: currentStage,
       completedStages: completedStages,
       successfulCellExecutions: Object.fromEntries(
-        Object.entries(successfulCellExecutions).map(([key, value]) => [key, Array.from(value)])
+        Object.entries(successfulCellExecutions).map(([key, value]) => [
+          key,
+          Array.from(value)
+        ])
       ),
       cellContent: getCellContentForAllStages(),
       lastSaved: Date.now()
@@ -29,28 +32,30 @@ function saveGameState() {
   }
 }
 
-function loadGameState() {
+function loadGameState () {
   try {
     const saved = localStorage.getItem('aicodepedagogy_progress')
     if (!saved) return false
-    
+
     const gameState = JSON.parse(saved)
-    
+
     // Restore basic state
     currentStage = gameState.currentStage || 1
     completedStages = gameState.completedStages || []
-    
+
     // Restore successful cell executions (convert arrays back to Sets)
     successfulCellExecutions = {}
     if (gameState.successfulCellExecutions) {
-      Object.entries(gameState.successfulCellExecutions).forEach(([key, value]) => {
-        successfulCellExecutions[key] = new Set(value)
-      })
+      Object.entries(gameState.successfulCellExecutions).forEach(
+        ([key, value]) => {
+          successfulCellExecutions[key] = new Set(value)
+        }
+      )
     }
-    
+
     // Restore saved cell content
     savedCellContent = gameState.cellContent || {}
-    
+
     console.log('Game state loaded from localStorage')
     return gameState
   } catch (error) {
@@ -59,25 +64,31 @@ function loadGameState() {
   }
 }
 
-function getCellContentForAllStages() {
+function getCellContentForAllStages () {
   // Update the current stage's content before saving
   updateCurrentStageCellContent()
   return savedCellContent
 }
 
-function updateCurrentStageCellContent() {
+function updateCurrentStageCellContent () {
   if (!currentStage) return
-  
+
   // Save single-cell content if editor exists
-  if (editor && document.getElementById('single-cell-container').style.display !== 'none') {
+  if (
+    editor &&
+    document.getElementById('single-cell-container').style.display !== 'none'
+  ) {
     savedCellContent[currentStage] = {
       type: 'single',
       content: editor.getValue()
     }
   }
-  
+
   // Save multi-cell content if editors exist
-  if (cellEditors.length > 0 && document.getElementById('cells-container').style.display !== 'none') {
+  if (
+    cellEditors.length > 0 &&
+    document.getElementById('cells-container').style.display !== 'none'
+  ) {
     savedCellContent[currentStage] = {
       type: 'multi',
       content: cellEditors.map(cellEditor => cellEditor.getValue())
@@ -85,10 +96,10 @@ function updateCurrentStageCellContent() {
   }
 }
 
-function restoreCellContent(gameState) {
+function restoreCellContent (gameState) {
   const stageContent = savedCellContent[currentStage]
   if (!stageContent) return
-  
+
   // Use setTimeout to ensure editors are created first
   setTimeout(() => {
     try {
@@ -107,7 +118,7 @@ function restoreCellContent(gameState) {
   }, 100)
 }
 
-function clearGameProgress() {
+function clearGameProgress () {
   try {
     localStorage.removeItem('aicodepedagogy_progress')
     // Reset to initial state
@@ -200,20 +211,20 @@ async function initializeGame () {
 
     // Create developer navigation
     createDevNav()
-    
+
     // Try to load saved progress
     const savedState = loadGameState()
-    
+
     // Load the appropriate stage (saved or default)
     loadStage(savedState ? currentStage : 1)
-    
+
     // Restore cell content if available
     if (savedState) {
       restoreCellContent(savedState)
     }
 
     console.log('Game initialized successfully')
-    
+
     // Mark game as initialized to enable auto-saving on stage changes
     window.gameInitialized = true
 
@@ -256,12 +267,12 @@ function loadStage (stageId) {
   }
 
   currentStage = stageId
-  
+
   // Save current stage cell content before switching
   if (window.gameInitialized) {
     updateCurrentStageCellContent()
   }
-  
+
   // Save state when stage changes (but not during initial load)
   if (gameContent && window.gameInitialized) {
     saveGameState()
@@ -424,20 +435,24 @@ function setupSingleCellStage (stage) {
         runPythonCode(editor.getValue(), stage.solution)
       },
       'Ctrl-Space': 'autocomplete', // Auto-completion trigger
-      'Tab': function(cm) {
+      Tab: function (cm) {
         // Better tab handling for mobile - autocomplete if popup is open, otherwise indent
-        if (cm.state.completionActive) return CodeMirror.Pass;
+        if (cm.state.completionActive) return CodeMirror.Pass
         if (cm.somethingSelected()) {
-          cm.indentSelection('add');
+          cm.indentSelection('add')
         } else {
-          cm.replaceSelection(cm.getOption('indentWithTabs') ? '\t' : ' '.repeat(cm.getOption('indentUnit')));
+          cm.replaceSelection(
+            cm.getOption('indentWithTabs')
+              ? '\t'
+              : ' '.repeat(cm.getOption('indentUnit'))
+          )
         }
       }
     }
   })
 
   // Add change listener to save state when content changes
-  editor.on('change', function() {
+  editor.on('change', function () {
     // Debounce the save to avoid too frequent saves
     clearTimeout(editor.saveTimeout)
     editor.saveTimeout = setTimeout(() => {
@@ -446,19 +461,25 @@ function setupSingleCellStage (stage) {
   })
 
   // Mobile-friendly auto-completion: trigger completion after typing certain characters
-  editor.on('inputRead', function(cm, event) {
+  editor.on('inputRead', function (cm, event) {
     // Auto-trigger completion on mobile after typing letters, dots, or underscores
-    if (!cm.state.completionActive && 
-        event.text && event.text.length === 1 && 
-        /[a-zA-Z._]/.test(event.text[0])) {
+    if (
+      !cm.state.completionActive &&
+      event.text &&
+      event.text.length === 1 &&
+      /[a-zA-Z._]/.test(event.text[0])
+    ) {
       // Get current line content to check context
       const cursor = cm.getCursor()
       const line = cm.getLine(cursor.line)
       const beforeCursor = line.slice(0, cursor.ch)
-      
+
       // Trigger completion if we have at least 2 characters of a word
-      if (/[a-zA-Z_][a-zA-Z0-9_]*$/.test(beforeCursor) && beforeCursor.match(/[a-zA-Z_][a-zA-Z0-9_]*$/)[0].length >= 2) {
-        setTimeout(() => cm.showHint({completeSingle: false}), 100)
+      if (
+        /[a-zA-Z_][a-zA-Z0-9_]*$/.test(beforeCursor) &&
+        beforeCursor.match(/[a-zA-Z_][a-zA-Z0-9_]*$/)[0].length >= 2
+      ) {
+        setTimeout(() => cm.showHint({ completeSingle: false }), 100)
       }
     }
   })
@@ -655,13 +676,17 @@ function createCodeCell (cell, index, totalCells) {
           )
         },
         'Ctrl-Space': 'autocomplete', // Auto-completion trigger
-        'Tab': function(cm) {
+        Tab: function (cm) {
           // Better tab handling for mobile - autocomplete if popup is open, otherwise indent
-          if (cm.state.completionActive) return CodeMirror.Pass;
+          if (cm.state.completionActive) return CodeMirror.Pass
           if (cm.somethingSelected()) {
-            cm.indentSelection('add');
+            cm.indentSelection('add')
           } else {
-            cm.replaceSelection(cm.getOption('indentWithTabs') ? '\t' : ' '.repeat(cm.getOption('indentUnit')));
+            cm.replaceSelection(
+              cm.getOption('indentWithTabs')
+                ? '\t'
+                : ' '.repeat(cm.getOption('indentUnit'))
+            )
           }
         }
       }
@@ -670,7 +695,7 @@ function createCodeCell (cell, index, totalCells) {
   cellEditors.push(cellEditor)
 
   // Add change listener to save state when content changes
-  cellEditor.on('change', function() {
+  cellEditor.on('change', function () {
     // Debounce the save to avoid too frequent saves
     clearTimeout(cellEditor.saveTimeout)
     cellEditor.saveTimeout = setTimeout(() => {
@@ -679,19 +704,25 @@ function createCodeCell (cell, index, totalCells) {
   })
 
   // Mobile-friendly auto-completion: trigger completion after typing certain characters
-  cellEditor.on('inputRead', function(cm, event) {
+  cellEditor.on('inputRead', function (cm, event) {
     // Auto-trigger completion on mobile after typing letters, dots, or underscores
-    if (!cm.state.completionActive && 
-        event.text && event.text.length === 1 && 
-        /[a-zA-Z._]/.test(event.text[0])) {
+    if (
+      !cm.state.completionActive &&
+      event.text &&
+      event.text.length === 1 &&
+      /[a-zA-Z._]/.test(event.text[0])
+    ) {
       // Get current line content to check context
       const cursor = cm.getCursor()
       const line = cm.getLine(cursor.line)
       const beforeCursor = line.slice(0, cursor.ch)
-      
+
       // Trigger completion if we have at least 2 characters of a word
-      if (/[a-zA-Z_][a-zA-Z0-9_]*$/.test(beforeCursor) && beforeCursor.match(/[a-zA-Z_][a-zA-Z0-9_]*$/)[0].length >= 2) {
-        setTimeout(() => cm.showHint({completeSingle: false}), 100)
+      if (
+        /[a-zA-Z_][a-zA-Z0-9_]*$/.test(beforeCursor) &&
+        beforeCursor.match(/[a-zA-Z_][a-zA-Z0-9_]*$/)[0].length >= 2
+      ) {
+        setTimeout(() => cm.showHint({ completeSingle: false }), 100)
       }
     }
   })
@@ -2063,12 +2094,16 @@ document.addEventListener('DOMContentLoaded', () => {
   if (restartButton) {
     restartButton.addEventListener('click', restartRuntime)
   }
-  
+
   // Set up clear progress button
   const clearProgressButton = document.getElementById('clear-progress-button')
   if (clearProgressButton) {
     clearProgressButton.addEventListener('click', () => {
-      if (confirm('Are you sure you want to clear all saved progress? This action cannot be undone.')) {
+      if (
+        confirm(
+          'Are you sure you want to clear all saved progress? This action cannot be undone.'
+        )
+      ) {
         clearGameProgress()
         // Reload the page to start fresh
         window.location.reload()
@@ -2173,7 +2208,7 @@ class LLMIntegration {
   }
 
   // API Key management methods
-  loadApiKeys() {
+  loadApiKeys () {
     try {
       const keys = localStorage.getItem('aicodepedagogy_api_keys')
       return keys ? JSON.parse(keys) : {}
@@ -2183,32 +2218,35 @@ class LLMIntegration {
     }
   }
 
-  saveApiKeys() {
+  saveApiKeys () {
     try {
-      localStorage.setItem('aicodepedagogy_api_keys', JSON.stringify(this.apiKeys))
+      localStorage.setItem(
+        'aicodepedagogy_api_keys',
+        JSON.stringify(this.apiKeys)
+      )
     } catch (error) {
       console.warn('Failed to save API keys:', error)
     }
   }
 
-  setApiKey(provider, key) {
+  setApiKey (provider, key) {
     this.apiKeys[provider] = key
     this.saveApiKeys()
   }
 
-  getApiKey(provider) {
+  getApiKey (provider) {
     return this.apiKeys[provider]
   }
 
-  onProviderChange() {
+  onProviderChange () {
     this.selectedModel = null
     this.updateProviderUI()
     this.loadModels()
   }
 
-  updateProviderUI() {
+  updateProviderUI () {
     const apiKeyContainer = document.getElementById('api-key-container')
-    
+
     if (this.provider === 'ollama') {
       if (apiKeyContainer) apiKeyContainer.style.display = 'none'
     } else {
@@ -2219,15 +2257,17 @@ class LLMIntegration {
     }
   }
 
-  setupApiKeyInput() {
+  setupApiKeyInput () {
     const apiKeyInput = document.getElementById('api-key-input')
     const saveKeyBtn = document.getElementById('save-api-key')
-    
+
     if (apiKeyInput) {
       apiKeyInput.value = this.getApiKey(this.provider) || ''
-      apiKeyInput.placeholder = `Enter your ${this.provider === 'openai' ? 'OpenAI' : 'Anthropic'} API key`
+      apiKeyInput.placeholder = `Enter your ${
+        this.provider === 'openai' ? 'OpenAI' : 'Anthropic'
+      } API key`
     }
-    
+
     if (saveKeyBtn) {
       saveKeyBtn.onclick = () => {
         const key = apiKeyInput.value.trim()
@@ -2264,7 +2304,7 @@ class LLMIntegration {
 
     try {
       let models = []
-      
+
       if (this.provider === 'ollama') {
         const response = await fetch(`http://localhost:11434/api/tags`)
         if (!response.ok) {
@@ -2308,14 +2348,15 @@ class LLMIntegration {
     } catch (error) {
       console.error(`Failed to load ${this.provider} models:`, error)
       this.isConnected = false
-      
+
       let errorMessage = ''
       if (this.provider === 'ollama') {
-        errorMessage = "Ollama not available - check if it's running on localhost:11434"
+        errorMessage =
+          "Ollama not available - check if it's running on localhost:11434"
       } else {
         errorMessage = `${this.provider} API not available - check your API key`
       }
-      
+
       this.updateStatus('error', errorMessage)
       this.populateModelSelect([])
     }
@@ -2421,7 +2462,7 @@ class LLMIntegration {
     const stage = gameContent.stages.find(s => s.id === currentStage)
     if (!stage) return
 
-    const query = this.buildQuery(queryType, stage)    // Show loading state
+    const query = this.buildQuery(queryType, stage) // Show loading state
     this.showLLMResponse('loading', 'Thinking... 🤔')
 
     try {
@@ -2573,7 +2614,7 @@ Think about it step by step, and don't hesitate to ask for clarification if you 
       throw new Error(`HTTP ${response.status}: ${response.statusText}`)
     }
     const data = await response.json()
-    return this.processLLMResponse(data.response)
+    return await this.processLLMResponse(data.response, prompt)
   }
 
   async sendOpenAIRequest (prompt) {
@@ -2586,7 +2627,7 @@ Think about it step by step, and don't hesitate to ask for clarification if you 
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+        Authorization: `Bearer ${apiKey}`
       },
       body: JSON.stringify({
         model: this.selectedModel,
@@ -2598,7 +2639,9 @@ Think about it step by step, and don't hesitate to ask for clarification if you 
 
     if (!response.ok) {
       const errorData = await response.json()
-      throw new Error(`OpenAI API error: ${errorData.error?.message || response.statusText}`)
+      throw new Error(
+        `OpenAI API error: ${errorData.error?.message || response.statusText}`
+      )
     }
     const data = await response.json()
     return this.processLLMResponse(data.choices[0].message.content)
@@ -2627,12 +2670,53 @@ Think about it step by step, and don't hesitate to ask for clarification if you 
 
     if (!response.ok) {
       const errorData = await response.json()
-      throw new Error(`Anthropic API error: ${errorData.error?.message || response.statusText}`)
+      throw new Error(
+        `Anthropic API error: ${
+          errorData.error?.message || response.statusText
+        }`
+      )
     }
     const data = await response.json()
     return this.processLLMResponse(data.content[0].text)
   }
-  processLLMResponse (rawResponse) {
+
+  async sendDirectOllamaRequest (prompt) {
+    // Direct API call for revision requests to avoid recursion
+    const response = await fetch(`http://localhost:11434/api/generate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: this.selectedModel,
+        prompt: prompt,
+        stream: false,
+        options: {
+          temperature: 0.7,
+          num_predict: 2000,
+          top_p: 0.9,
+          stop: [
+            '# Solution:',
+            'The complete code is:',
+            "Here's the solution:",
+            'The answer is:',
+            'Solution:',
+            'Complete solution:',
+            'Full solution:',
+            'Working code:'
+          ]
+        }
+      })
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+    }
+    const data = await response.json()
+    return data.response // Return raw response without processing to avoid recursion
+  }
+
+  async processLLMResponse (rawResponse, originalPrompt = '') {
     console.log('Raw LLM response:', rawResponse)
     console.log('Raw response length:', rawResponse.length)
 
@@ -2660,7 +2744,7 @@ Think about it step by step, and don't hesitate to ask for clarification if you 
 
     // Check if the response contains potential solutions
     const solutionDetected = this.detectPotentialSolution(cleanedResponse)
-    
+
     if (solutionDetected && originalPrompt) {
       console.log('Solution detected, requesting revision...')
       try {
@@ -2680,11 +2764,19 @@ Please:
 
 Provide an educational, encouraging response that helps them learn.`
 
-        const revisedResponse = await this.sendDirectOllamaRequest(revisionPrompt)
-        console.log('Received revised response, length:', revisedResponse.length)
+        const revisedResponse = await this.sendDirectOllamaRequest(
+          revisionPrompt
+        )
+        console.log(
+          'Received revised response, length:',
+          revisedResponse.length
+        )
         return this.markdownToHtml(revisedResponse)
       } catch (error) {
-        console.warn('Failed to get revised response, falling back to filtered original:', error)
+        console.warn(
+          'Failed to get revised response, falling back to filtered original:',
+          error
+        )
         // Fall back to the original filtering approach if revision fails
       }
     }
@@ -2709,9 +2801,14 @@ Provide an educational, encouraging response that helps them learn.`
       // Only skip lines that are clearly complete standalone solution code
       // Be much more selective to preserve educational content like "def" explanations
       if (
-        (trimmed.startsWith('def ') && trimmed.includes('():') && trimmed.includes('return')) ||
-        (trimmed.match(/^\s*\w+\s*=\s*input\(.*\)\s*$/) && line.includes('int(')) ||
-        (trimmed.startsWith('print(') && trimmed.includes('input(') && trimmed.endsWith(')'))
+        (trimmed.startsWith('def ') &&
+          trimmed.includes('():') &&
+          trimmed.includes('return')) ||
+        (trimmed.match(/^\s*\w+\s*=\s*input\(.*\)\s*$/) &&
+          line.includes('int(')) ||
+        (trimmed.startsWith('print(') &&
+          trimmed.includes('input(') &&
+          trimmed.endsWith(')'))
       ) {
         return false
       }
@@ -2725,51 +2822,127 @@ Provide an educational, encouraging response that helps them learn.`
     if (cleanedResponse.length === 0) {
       cleanedResponse =
         "I'm here to help! Could you tell me more about what you're trying to accomplish with this challenge?"
-    }    // Convert markdown to HTML
+    } // Convert markdown to HTML
     return this.markdownToHtml(cleanedResponse)
   }
 
-  containsSolution(response) {
+  detectPotentialSolution (response) {
+    // Check for various indicators that the response might contain too much of the solution
+    const solutionIndicators = [
+      // Complete code blocks with Python
+      /```python[\s\S]*?```/i,
+      // Function definitions that look like solutions
+      /def\s+(solve|solution|answer|main|calculate|process|find|get).*\([^)]*\)\s*:/i,
+      // Variable assignments that look like final answers
+      /(answer|result|solution|final|output)\s*=\s*[^=]/i,
+      // Input/output patterns that show complete implementation
+      /input\s*\([^)]*\)[\s\S]*print\s*\(/i,
+      // Complete algorithmic patterns
+      /for.*in.*:[\s\S]*if.*:[\s\S]*return/i,
+      // Complete conditional logic with returns
+      /if.*:[\s\S]*return[\s\S]*else[\s\S]*return/i,
+      // List comprehensions or lambda functions that solve the problem
+      /\[.*for.*in.*if.*\]/i,
+      // Multiple lines that form a complete solution structure
+      /[\w\s]*=.*\n.*if.*:\n.*return/i
+    ]
+
+    // Check for solution phrases
+    const solutionPhrases = [
+      'here is the complete',
+      "here's the complete",
+      'the complete code',
+      'full solution',
+      'complete solution',
+      'working code',
+      'final answer',
+      'the answer is',
+      'solution:',
+      "here's how to solve",
+      'step-by-step solution',
+      'copy this code',
+      'use this code',
+      'this will work',
+      'this should work'
+    ]
+
+    // Check for indicators
+    for (const indicator of solutionIndicators) {
+      if (indicator.test(response)) {
+        console.log('Solution indicator detected:', indicator.source)
+        return true
+      }
+    }
+
+    // Check for solution phrases
+    const lowerResponse = response.toLowerCase()
+    for (const phrase of solutionPhrases) {
+      if (lowerResponse.includes(phrase)) {
+        console.log('Solution phrase detected:', phrase)
+        return true
+      }
+    }
+
+    // Check response length and code density - very long responses with lots of code might be solutions
+    const codeLines = response
+      .split('\n')
+      .filter(line =>
+        line
+          .trim()
+          .match(
+            /^(def |class |if |for |while |try |with |import |from |return |print\(|input\(|=)/
+          )
+      )
+
+    if (codeLines.length > 5 && response.length > 800) {
+      console.log('High code density detected - might be a complete solution')
+      return true
+    }
+
+    return false
+  }
+
+  containsSolution (response) {
     // Check if response contains solution indicators that should trigger a followup
     const solutionIndicators = [
-      /```python[\s\S]*?```/i,  // Python code blocks
-      /def\s+\w+\s*\([^)]*\)\s*:/i,  // Function definitions (complete syntax)
-      /print\s*\([^)]*\)\s*$/im,  // Print statements at end of line
-      /input\s*\([^)]*\)\s*$/im,  // Input statements
-      /for\s+\w+\s+in\s+.*:\s*$/im,  // For loops
-      /if\s+.*:\s*$/im,  // If statements
-      /while\s+.*:\s*$/im,  // While loops
-      /The\s+(answer|solution)\s+is[:\s]/i,  // Direct solution statements
-      /Here['']?s\s+the\s+(complete\s+)?code/i,  // Code revelation statements
+      /```python[\s\S]*?```/i, // Python code blocks
+      /def\s+\w+\s*\([^)]*\)\s*:/i, // Function definitions (complete syntax)
+      /print\s*\([^)]*\)\s*$/im, // Print statements at end of line
+      /input\s*\([^)]*\)\s*$/im, // Input statements
+      /for\s+\w+\s+in\s+.*:\s*$/im, // For loops
+      /if\s+.*:\s*$/im, // If statements
+      /while\s+.*:\s*$/im, // While loops
+      /The\s+(answer|solution)\s+is[:\s]/i, // Direct solution statements
+      /Here['']?s\s+the\s+(complete\s+)?code/i, // Code revelation statements
       /The\s+complete\s+code\s+is/i
-    ];
+    ]
 
     // Check for multiple indicators to avoid false positives on educational content
-    let indicatorCount = 0;
+    let indicatorCount = 0
     for (const pattern of solutionIndicators) {
       if (pattern.test(response)) {
-        indicatorCount++;
+        indicatorCount++
       }
     }
 
     // Trigger followup if we find 2 or more indicators, or 1 strong indicator (code block)
-    return indicatorCount >= 2 || /```python[\s\S]*?```/i.test(response);
+    return indicatorCount >= 2 || /```python[\s\S]*?```/i.test(response)
   }
 
-  async sendLLMRequestWithFollowup(prompt) {
+  async sendLLMRequestWithFollowup (prompt) {
     // First attempt - get initial response
-    let response = await this.sendLLMRequest(prompt);
-    
+    let response = await this.sendLLMRequest(prompt)
+
     // Check if response contains solution and send followup if needed
     if (this.containsSolution(response)) {
       const followupPrompt = `${prompt}
 
-IMPORTANT: Please provide guidance and hints without giving away the complete solution. Help the student think through the problem step by step, but let them write the code themselves. Avoid showing complete code blocks or giving direct answers.`;
-      
-      response = await this.sendLLMRequest(followupPrompt);
+IMPORTANT: Please provide guidance and hints without giving away the complete solution. Help the student think through the problem step by step, but let them write the code themselves. Avoid showing complete code blocks or giving direct answers.`
+
+      response = await this.sendLLMRequest(followupPrompt)
     }
-    
-    return response;
+
+    return response
   }
 
   markdownToHtml (markdown) {
