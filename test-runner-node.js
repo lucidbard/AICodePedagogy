@@ -424,8 +424,8 @@ class SimpleTestSuite extends NodeTestRunner {
             global.window = { addEventListener: () => {} };
             global.localStorage = { getItem: () => null, setItem: () => {}, removeItem: () => {} };
 
-            // Load script.js to access LLMIntegration
-            const { LLMIntegration } = require('./script.js');
+            // Load llm-integration.js to access LLMIntegration
+            const { LLMIntegration } = require('./llm-integration.js');
             const llm = new LLMIntegration();
             const html = llm.markdownToHtml('- item1\n- item2');
 
@@ -435,6 +435,54 @@ class SimpleTestSuite extends NodeTestRunner {
 
             if (html !== '<ul><li>item1</li><li>item2</li></ul>') {
                 throw new Error('Markdown list not converted correctly');
+            }
+        });
+
+        await this.runTest('Environment Detection', async () => {
+            // Minimal DOM stubs for script.js
+            global.document = {
+                getElementById: () => ({
+                    addEventListener: () => {},
+                    style: {},
+                    innerHTML: '',
+                    querySelectorAll: () => [],
+                    appendChild: () => {},
+                    classList: { add: () => {}, remove: () => {}, contains: () => false }
+                }),
+                querySelector: () => ({
+                    classList: { add: () => {}, remove: () => {} },
+                    addEventListener: () => {},
+                    style: {},
+                    appendChild: () => {},
+                    querySelectorAll: () => []
+                }),
+                createElement: () => ({
+                    className: '',
+                    innerHTML: '',
+                    appendChild: () => {},
+                    addEventListener: () => {},
+                    setAttribute: () => {},
+                    classList: { add: () => {}, remove: () => {} },
+                    style: {},
+                    querySelectorAll: () => []
+                }),
+                addEventListener: () => {}
+            };
+            global.window = { addEventListener: () => {} };
+            global.localStorage = { getItem: () => null, setItem: () => {}, removeItem: () => {} };
+
+            // Load llm-integration.js to access LLMIntegration
+            const { LLMIntegration } = require('./llm-integration.js');
+            const llm = new LLMIntegration();
+            
+            // Verify that browser-dependent methods don't throw errors in Node.js
+            llm.init(); // Should not throw
+            llm.setupEventListeners(); // Should not throw
+            
+            // Verify core functionality still works
+            const simpleHtml = llm.markdownToHtml('**bold text**');
+            if (!simpleHtml.includes('<strong>bold text</strong>')) {
+                throw new Error('Bold markdown conversion failed');
             }
         });
     }
