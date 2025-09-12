@@ -387,6 +387,57 @@ class SimpleTestSuite extends NodeTestRunner {
             }
         });
     }
+
+    async testMarkdownConversion() {
+        this.createTestSuite('Markdown Conversion Tests');
+
+        await this.runTest('List Rendering Without Breaks', async () => {
+            // Minimal DOM stubs for script.js
+            global.document = {
+                getElementById: () => ({
+                    addEventListener: () => {},
+                    style: {},
+                    innerHTML: '',
+                    querySelectorAll: () => [],
+                    appendChild: () => {},
+                    classList: { add: () => {}, remove: () => {}, contains: () => false }
+                }),
+                querySelector: () => ({
+                    classList: { add: () => {}, remove: () => {} },
+                    addEventListener: () => {},
+                    style: {},
+                    appendChild: () => {},
+                    querySelectorAll: () => []
+                }),
+                createElement: () => ({
+                    className: '',
+                    innerHTML: '',
+                    appendChild: () => {},
+                    addEventListener: () => {},
+                    setAttribute: () => {},
+                    classList: { add: () => {}, remove: () => {} },
+                    style: {},
+                    querySelectorAll: () => []
+                }),
+                addEventListener: () => {}
+            };
+            global.window = { addEventListener: () => {} };
+            global.localStorage = { getItem: () => null, setItem: () => {}, removeItem: () => {} };
+
+            // Load script.js to access LLMIntegration
+            const { LLMIntegration } = require('./script.js');
+            const llm = new LLMIntegration();
+            const html = llm.markdownToHtml('- item1\n- item2');
+
+            if (html.includes('<br>')) {
+                throw new Error('List items should not contain <br> tags');
+            }
+
+            if (html !== '<ul><li>item1</li><li>item2</li></ul>') {
+                throw new Error('Markdown list not converted correctly');
+            }
+        });
+    }
     
     async runAllTests() {
         console.log('🧪 Starting AICodePedagogy Test Suite (Node.js)...');
@@ -397,7 +448,8 @@ class SimpleTestSuite extends NodeTestRunner {
         try {
             await this.testBasicFunctionality();
             await this.testValidationSystem();
-            
+            await this.testMarkdownConversion();
+
             const success = this.displaySummary();
             
             if (success) {

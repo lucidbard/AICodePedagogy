@@ -2999,10 +2999,16 @@ IMPORTANT: Please provide guidance and hints without giving away the complete so
 
     html = processedLines.join('\n')
 
-    // Convert line breaks to paragraphs and <br> tags
+    // Remove line breaks around list elements to avoid extraneous <br> tags
+    html = html
+      .replace(/<ul>\n/g, '<ul>')
+      .replace(/\n<\/ul>/g, '</ul>')
+      .replace(/<li>(.*?)<\/li>\n/g, '<li>$1</li>')
+
+    // Convert remaining line breaks to paragraphs and <br> tags
     html = html
       .replace(/\n\n+/g, '</p><p>') // Double line breaks become paragraph breaks
-      .replace(/\n/g, '<br>') // Single line breaks become <br>    // Wrap content in paragraphs if not already wrapped in block elements
+      .replace(/\n/g, '<br>') // Single line breaks become <br>
     if (
       !html.includes('<p>') &&
       !html.includes('<h') &&
@@ -3129,3 +3135,8 @@ function setupOllamaHelpModal () {
 
 // Initialize LLM integration when DOM is loaded
 let ollamaLLM = null
+
+// Export for Node.js testing environment
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { LLMIntegration }
+}
