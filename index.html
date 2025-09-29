@@ -13,12 +13,8 @@
     href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&display=swap"
     rel="stylesheet">
 
-  <script src="https://unpkg.com/skulpt@0.11.1/dist/skulpt.min.js"
-    onload="if(window.onSkulptLoaded) window.onSkulptLoaded(); console.log('Skulpt core loaded')"
-    onerror="loadSkulptFallback()"></script>
-  <script src="https://unpkg.com/skulpt@0.11.1/dist/skulpt-stdlib.js" onload="console.log('Skulpt stdlib loaded')"
-    onerror="console.error('Failed to load Skulpt stdlib')"></script>
-  <script>    // Fallback function to load Skulpt from alternative CDN
+  <script>
+    // Fallback function to load Skulpt from alternative CDN
     function loadSkulptFallback() {
       console.log('Trying fallback CDN for Skulpt...');
       const script1 = document.createElement('script');
@@ -36,6 +32,12 @@
       document.head.appendChild(script2);
     }
   </script>
+
+  <script src="https://unpkg.com/skulpt@0.11.1/dist/skulpt.min.js"
+    onload="if(window.onSkulptLoaded) window.onSkulptLoaded(); console.log('Skulpt core loaded')"
+    onerror="loadSkulptFallback()"></script>
+  <script src="https://unpkg.com/skulpt@0.11.1/dist/skulpt-stdlib.js" onload="console.log('Skulpt stdlib loaded')"
+    onerror="console.error('Failed to load Skulpt stdlib')"></script>
 
   <!-- CodeMirror for syntax highlighting -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
