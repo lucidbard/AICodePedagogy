@@ -9,7 +9,24 @@ class LLMIntegration {
     this.selectedModel = null;
     this.models = [];
     this.provider = 'ollama'; // Default to ollama
-    
+
+    // Set Ollama URL based on current host
+    // If served from a remote host, use that host for Ollama
+    // Otherwise default to localhost
+    if (this.isBrowserEnvironment()) {
+      const currentHost = window.location.hostname;
+      const currentProtocol = window.location.protocol;
+
+      // If not on localhost, use the current host for Ollama
+      if (currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
+        this.ollamaBaseUrl = `${currentProtocol}//${currentHost}:11434`;
+      } else {
+        this.ollamaBaseUrl = 'http://localhost:11434';
+      }
+    } else {
+      this.ollamaBaseUrl = 'http://localhost:11434';
+    }
+
     // Only run browser-dependent initialization if in browser environment
     if (this.isBrowserEnvironment()) {
       this.apiKeys = this.loadApiKeys();
@@ -35,13 +52,20 @@ class LLMIntegration {
 
   init() {
     if (!this.isBrowserEnvironment()) return;
-    
+
     // Hide footer by default
     const footer = document.querySelector('.llm-footer');
     // if (footer) footer.classList.add('hidden')
 
     this.setupEventListeners();
-    this.loadModels();
+
+    // Check initial toggle state and initialize if enabled
+    const toggle = document.getElementById('llm-enabled');
+    if (toggle && toggle.checked) {
+      this.toggleLLM(true);
+    } else {
+      this.isEnabled = false;
+    }
   }
 
   setupEventListeners() {
@@ -63,6 +87,7 @@ class LLMIntegration {
         this.updateModelInfo();
         this.updateStatus('connected', `Connected to ${this.selectedModel}`);
         this.updateQueryButtonStates();
+        this.updateHintSystem();
         this.hideModelSelection();
       }
     });
@@ -146,7 +171,7 @@ class LLMIntegration {
 
   toggleLLM(enabled) {
     if (!this.isBrowserEnvironment()) return;
-    
+
     const settings = document.getElementById('llm-settings');
     const footer = document.querySelector('.llm-footer');
 
@@ -155,6 +180,9 @@ class LLMIntegration {
       // if (footer) footer.classList.remove('hidden')
       this.updateProviderUI();
       this.loadModels();
+      if (this.selectedModel) {
+        this.updateHintSystem();
+      }
     } else {
       settings.style.display = 'none';
       // if (footer) footer.classList.add('hidden')
@@ -209,7 +237,7 @@ class LLMIntegration {
       let models = [];
 
       if (this.provider === 'ollama') {
-        const response = await fetch('http://localhost:11434/api/tags');
+        const response = await fetch(`${this.ollamaBaseUrl}/api/tags`);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -403,8 +431,8 @@ Keep the explanation clear and beginner-friendly.`;
 
   async queryOllama(prompt) {
     if (!this.isBrowserEnvironment()) throw new Error('Browser environment required');
-    
-    const response = await fetch('http://localhost:11434/api/generate', {
+
+    const response = await fetch(`${this.ollamaBaseUrl}/api/generate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

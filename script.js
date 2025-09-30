@@ -240,6 +240,7 @@ async function initializeGame () {
     // Initialize LLM integration
     console.log('Initializing LLM integration...')
     ollamaLLM = new LLMIntegration()
+    ollamaLLM.init()
     console.log('LLM integration initialized')
   } catch (error) {
     console.error('Error initializing game:', error)
@@ -1520,8 +1521,13 @@ function generateSpecificSingleCellFeedback (
       feedback.statusText = 'Format Issue'
       feedback.detailedMessage = `
         <strong>📋 Output format doesn't match expected pattern</strong><br>
-        ${validationResult.reason}<br>
-        <em>Check your output format and make sure it matches the expected structure.</em>
+        <br>
+        <strong>What you printed:</strong><br>
+        <code>${actualOutput || '(no output)'}</code><br>
+        <br>
+        <strong>Issue:</strong> ${validationResult.reason}<br>
+        <br>
+        <em>Tip: Pay close attention to the exact wording in your print statements. Use "Fragments" (plural) in your output text.</em>
       `
       feedback.suggestedHints = availableHints
         .filter(
@@ -1693,13 +1699,16 @@ async function validateSolution (code, solution, actualOutput, stage) {
   }
 
   // Check output patterns (result validation)
-  const outputValidation = validateOutputPatterns(actualOutput, outputPatterns)
+  const outputValidation = validateOutputPatterns(actualOutput, outputPatterns, rules.outputPatterns)
   if (!outputValidation.isValid) {
+    // Provide human-readable explanation of what's expected
+    const patternExplanation = explainOutputPattern(outputValidation.missingPattern, outputValidation.patternIndex, stage)
     return {
       isCorrect: false,
-      reason: `Output issue: Missing pattern ${outputValidation.missingPattern}`,
+      reason: `Output format issue: ${patternExplanation}`,
       feedback: 'Output incorrect',
-      expectedPatterns: rules.outputPatterns
+      expectedPatterns: rules.outputPatterns,
+      actualOutput: actualOutput
     }
   }
 
@@ -1725,16 +1734,46 @@ function validateCodePatterns (code, patterns) {
 }
 
 // Validate output against expected patterns
-function validateOutputPatterns (output, patterns) {
-  for (const pattern of patterns) {
+function validateOutputPatterns (output, patterns, originalPatterns) {
+  for (let i = 0; i < patterns.length; i++) {
+    const pattern = patterns[i]
     if (!pattern.test(output)) {
       return {
         isValid: false,
-        missingPattern: pattern.source || pattern.toString()
+        missingPattern: pattern.source || pattern.toString(),
+        patternIndex: i,
+        originalPattern: originalPatterns ? originalPatterns[i] : null
       }
     }
   }
   return { isValid: true }
+}
+
+// Explain output pattern in human-readable terms
+function explainOutputPattern (patternStr, patternIndex, stage) {
+  // Stage-specific explanations for common patterns
+  if (stage.id === 1) {
+    // Stage 1: Manuscript variables
+    if (patternIndex === 0) {
+      return 'Your output must include "Manuscript Catalog" followed by "MS-ALEX-2847"'
+    } else if (patternIndex === 1) {
+      return 'Your output must include the word "Fragments" (or "Fragment") near the number 23. Try: "Fragments Found: 23"'
+    }
+  }
+
+  // Generic pattern explanation
+  // Try to make regex more readable
+  const readable = patternStr
+    .replace(/\.\*/g, ' (any text) ')
+    .replace(/\\s\*/g, ' ')
+    .replace(/\(/g, '')
+    .replace(/\)/g, '')
+    .replace(/\|/g, ' OR ')
+    .replace(/\[/g, '')
+    .replace(/\]/g, '')
+    .replace(/\\/g, '')
+
+  return `Expected pattern: ${readable}. Check that your print statement includes the right text format.`
 }
 
 // Normalize output for comparison (remove extra whitespace, etc.)
@@ -1812,7 +1851,7 @@ async function checkCompletion (code, solution, actualOutput) {
       }
     } else {
       // Solution is incorrect - provide specific feedback
-      const outputArea = document.getElementById('single-cell-output')
+      const outputArea = document.getElementById('single-output-area')
 
       // Generate specific feedback for single-cell validation failure
       const specificFeedback = generateSpecificSingleCellFeedback(
@@ -1942,27 +1981,29 @@ function showCelebration () {
   }, 5000)
 }
 
-// Set up next button to advance to next stage
-document.getElementById('next-button').addEventListener('click', function () {
-  const nextStage = currentStage + 1
+// Set up next button to advance to next stage (moved to DOMContentLoaded)
+function setupNextButton () {
+  document.getElementById('next-button').addEventListener('click', function () {
+    const nextStage = currentStage + 1
 
-  // Check if there's a next stage
-  if (nextStage <= gameContent.gameInfo.totalStages) {
-    showCelebration()
-    loadStage(nextStage)
-  } else {
-    // Handle game completion
-    document.getElementById('story-content').innerHTML = `
+    // Check if there's a next stage
+    if (nextStage <= gameContent.gameInfo.totalStages) {
+      showCelebration()
+      loadStage(nextStage)
+    } else {
+      // Handle game completion
+      document.getElementById('story-content').innerHTML = `
           <h2>Congratulations!</h2>
           <p>You've completed all stages of the Digital Archaeology Mystery!</p>
           <p>You've successfully pieced together the ancient fragments and uncovered the lost knowledge.</p>
         `
-    document.getElementById('challenge-content').style.display = 'none'
-    document.getElementById('data-content').style.display = 'none'
-    document.getElementById('code-panel').style.display = 'none'
-    showCelebration()
-  }
-})
+      document.getElementById('challenge-content').style.display = 'none'
+      document.getElementById('data-content').style.display = 'none'
+      document.getElementById('code-panel').style.display = 'none'
+      showCelebration()
+    }
+  })
+}
 
 // Restart runtime functionality - clears all cell outputs and resets execution state
 function restartRuntime () {
@@ -2089,6 +2130,9 @@ function restartRuntime () {
 document.addEventListener('DOMContentLoaded', () => {
   initializeGame()
 
+  // Set up next button
+  setupNextButton()
+
   // Set up restart runtime button
   const restartButton = document.getElementById('restart-runtime-button')
   if (restartButton) {
@@ -2151,6 +2195,158 @@ window.addEventListener('load', () => {
 // LLMIntegration class is now imported from llm-integration.js to avoid
 // browser/Node.js environment conflicts and side effects during testing
 
+// Update Ollama help URLs dynamically based on current origin
+function updateOllamaHelpUrls() {
+  const currentOrigin = window.location.origin;
+  const currentDomain = window.location.hostname;
+  const modal = document.getElementById('ollama-help-modal');
+
+  if (!modal) return;
+
+  // Determine if CORS configuration is needed
+  const isLocalhost = currentDomain === 'localhost' || currentDomain === '127.0.0.1';
+  const corsSection = document.getElementById('cors-section');
+  const corsDescription = document.getElementById('cors-description');
+
+  // Determine the OLLAMA_ORIGINS value based on the domain
+  let ollamaOrigins;
+  if (isLocalhost) {
+    // For localhost, CORS is not needed - hide the section
+    if (corsSection) {
+      corsSection.style.display = 'none';
+    }
+    // Update step numbers for subsequent steps
+    const installModelHeading = document.getElementById('install-model-heading');
+    const testConnectionHeading = document.getElementById('test-connection-heading');
+    const testConnectionDescription = document.getElementById('test-connection-description');
+    
+    if (installModelHeading) {
+      installModelHeading.innerHTML = '🚀 Step 2: Install a Model';
+    }
+    if (testConnectionHeading) {
+      testConnectionHeading.innerHTML = '✅ Step 3: Test Connection';
+    }
+    if (testConnectionDescription) {
+      testConnectionDescription.innerHTML = 'Once Ollama is running:';
+    }
+  } else {
+    // For remote domains (like GitHub Pages), show CORS config and include both the domain and localhost
+    if (corsSection) {
+      corsSection.style.display = 'block';
+    }
+    ollamaOrigins = `${currentOrigin},http://localhost:*`;
+    
+    // Update the description to show current domain
+    if (corsDescription) {
+      corsDescription.innerHTML = `To allow this website (<strong>${currentOrigin}</strong>) to connect to your local Ollama server, you need to set environment variables:`;
+    }
+    
+    // Reset step numbers to normal
+    const installModelHeading = document.getElementById('install-model-heading');
+    const testConnectionHeading = document.getElementById('test-connection-heading');
+    const testConnectionDescription = document.getElementById('test-connection-description');
+    
+    if (installModelHeading) {
+      installModelHeading.innerHTML = '🚀 Step 3: Install a Model';
+    }
+    if (testConnectionHeading) {
+      testConnectionHeading.innerHTML = '✅ Step 4: Test Connection';
+    }
+    if (testConnectionDescription) {
+      testConnectionDescription.innerHTML = 'Once Ollama is running with CORS configured:';
+    }
+  }
+
+  // Replace all instances of the hardcoded URL and OLLAMA_ORIGINS value
+  const elementsToUpdate = modal.querySelectorAll('.help-section p, .code-block code, .code-block');
+
+  elementsToUpdate.forEach(element => {
+    // Update domain references
+    if (element.innerHTML.includes('https://jtm.io/codepedagogy/')) {
+      element.innerHTML = element.innerHTML.replace(
+        /https:\/\/jtm\.io\/codepedagogy\//g,
+        currentOrigin + (currentOrigin.endsWith('/') ? '' : '/')
+      );
+    }
+    
+    // Update OLLAMA_ORIGINS values - handle both with and without quotes
+    if (element.innerHTML.includes('OLLAMA_ORIGINS') && ollamaOrigins) {
+      // Match patterns like: OLLAMA_ORIGINS=https://... or OLLAMA_ORIGINS="https://...
+      element.innerHTML = element.innerHTML.replace(
+        /OLLAMA_ORIGINS=["']?https:\/\/jtm\.io\/codepedagogy\/,http:\/\/localhost:\*["']?/g,
+        `OLLAMA_ORIGINS="${ollamaOrigins}"`
+      );
+      
+      // Also update the environment variable value in the permanent setup instructions
+      element.innerHTML = element.innerHTML.replace(
+        /Value: <code>https:\/\/jtm\.io\/codepedagogy\/,http:\/\/localhost:\*<\/code>/g,
+        `Value: <code>${ollamaOrigins}</code>`
+      );
+    }
+  });
+}
+
+// Detect user's operating system
+function detectOS() {
+  const userAgent = window.navigator.userAgent;
+  const platform = window.navigator.platform;
+  
+  console.log('OS Detection - userAgent:', userAgent);
+  console.log('OS Detection - platform:', platform);
+  
+  // Check platform first (more reliable) - case insensitive
+  const platformLower = platform.toLowerCase();
+  if (platformLower.includes('win')) {
+    console.log('Detected OS: Windows (from platform)');
+    return 'windows';
+  }
+  if (platformLower.includes('mac')) {
+    console.log('Detected OS: macOS (from platform)');
+    return 'mac';
+  }
+  if (platformLower.includes('linux')) {
+    console.log('Detected OS: Linux (from platform, using mac/linux tab)');
+    return 'mac'; // Use mac/linux tab for Linux
+  }
+  
+  // Fallback detection using userAgent
+  const userAgentLower = userAgent.toLowerCase();
+  if (userAgentLower.includes('win')) {
+    console.log('Detected OS via userAgent: Windows');
+    return 'windows';
+  }
+  if (userAgentLower.includes('mac')) {
+    console.log('Detected OS via userAgent: macOS');
+    return 'mac';
+  }
+  if (userAgentLower.includes('linux')) {
+    console.log('Detected OS via userAgent: Linux');
+    return 'mac';
+  }
+  
+  // Check for newer browser API
+  if (navigator.userAgentData && navigator.userAgentData.platform) {
+    const platformData = navigator.userAgentData.platform.toLowerCase();
+    console.log('OS Detection - userAgentData.platform:', platformData);
+    if (platformData.includes('win')) {
+      console.log('Detected OS via userAgentData: Windows');
+      return 'windows';
+    }
+    if (platformData.includes('mac')) {
+      console.log('Detected OS via userAgentData: macOS');
+      return 'mac';
+    }
+    if (platformData.includes('linux')) {
+      console.log('Detected OS via userAgentData: Linux');
+      return 'mac';
+    }
+  }
+  
+  // Default to mac/linux for unknown systems
+  console.log('Could not detect OS, defaulting to mac/linux');
+  return 'mac';
+}
+
 // Ollama Help Modal Setup
 function setupOllamaHelpModal () {
   const helpBtn = document.getElementById('ollama-help-btn')
@@ -2158,14 +2354,73 @@ function setupOllamaHelpModal () {
   const closeBtn = document.getElementById('close-ollama-help')
   const tabBtns = document.querySelectorAll('.tab-btn')
   const platformContents = document.querySelectorAll('.platform-content')
+  const tabBtnsInstall = document.querySelectorAll('.tab-btn-install')
+  const platformContentsInstall = document.querySelectorAll('.platform-content-install')
 
   // Open modal
   if (helpBtn) {
     helpBtn.addEventListener('click', e => {
       e.preventDefault()
       e.stopPropagation()
+
+      // Show modal first
       modal.style.display = 'flex'
       document.body.style.overflow = 'hidden'
+
+      // Update URLs dynamically based on current origin
+      updateOllamaHelpUrls()
+      
+      // Auto-detect and select the correct platform tab
+      // Use a small delay to ensure modal is fully rendered
+      setTimeout(() => {
+        const detectedOS = detectOS();
+        console.log('Modal opened - detected OS:', detectedOS);
+        
+        // Update Step 1 (Install) tabs
+        const targetTabInstall = document.querySelector(`.tab-btn-install[data-platform="${detectedOS}"]`);
+        console.log('Step 1 target tab found:', targetTabInstall);
+        
+        if (targetTabInstall) {
+          tabBtnsInstall.forEach(tab => tab.classList.remove('active'));
+          targetTabInstall.classList.add('active');
+          
+          platformContentsInstall.forEach(content => {
+            if (content.getAttribute('data-platform') === detectedOS) {
+              content.style.display = 'block';
+              console.log('Step 1: Showing content for:', detectedOS);
+            } else {
+              content.style.display = 'none';
+            }
+          });
+        }
+        
+        // Update Step 2 (CORS) tabs
+        const targetTab = document.querySelector(`.tab-btn[data-platform="${detectedOS}"]`);
+        console.log('Step 2 target tab found:', targetTab);
+        console.log('All tab buttons:', document.querySelectorAll('.tab-btn'));
+        
+        if (targetTab) {
+          // Update active tab
+          tabBtns.forEach(tab => tab.classList.remove('active'));
+          targetTab.classList.add('active');
+          console.log('Step 2: Active tab set to:', detectedOS);
+          
+          // Show corresponding content
+          platformContents.forEach(content => {
+            const contentPlatform = content.getAttribute('data-platform');
+            console.log('Step 2: Checking content platform:', contentPlatform);
+            if (contentPlatform === detectedOS) {
+              content.style.display = 'block';
+              console.log('Step 2: Showing content for:', detectedOS);
+            } else {
+              content.style.display = 'none';
+            }
+          });
+        } else {
+          console.warn('No tab found for platform:', detectedOS);
+          console.warn('Available tabs:', tabBtns);
+        }
+      }, 50);
     })
   }
 
@@ -2195,7 +2450,7 @@ function setupOllamaHelpModal () {
     }
   })
 
-  // Platform tab switching
+  // Platform tab switching for Step 2 (CORS)
   tabBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       const platform = btn.getAttribute('data-platform')
@@ -2206,6 +2461,26 @@ function setupOllamaHelpModal () {
 
       // Show corresponding content
       platformContents.forEach(content => {
+        if (content.getAttribute('data-platform') === platform) {
+          content.style.display = 'block'
+        } else {
+          content.style.display = 'none'
+        }
+      })
+    })
+  })
+
+  // Platform tab switching for Step 1 (Install)
+  tabBtnsInstall.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const platform = btn.getAttribute('data-platform')
+
+      // Update active tab
+      tabBtnsInstall.forEach(tab => tab.classList.remove('active'))
+      btn.classList.add('active')
+
+      // Show corresponding content
+      platformContentsInstall.forEach(content => {
         if (content.getAttribute('data-platform') === platform) {
           content.style.display = 'block'
         } else {

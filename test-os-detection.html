@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OS Detection Test</title>
+  <style>
+    body {
+      font-family: 'Courier New', monospace;
+      padding: 20px;
+      background: #1e1e1e;
+      color: #d4d4d4;
+    }
+
+    .info-box {
+      background: #2d2d2d;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 5px;
+      border-left: 4px solid #007acc;
+    }
+
+    h1 {
+      color: #4ec9b0;
+    }
+
+    h2 {
+      color: #569cd6;
+    }
+
+    code {
+      background: #3c3c3c;
+      padding: 2px 6px;
+      border-radius: 3px;
+      color: #ce9178;
+    }
+
+    .detected {
+      font-size: 24px;
+      font-weight: bold;
+      color: #4ec9b0;
+      margin: 20px 0;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>🔍 OS Detection Test</h1>
+
+  <div class="detected" id="detected-os">Detecting...</div>
+
+  <h2>Browser Information:</h2>
+
+  <div class="info-box">
+    <strong>navigator.platform:</strong><br>
+    <code id="platform">Loading...</code>
+  </div>
+
+  <div class="info-box">
+    <strong>navigator.userAgent:</strong><br>
+    <code id="userAgent">Loading...</code>
+  </div>
+
+  <div class="info-box">
+    <strong>navigator.userAgentData (if available):</strong><br>
+    <code id="userAgentData">Loading...</code>
+  </div>
+
+  <h2>Detection Results:</h2>
+  <div class="info-box">
+    <strong>Platform check (toLowerCase):</strong><br>
+    <div id="platform-checks"></div>
+  </div>
+
+  <div class="info-box">
+    <strong>UserAgent check (toLowerCase):</strong><br>
+    <div id="ua-checks"></div>
+  </div>
+
+  <script>
+    function detectOS() {
+      const userAgent = window.navigator.userAgent;
+      const platform = window.navigator.platform;
+
+      console.log('OS Detection - userAgent:', userAgent);
+      console.log('OS Detection - platform:', platform);
+
+      const userAgentLower = userAgent.toLowerCase();
+      const platformLower = platform.toLowerCase();
+
+      console.log('OS Detection - userAgent (lower):', userAgentLower);
+      console.log('OS Detection - platform (lower):', platformLower);
+
+      // Check platform first (more reliable) - case insensitive
+      if (platformLower.includes('win')) {
+        console.log('Detected OS: Windows (from platform)');
+        return 'windows';
+      }
+      if (platformLower.includes('mac')) {
+        console.log('Detected OS: macOS (from platform)');
+        return 'mac';
+      }
+      if (platformLower.includes('linux')) {
+        console.log('Detected OS: Linux (from platform, using mac/linux tab)');
+        return 'mac'; // Use mac/linux tab for Linux
+      }
+
+      // Fallback detection using userAgent
+      if (userAgentLower.includes('win')) {
+        console.log('Detected OS via userAgent: Windows');
+        return 'windows';
+      }
+      if (userAgentLower.includes('mac')) {
+        console.log('Detected OS via userAgent: macOS');
+        return 'mac';
+      }
+      if (userAgentLower.includes('linux')) {
+        console.log('Detected OS via userAgent: Linux');
+        return 'mac';
+      }
+
+      // Check for newer browser API
+      if (navigator.userAgentData && navigator.userAgentData.platform) {
+        const platformData = navigator.userAgentData.platform.toLowerCase();
+        console.log('OS Detection - userAgentData.platform:', platformData);
+        if (platformData.includes('win')) {
+          console.log('Detected OS via userAgentData: Windows');
+          return 'windows';
+        }
+        if (platformData.includes('mac')) {
+          console.log('Detected OS via userAgentData: macOS');
+          return 'mac';
+        }
+        if (platformData.includes('linux')) {
+          console.log('Detected OS via userAgentData: Linux');
+          return 'mac';
+        }
+      }
+
+      // Default to mac/linux for unknown systems
+      console.log('Could not detect OS, defaulting to mac/linux');
+      return 'mac';
+    }
+
+    // Display browser info
+    document.getElementById('platform').textContent = navigator.platform;
+    document.getElementById('userAgent').textContent = navigator.userAgent;
+
+    if (navigator.userAgentData) {
+      navigator.userAgentData.getHighEntropyValues(['platform', 'platformVersion'])
+        .then(data => {
+          document.getElementById('userAgentData').textContent = JSON.stringify(data, null, 2);
+        })
+        .catch(() => {
+          document.getElementById('userAgentData').textContent = 'Available but could not get high entropy values';
+        });
+    } else {
+      document.getElementById('userAgentData').textContent = 'Not available in this browser';
+    }
+
+    // Platform checks
+    const platform = navigator.platform;
+    const platformLower = platform.toLowerCase();
+    document.getElementById('platform-checks').innerHTML = `
+            <code>Original platform: "${platform}"</code><br>
+            <code>Lowercase platform: "${platformLower}"</code><br>
+            <code>platformLower.includes('win'): ${platformLower.includes('win')}</code><br>
+            <code>platformLower.includes('mac'): ${platformLower.includes('mac')}</code><br>
+            <code>platformLower.includes('linux'): ${platformLower.includes('linux')}</code>
+        `;
+
+    // UserAgent checks
+    const userAgent = navigator.userAgent;
+    const userAgentLower = userAgent.toLowerCase();
+    document.getElementById('ua-checks').innerHTML = `
+            <code>userAgentLower.includes('win'): ${userAgentLower.includes('win')}</code><br>
+            <code>userAgentLower.includes('mac'): ${userAgentLower.includes('mac')}</code><br>
+            <code>userAgentLower.includes('linux'): ${userAgentLower.includes('linux')}</code>
+        `;
+
+    // Run detection
+    const detected = detectOS();
+    document.getElementById('detected-os').textContent = `Detected OS: ${detected === 'windows' ? 'Windows' : 'macOS/Linux'}`;
+  </script>
+</body>
+
+</html>

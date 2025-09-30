@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Digital Archaeology Mystery</title>
+  <title>Digging into AI: An Archaelogical Python Adventure</title>
 
   <!-- Google Fonts for Colab-style appearance -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -56,8 +56,8 @@
 <body>
   <div class="container">
     <div class="header">
-      <h1 id="game-title">🏛️ Digital Archaeology Mystery</h1>
-      <p class="subtitle" id="game-subtitle">Code Your Way Through Ancient Secrets</p>
+      <h1 id="game-title">Digging into AI</h1>
+      <p class="subtitle" id="game-subtitle">An Archaelogical Python Adventure</p>
       <div class="progress-bar">
         <div class="progress-fill" id="progress-bar"></div>
       </div>
@@ -118,10 +118,11 @@
         <label class="llm-toggle">
           <input type="checkbox" id="llm-enabled" />
           <span class="llm-slider"></span>
-          <span class="llm-label">🤖 AI Assistant</span>
+          <span class="llm-label">🤖 AI Assistant
+          </span>
         </label>
-        <button id="ollama-help-btn" class="help-btn" title="How to setup Ollama">❓</button>
       </div>
+      <button id="ollama-help-btn" class="help-btn" title="How to setup Ollama">❓</button>
       <div class="llm-settings" id="llm-settings" style="display: none;">
         <div class="provider-selection">
           <label for="provider-select">Provider:</label>
@@ -159,19 +160,31 @@
         <div class="help-section">
           <h4>📦 Step 1: Install Ollama</h4>
           <p>Download and install Ollama from <a href="https://ollama.ai" target="_blank">https://ollama.ai</a></p>
-          <div class="code-block">
-            <strong>macOS/Linux:</strong><br>
-            <code>curl -fsSL https://ollama.ai/install.sh | sh</code>
+
+          <div class="platform-tabs">
+            <button class="tab-btn-install active" data-platform="windows">Windows</button>
+            <button class="tab-btn-install" data-platform="mac">macOS/Linux</button>
           </div>
-          <div class="code-block">
-            <strong>Windows:</strong><br>
-            Download the installer from the website
+
+          <div class="platform-content-install" data-platform="windows">
+            <div class="code-block">
+              <strong>Windows:</strong><br>
+              Download the installer from the website
+            </div>
+          </div>
+
+          <div class="platform-content-install" data-platform="mac" style="display: none;">
+            <div class="code-block">
+              <strong>macOS/Linux:</strong><br>
+              <code>curl -fsSL https://ollama.ai/install.sh | sh</code>
+            </div>
           </div>
         </div>
 
-        <div class="help-section">
+        <div class="help-section" id="cors-section">
           <h4>🔧 Step 2: Configure CORS for Web Access</h4>
-          <p>To allow this website (<strong>https://jtm.io/codepedagogy/</strong>) to connect to your local Ollama
+          <p id="cors-description">To allow this website (<strong>https://jtm.io/codepedagogy/</strong>) to connect to
+            your local Ollama
             server, you need to set environment variables:</p>
 
           <div class="platform-tabs">
@@ -210,7 +223,7 @@
               <code>ollama serve</code>
             </div>
             <div class="code-block">
-              <strong>Permanent (add to ~/.bashrc or ~/.zshrc):</strong><br>
+              <strong>Permanent (add to ~/.bashrc, ~/.zshrc, or ~/.profile):</strong><br>
               <code>echo 'export OLLAMA_ORIGINS="https://jtm.io/codepedagogy/,http://localhost:*"' >> ~/.bashrc</code><br>
               <code>source ~/.bashrc</code><br>
               <code>ollama serve</code>
@@ -223,8 +236,8 @@
           </div>
         </div>
 
-        <div class="help-section">
-          <h4>🚀 Step 3: Install a Model</h4>
+        <div class="help-section" id="install-model-section">
+          <h4 id="install-model-heading">🚀 Step 3: Install a Model</h4>
           <p>Download a model suitable for coding assistance:</p>
           <div class="code-block">
             <strong>Recommended models:</strong><br>
@@ -234,9 +247,9 @@
           </div>
         </div>
 
-        <div class="help-section">
-          <h4>✅ Step 4: Test Connection</h4>
-          <p>Once Ollama is running with CORS configured:</p>
+        <div class="help-section" id="test-connection-section">
+          <h4 id="test-connection-heading">✅ Step 4: Test Connection</h4>
+          <p id="test-connection-description">Once Ollama is running with CORS configured:</p>
           <ol>
             <li>Enable the "🤖 AI Assistant" toggle above</li>
             <li>Select your model from the dropdown</li>
@@ -259,7 +272,8 @@
           <ul>
             <li><strong>Connection failed:</strong> Ensure Ollama is running and CORS is configured</li>
             <li><strong>Model not found:</strong> Make sure you've pulled the model with
-              <code>ollama pull model-name</code></li>
+              <code>ollama pull model-name</code>
+            </li>
             <li><strong>Slow responses:</strong> Try a smaller model or check your system resources</li>
             <li><strong>Windows issues:</strong> Try running Command Prompt as Administrator</li>
           </ul>
