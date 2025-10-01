@@ -1778,3 +1778,445 @@ body {
     gap: 5px;
   }
 }
+
+/* Story Modal Styling */
+.story-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+.story-content {
+  background: linear-gradient(135deg, #2c1810 0%, #3d2817 100%);
+  border: 2px solid #d4a574;
+  border-radius: 12px;
+  padding: 2rem;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.story-narrative {
+  color: #f4e4d4;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+  font-family: 'Georgia', serif;
+}
+
+.character-message {
+  display: flex;
+  align-items: flex-start;
+  margin: 1.5rem 0;
+  animation: slideInLeft 0.5s ease;
+}
+
+.character-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 3px solid #d4a574;
+  margin-right: 1rem;
+}
+
+.message-bubble {
+  background: rgba(212, 165, 116, 0.1);
+  border: 1px solid #d4a574;
+  border-radius: 12px;
+  padding: 1rem;
+  flex: 1;
+  position: relative;
+}
+
+.message-bubble::before {
+  content: '';
+  position: absolute;
+  left: -10px;
+  top: 20px;
+  border: 10px solid transparent;
+  border-right-color: #d4a574;
+}
+
+.choice-prompt {
+  color: #d4a574;
+  font-weight: bold;
+  margin: 1.5rem 0 1rem;
+}
+
+.choice-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.choice-button {
+  background: linear-gradient(135deg, rgba(212, 165, 116, 0.2), rgba(212, 165, 116, 0.1));
+  border: 2px solid #d4a574;
+  color: #f4e4d4;
+  padding: 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+}
+
+.choice-button:hover {
+  background: rgba(212, 165, 116, 0.3);
+  transform: translateX(5px);
+}
+
+.choice-button strong {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.choice-button small {
+  opacity: 0.8;
+  font-style: italic;
+}
+
+/* Character Chat Interface */
+.character-chat {
+  background: #f7f3ed;
+  border: 2px solid #d4a574;
+  border-radius: 8px;
+  height: 300px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.chat-header {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  border-bottom: 2px solid #d4a574;
+  background: linear-gradient(135deg, #3d2817 0%, #4a3429 100%);
+  color: #f4f1e8;
+  font-weight: 500;
+}
+
+.chat-header span {
+  color: #f4f1e8;
+}
+
+.chat-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  margin-right: 0.5rem;
+  border: 2px solid #d4a574;
+}
+
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-left: auto;
+}
+
+.status-indicator.online {
+  background: #4ade80;
+  box-shadow: 0 0 8px #4ade80;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: #ffffff;
+}
+
+.message {
+  max-width: 80%;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  animation: fadeInUp 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.message.character {
+  background: #f7e7d3;
+  border: 1px solid #d4a574;
+  border-left: 4px solid #d4a574;
+  align-self: flex-start;
+  color: #2c1810;
+}
+
+.message.character p {
+  color: #2c1810;
+  margin: 0;
+}
+
+.message.user {
+  background: #e3f2fd;
+  border: 1px solid #64b5f6;
+  border-right: 4px solid #2196f3;
+  align-self: flex-end;
+  color: #1565c0;
+}
+
+.message.user p {
+  color: #1565c0;
+  margin: 0;
+}
+
+.typing-dots {
+  animation: pulse 1.5s infinite;
+  color: #2c1810;
+}
+
+.chat-input-container {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-top: 2px solid #d4a574;
+  background: #f7f3ed;
+}
+
+.quick-action {
+  flex: 1;
+  padding: 0.6rem 0.5rem;
+  background: #ffffff;
+  border: 2px solid #d4a574;
+  color: #3d2817;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  font-size: 0.85rem;
+}
+
+.quick-action:hover {
+  background: #d4a574;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.story-text {
+  background: rgba(0,0,0,0.2);
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  border-left: 3px solid #d4a574;
+}
+
+.challenge-text {
+  background: rgba(212, 165, 116, 0.1);
+  padding: 1rem;
+  border-radius: 4px;
+}
+
+.quick-action:hover {
+  background: rgba(212, 165, 116, 0.2);
+}
+/* --- Integrated Narrative-Code Design --- */
+.game-area {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 1rem;
+}
+
+.narrative-strip {
+  background: linear-gradient(135deg, #2c1810 0%, #3d2817 100%);
+  padding: 1.5rem;
+  border: 2px solid #d4a574;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 1rem;
+}
+
+.reference-panel {
+  background: rgba(212, 165, 116, 0.05);
+  padding: 1rem;
+}
+.reference-panel .data-card,
+.reference-panel .concept-reference,
+.reference-panel .investigation-log {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid #d4a574;
+  border-radius: 8px;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.reference-panel h3 {
+  font-size: 0.9rem;
+  margin: 0 0 0.5rem 0;
+  color: #d4a574;
+}
+.reference-panel p,
+.reference-panel li {
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.code-panel {
+  background: white;
+  border: 3px solid #d4a574;
+  box-shadow: 0 0 20px rgba(212, 165, 116, 0.3);
+}
+
+.excavation-layers {
+  margin-top: 1.5rem;
+}
+.layer {
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  border: 2px solid #d4a574;
+  background: #f7f3ed;
+  box-shadow: 0 2px 8px rgba(212, 165, 116, 0.08);
+}
+.layer-header {
+  font-weight: bold;
+  padding: 0.75rem 1rem;
+  background: #e5d3b8;
+  border-bottom: 1px solid #d4a574;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.layer.completed {
+  opacity: 0.7;
+}
+.layer.active {
+  border-color: #a87c4f;
+  background: #fffbe9;
+}
+.layer.locked {
+  opacity: 0.4;
+  pointer-events: none;
+}
+.discovery {
+  color: #4e9a51;
+  font-size: 0.9rem;
+}
+.instruction {
+  color: #a87c4f;
+  font-size: 0.9rem;
+}
+.hint {
+  color: #d4a574;
+  font-size: 0.9rem;
+}
+.rodriguez-reaction {
+  margin-top: 0.5rem;
+  background: #f7e7d3;
+  border-left: 4px solid #d4a574;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+}
+.character-inline {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+.character-inline img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  margin-right: 0.75rem;
+}
+.character-inline p {
+  margin: 0;
+  font-style: italic;
+  color: #3d2817;
+}
+
+/* Discovery items styling */
+.discovery-item {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Narrative strip styling */
+.story-progress {
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: #f4f1e8;
+}
+
+.current-objective {
+  color: #d4a574;
+  font-weight: 600;
+}
+
+/* Data card code styling */
+.data-card code {
+  display: block;
+  background: rgba(0,0,0,0.5);
+  padding: 0.5rem;
+  border-radius: 4px;
+  margin-top: 0.5rem;
+  color: #f4f1e8;
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.85rem;
+}
+
+/* Concept reference details styling */
+.concept-reference summary {
+  cursor: pointer;
+  padding: 0.5rem;
+  background: rgba(212, 165, 116, 0.1);
+  border-radius: 4px;
+  user-select: none;
+}
+
+.concept-reference summary:hover {
+  background: rgba(212, 165, 116, 0.2);
+}
+
+.concept-reference[open] summary {
+  margin-bottom: 0.5rem;
+}
+
+.concept-content ul {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 0 0;
+}
+
+.concept-content li {
+  padding: 0.25rem 0;
+  border-left: 2px solid transparent;
+  padding-left: 0.5rem;
+}
+
+.concept-content li:hover {
+  border-left-color: #d4a574;
+  background: rgba(212, 165, 116, 0.05);
+}
+
+.concept-content code {
+  background: rgba(0,0,0,0.3);
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+  font-family: 'Roboto Mono', monospace;
+}

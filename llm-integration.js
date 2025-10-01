@@ -30,6 +30,7 @@ class LLMIntegration {
     // Only run browser-dependent initialization if in browser environment
     if (this.isBrowserEnvironment()) {
       this.apiKeys = this.loadApiKeys();
+      this.loadModelPreferences(); // Restore saved model and provider
       this.setupEventListeners();
 
       // Show the footer by default (remove hidden class)
@@ -58,6 +59,9 @@ class LLMIntegration {
     // if (footer) footer.classList.add('hidden')
 
     this.setupEventListeners();
+
+    // Restore provider and model selection UI
+    this.restoreUIFromPreferences();
 
     // Check initial toggle state and initialize if enabled
     const toggle = document.getElementById('llm-enabled');
@@ -89,6 +93,7 @@ class LLMIntegration {
         this.updateQueryButtonStates();
         this.updateHintSystem();
         this.hideModelSelection();
+        this.saveModelPreferences(); // Save model selection
       }
     });
 
@@ -105,6 +110,7 @@ class LLMIntegration {
         this.provider = e.target.value;
         this.updateProviderUI();
         this.loadModels();
+        this.saveModelPreferences(); // Save provider selection
       });
     }
   }
@@ -131,6 +137,56 @@ class LLMIntegration {
       );
     } catch (error) {
       console.error('Failed to save API keys:', error);
+    }
+  }
+
+  loadModelPreferences() {
+    if (!this.isBrowserEnvironment()) return;
+    
+    try {
+      const prefs = localStorage.getItem('aicodepedagogy_model_prefs');
+      if (prefs) {
+        const { provider, model } = JSON.parse(prefs);
+        if (provider) this.provider = provider;
+        if (model) this.selectedModel = model;
+      }
+    } catch (error) {
+      console.error('Failed to load model preferences:', error);
+    }
+  }
+
+  saveModelPreferences() {
+    if (!this.isBrowserEnvironment()) return;
+    
+    try {
+      localStorage.setItem(
+        'aicodepedagogy_model_prefs',
+        JSON.stringify({
+          provider: this.provider,
+          model: this.selectedModel
+        })
+      );
+    } catch (error) {
+      console.error('Failed to save model preferences:', error);
+    }
+  }
+
+  restoreUIFromPreferences() {
+    if (!this.isBrowserEnvironment()) return;
+    
+    // Restore provider dropdown
+    const providerSelect = document.getElementById('provider-select');
+    if (providerSelect && this.provider) {
+      providerSelect.value = this.provider;
+      this.updateProviderUI();
+    }
+
+    // Restore model dropdown if we have a saved model
+    const modelSelect = document.getElementById('model-select');
+    if (modelSelect && this.selectedModel) {
+      // Set the value (it will be validated when models load)
+      modelSelect.value = this.selectedModel;
+      this.updateModelInfo();
     }
   }
 
@@ -196,18 +252,18 @@ class LLMIntegration {
     if (!this.isBrowserEnvironment()) return;
     
     const selection = document.getElementById('model-selection');
-    const info = document.getElementById('model-info');
-    selection.style.display = 'block';
-    info.style.display = 'none';
+    const info = document.getElementById('llm-model-info');
+    if (selection) selection.style.display = 'block';
+    if (info) info.style.display = 'none';
   }
 
   hideModelSelection() {
     if (!this.isBrowserEnvironment()) return;
     
     const selection = document.getElementById('model-selection');
-    const info = document.getElementById('model-info');
-    selection.style.display = 'none';
-    info.style.display = 'block';
+    const info = document.getElementById('llm-model-info');
+    if (selection) selection.style.display = 'none';
+    if (info) info.style.display = 'block';
   }
 
   updateModelInfo() {

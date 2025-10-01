@@ -239,7 +239,7 @@ async function initializeGame () {
 
     // Initialize LLM integration
     console.log('Initializing LLM integration...')
-    ollamaLLM = new LLMIntegration()
+    ollamaLLM = new EnhancedLLMIntegration()
     ollamaLLM.init()
     console.log('LLM integration initialized')
   } catch (error) {
@@ -278,20 +278,32 @@ function loadStage (stageId) {
   if (gameContent && window.gameInitialized) {
     saveGameState()
   }
+  
+  // Update narrative strip (top of new layout)
+  updateNarrativeStrip(
+    stage.narrativeIntro || stage.story.substring(0, 100) + "...",
+    stage.challenge
+  );
+  
+  // Update data card in reference panel
+  updateDataCard(stage.data);
+  
   // Update UI elements with stage content (convert \n to <br> for proper line breaks)
-  document.getElementById('story-content').innerHTML = stage.story.replace(
-    /\n/g,
-    '<br>'
-  )
-  document.getElementById(
-    'challenge-content'
-  ).innerHTML = `<strong>Challenge:</strong> ${stage.challenge.replace(
-    /\n/g,
-    '<br>'
-  )}`
-  document.getElementById(
-    'data-content'
-  ).innerHTML = `<strong>Data:</strong><br>${stage.data.replace(/\n/g, '<br>')}`
+  // Keep backward compatibility with old story panel if it exists
+  const storyContent = document.getElementById('story-content');
+  if (storyContent) {
+    storyContent.innerHTML = stage.story.replace(/\n/g, '<br>');
+  }
+  
+  const challengeContent = document.getElementById('challenge-content');
+  if (challengeContent) {
+    challengeContent.innerHTML = `<strong>Challenge:</strong> ${stage.challenge.replace(/\n/g, '<br>')}`;
+  }
+  
+  const dataContent = document.getElementById('data-content');
+  if (dataContent) {
+    dataContent.innerHTML = `<strong>Data:</strong><br>${stage.data.replace(/\n/g, '<br>')}`;
+  }
 
   // Update progress bar
   const progressPercent = (stageId / gameContent.gameInfo.totalStages) * 100
@@ -1120,7 +1132,16 @@ async function runCellCode (code, expectedOutput, cellIndex, totalCells) {
             cellStatus.textContent = 'Completed'
             cellStatus.className = 'cell-status completed'
             outputArea.classList.remove('error')
-            outputArea.classList.add('success') // Check if all cells are completed
+            outputArea.classList.add('success')
+            
+            // Add inline narrative response
+            const narrativeMessage = getNarrativeResponse(currentStage, cellIndex, outputText);
+            showInlineNarrative(cellIndex, outputText, narrativeMessage);
+            
+            // Unlock next excavation layer if using that UI
+            unlockNextLayer(cellIndex);
+            
+            // Check if all cells are completed
             checkAllCellsCompleted(totalCells)
 
             // Update visual indicators
@@ -2495,3 +2516,528 @@ function setupOllamaHelpModal () {
 let ollamaLLM = null
 
 // LLMIntegration is now exported from llm-integration.js
+
+// Add to script.js
+class PlayerStoryTracker {
+  constructor() {
+    this.actions = [];
+    this.choices = [];
+    this.performance = {};
+    this.characterRelationship = 0; // Dr. Rodriguez trust level
+    this.narrativePath = 'neutral';
+  }
+  
+  trackCodeExecution(stageId, attempts, timeSpent, hintsUsed, errors) {
+    this.performance[stageId] = {
+      attempts,
+      timeSpent,
+      hintsUsed,
+      errors,
+      firstTrySuccess: attempts === 1,
+      struggledConcepts: this.identifyStruggles(errors)
+    };
+    
+    // Record specific actions for narrative callbacks
+    if (attempts === 1 && hintsUsed === 0) {
+      this.actions.push(`solved_stage_${stageId}_perfectly`);
+    } else if (hintsUsed > 3) {
+      this.actions.push(`needed_extensive_help_stage_${stageId}`);
+    }
+  }
+  
+  identifyStruggles(errors) {
+    // Analyze error patterns
+    const struggles = [];
+    if (errors.some(e => e.includes('IndentationError'))) {
+      struggles.push('indentation');
+    }
+    if (errors.some(e => e.includes('str'))) {
+      struggles.push('string conversion');
+    }
+    return struggles;
+  }
+  
+  getPersonalizedNarrative(template, stageId) {
+    const perf = this.performance[stageId];
+    return template
+      .replace('{{playerAction}}', this.describePlayerApproach(perf))
+      .replace('{{struggledConcept}}', perf.struggledConcepts.join(' and ') || 'the challenge')
+      .replace('{{timeReference}}', this.getTimeReference(perf.timeSpent));
+  }
+  
+  describePlayerApproach(performance) {
+    if (performance.firstTrySuccess) {
+      return "immediately identified the key pattern";
+    } else if (performance.hintsUsed > 2) {
+      return "carefully worked through the hints";
+    } else {
+      return "methodically tested different approaches";
+    }
+  }
+}
+
+let playerTracker = new PlayerStoryTracker();
+
+// Modify LLMIntegration class
+class EnhancedLLMIntegration extends LLMIntegration {
+  async queryCharacterHint(code, error, stage) {
+    const characterPersonality = `You are Dr. Elena Rodriguez, a digital archaeologist. You're brilliant but approachable, 
+    excited about discoveries, and genuinely care about your assistant's learning. You've been studying these fragments 
+    for years. Speak in first person, be encouraging but not condescending. Reference the current mystery naturally.`;
+    
+    const storyContext = `Current investigation: ${stage.story}
+    Player's relationship level: ${playerTracker.characterRelationship}
+    Recent choices: ${JSON.stringify(playerTracker.choices.slice(-2))}
+    Current narrative path: ${playerTracker.narrativePath}`;
+    
+    const prompt = `${characterPersonality}
+    
+    ${storyContext}
+    
+    The player is stuck on: ${stage.challenge}
+    Their code: ${code}
+    ${error ? `Error message: ${error}` : ''}
+    
+    As Dr. Rodriguez, provide a hint that:
+    1. Stays in character
+    2. References the archaeological mystery
+    3. Provides genuine help without giving away the solution
+    4. Shows personality (excitement, concern, humor as appropriate)
+    5. If relevant, mention how this connects to the larger mystery
+    
+    Keep response under 100 words. Be conversational.`;
+    
+    const response = await this.query(prompt);
+    
+    // Track interaction for relationship building
+    playerTracker.characterRelationship += 0.1;
+    
+    return response;
+  }
+  
+  updateHintSystem() {
+    const hintsContainer = document.getElementById('hints-container');
+    hintsContainer.innerHTML = '';
+    
+    // Create character chat interface
+    const chatInterface = document.createElement('div');
+    chatInterface.className = 'character-chat';
+    chatInterface.innerHTML = `
+      <div class="chat-header">
+        <img src="rodriguez-avatar.png" alt="Dr. Rodriguez" class="chat-avatar">
+        <span>Chat with Dr. Rodriguez</span>
+        <span class="status-indicator online"></span>
+      </div>
+      <div class="chat-messages" id="chat-messages">
+        <div class="message character">
+          <p>Need help with the ${gameContent.stages[currentStage - 1].title.toLowerCase()}? 
+          I'm here to guide you through this mystery!</p>
+        </div>
+      </div>
+      <div class="chat-input-container">
+        <button id="quick-hint-btn" class="quick-action">🔍 Quick Hint</button>
+        <button id="explain-error-btn" class="quick-action">❌ Explain Error</button>
+        <button id="story-context-btn" class="quick-action">📖 Story Context</button>
+      </div>
+    `;
+    
+    hintsContainer.appendChild(chatInterface);
+    
+    // Wire up buttons
+    document.getElementById('quick-hint-btn').addEventListener('click', async () => {
+      await this.requestCharacterHint('hint');
+    });
+    
+    document.getElementById('explain-error-btn').addEventListener('click', async () => {
+      await this.requestCharacterHint('error');
+    });
+    
+    document.getElementById('story-context-btn').addEventListener('click', async () => {
+      await this.requestCharacterHint('story');
+    });
+  }
+  
+  getRequestMessage(type) {
+    const messages = {
+      'hint': 'Can you give me a hint?',
+      'error': 'Can you help me understand this error?',
+      'story': 'Can you explain the story context?'
+    };
+    return messages[type] || 'Can you help me?';
+  }
+  
+  getCurrentCode() {
+    // Get code from the active editor
+    if (editor) {
+      return editor.getValue();
+    } else if (cellEditors && cellEditors.length > 0) {
+      // For multi-cell stages, return the last edited cell
+      return cellEditors[cellEditors.length - 1]?.getValue() || '';
+    }
+    return '';
+  }
+  
+  getLastError() {
+    // Look for error in the most recent output
+    const outputs = document.querySelectorAll('.cell-output, .output');
+    for (let i = outputs.length - 1; i >= 0; i--) {
+      const text = outputs[i].textContent;
+      if (text.includes('Error:') || text.includes('Traceback')) {
+        return text;
+      }
+    }
+    return '';
+  }
+  
+  async requestCharacterHint(type) {
+    const messagesContainer = document.getElementById('chat-messages');
+    
+    // Add user message
+    const userMsg = document.createElement('div');
+    userMsg.className = 'message user';
+    userMsg.innerHTML = `<p>${this.getRequestMessage(type)}</p>`;
+    messagesContainer.appendChild(userMsg);
+    
+    // Add typing indicator
+    const typingIndicator = document.createElement('div');
+    typingIndicator.className = 'message character typing';
+    typingIndicator.innerHTML = '<div class="typing-dots">...</div>';
+    messagesContainer.appendChild(typingIndicator);
+    
+    // Get response
+    const response = await this.queryCharacterHint(
+      this.getCurrentCode(),
+      this.getLastError(),
+      gameContent.stages[currentStage - 1]
+    );
+    
+    // Remove typing indicator and add response
+    typingIndicator.remove();
+    const charMsg = document.createElement('div');
+    charMsg.className = 'message character';
+    charMsg.innerHTML = `<p>${response}</p>`;
+    messagesContainer.appendChild(charMsg);
+    
+    // Scroll to bottom
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  }
+}
+
+// Add to script.js
+function showStorySegment(stage) {
+  const segment = stage.completionSegment;
+  if (!segment) return;
+  
+  // Create modal-style story overlay
+  const storyModal = document.createElement('div');
+  storyModal.className = 'story-modal';
+  storyModal.innerHTML = `
+    <div class="story-content">
+      <div class="story-narrative">
+        ${playerTracker.getPersonalizedNarrative(segment.narrative, stage.id)}
+      </div>
+      
+      ${segment.characterResponse ? `
+        <div class="character-message">
+          <img src="rodriguez-avatar.png" alt="Dr. Rodriguez" class="character-avatar">
+          <div class="message-bubble">
+            ${getCharacterResponse(segment.characterResponse, stage.id)}
+          </div>
+        </div>
+      ` : ''}
+      
+      ${segment.choice ? `
+        <div class="story-choice">
+          <p class="choice-prompt">${segment.choice.prompt}</p>
+          <div class="choice-options">
+            ${segment.choice.options.map(opt => `
+              <button class="choice-button" data-choice="${opt.id}" data-consequence="${opt.consequence}">
+                <strong>${opt.text}</strong>
+                <small>${opt.preview}</small>
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      ` : `
+        <button class="continue-button">Continue →</button>
+      `}
+    </div>
+  `;
+  
+  document.body.appendChild(storyModal);
+  
+  // Handle choices
+  storyModal.querySelectorAll('.choice-button').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const choice = e.currentTarget.dataset.choice;
+      const consequence = e.currentTarget.dataset.consequence;
+      
+      playerTracker.choices.push({
+        stageId: stage.id,
+        choice: choice,
+        consequence: consequence
+      });
+      
+      playerTracker.narrativePath = consequence;
+      
+      // Modify next stage based on choice
+      applyNarrativeModifiers(consequence);
+      
+      // Close modal and proceed
+      storyModal.remove();
+      proceedToNextStage();
+    });
+  });
+}
+
+function getCharacterResponse(responses, stageId) {
+  const perf = playerTracker.performance[stageId];
+  if (perf.firstTrySuccess && perf.hintsUsed === 0) {
+    return playerTracker.getPersonalizedNarrative(responses.success, stageId);
+  } else {
+    return playerTracker.getPersonalizedNarrative(responses.struggle, stageId);
+  }
+}
+
+function determineEnding() {
+  const endings = gameContent.endings;
+  const playerActions = playerTracker.actions;
+  const playerChoices = playerTracker.choices;
+  
+  // Score each ending based on requirements met
+  const endingScores = {};
+  
+  for (const [endingId, ending] of Object.entries(endings)) {
+    let score = 0;
+    let requirementsMet = 0;
+    
+    for (const requirement of ending.requirements) {
+      if (checkRequirement(requirement, playerActions, playerChoices)) {
+        requirementsMet++;
+        score += 10;
+      }
+    }
+    
+    // Bonus points for narrative consistency
+    if (ending.narrativePath === playerTracker.narrativePath) {
+      score += 5;
+    }
+    
+    endingScores[endingId] = {
+      score,
+      percentComplete: (requirementsMet / ending.requirements.length) * 100
+    };
+  }
+  
+  // Select best ending
+  const bestEnding = Object.entries(endingScores)
+    .sort((a, b) => b[1].score - a[1].score)[0];
+  
+  return endings[bestEnding[0]];
+}
+
+function showFinalRevelation() {
+  const ending = determineEnding();
+  const revelation = generateFinalRevelation(ending);
+  
+  // Create elaborate ending sequence
+  const endingModal = document.createElement('div');
+  endingModal.className = 'ending-modal';
+  endingModal.innerHTML = `
+    <div class="ending-content">
+      <h2>🏛️ The Truth Revealed</h2>
+      
+      <div class="revelation-text">
+        ${revelation.narrative}
+      </div>
+      
+      <div class="character-final">
+        <img src="rodriguez-avatar.svg" alt="Dr. Rodriguez" onerror="this.style.display='none'; this.nextElementSibling.innerHTML='<span style=&quot;font-size:48px&quot;>👨‍🔬</span>' + this.nextElementSibling.innerHTML">
+        <div class="final-message">
+          <p>"${revelation.characterMessage}"</p>
+        </div>
+      </div>
+      
+      <div class="ending-stats">
+        <h3>Your Archaeological Journey:</h3>
+        <ul>
+          <li>Fragments Decoded: ${playerTracker.getDecodedCount()}</li>
+          <li>Mysteries Solved: ${playerTracker.choices.length}</li>
+          <li>Relationship with Dr. Rodriguez: ${getRelationshipLevel()}</li>
+          <li>Path Taken: ${formatPath(playerTracker.narrativePath)}</li>
+        </ul>
+      </div>
+      
+      <div class="ending-badge">
+        <img src="badges/${ending.badge}.png" alt="${ending.title}">
+        <h3>${ending.title}</h3>
+        <p>${ending.description}</p>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(endingModal);
+}
+
+// ========================================
+// Integrated Narrative-Code Design Functions
+// ========================================
+
+// Show inline narrative reaction from Dr. Rodriguez after code execution
+function showInlineNarrative(cellIndex, output, narrativeMessage) {
+  const outputArea = document.getElementById(`output-${cellIndex}`);
+  if (!outputArea) return;
+  
+  // Create Rodriguez reaction element
+  const narrative = document.createElement('div');
+  narrative.className = 'rodriguez-reaction';
+  narrative.innerHTML = `
+    <div class="character-inline">
+      <span style="font-size: 32px; margin-right: 0.75rem;">👨‍🔬</span>
+      <p>"${narrativeMessage}"</p>
+    </div>
+  `;
+  
+  // Insert right below the output
+  outputArea.appendChild(narrative);
+  
+  // Add to discoveries log
+  updateDiscoveriesLog(narrativeMessage);
+}
+
+// Update the discoveries log in the reference panel
+function updateDiscoveriesLog(discovery) {
+  const discoveriesContainer = document.getElementById('live-discoveries');
+  if (!discoveriesContainer) return;
+  
+  const discoveryItem = document.createElement('div');
+  discoveryItem.className = 'discovery-item';
+  discoveryItem.innerHTML = `
+    <div style="padding: 0.5rem; border-left: 2px solid #d4a574; margin-bottom: 0.5rem; background: rgba(212, 165, 116, 0.1);">
+      ✓ ${discovery}
+    </div>
+  `;
+  
+  discoveriesContainer.appendChild(discoveryItem);
+}
+
+// Update the data card in the reference panel with stage-specific data
+function updateDataCard(stageData) {
+  const dataCard = document.querySelector('.data-card');
+  if (!dataCard) return;
+  
+  // Extract data snippet from stage data (first code block or first 100 chars)
+  const codeMatch = stageData.match(/```[\s\S]*?```/) || stageData.match(/\[.*?\]/);
+  const dataSnippet = codeMatch ? codeMatch[0].replace(/```/g, '') : stageData.substring(0, 100);
+  
+  dataCard.innerHTML = `
+    <h3>📊 Fragment Data</h3>
+    <code>${dataSnippet}</code>
+    <p style="margin-top: 0.5rem; font-size: 0.8rem;">Explore this data in your code</p>
+  `;
+}
+
+
+// Update the narrative strip with current story progress
+function updateNarrativeStrip(storyText, objectiveText) {
+  const storyProgress = document.getElementById('story-progress');
+  const currentObjective = document.getElementById('current-objective');
+  
+  if (storyProgress && storyText) {
+    storyProgress.innerHTML = `📜 Dr. Rodriguez: "${storyText}"`;
+  }
+  
+  if (currentObjective && objectiveText) {
+    currentObjective.innerHTML = `🎯 ${objectiveText}`;
+  }
+}
+
+// Transform cells into excavation layers for multi-cell stages
+function createExcavationLayers(cells) {
+  const container = document.getElementById('cells-container');
+  if (!container) return;
+  
+  container.innerHTML = '';
+  const layersDiv = document.createElement('div');
+  layersDiv.className = 'excavation-layers';
+  
+  cells.forEach((cell, index) => {
+    const layer = document.createElement('div');
+    layer.className = index === 0 ? 'layer active' : 'layer locked';
+    layer.id = `layer-${index}`;
+    
+    const layerHeader = document.createElement('div');
+    layerHeader.className = 'layer-header';
+    
+    const headerTitle = cell.layerTitle || `Layer ${index + 1}: ${cell.title}`;
+    const headerIcon = index === 0 ? '⚒️' : '🔒';
+    
+    layerHeader.innerHTML = `
+      ${headerIcon} ${headerTitle}
+      <span class="instruction">${cell.layerHint || 'Complete the previous layer to unlock'}</span>
+    `;
+    
+    layer.appendChild(layerHeader);
+    
+    // Add cell content area (will be populated by existing cell creation logic)
+    const cellContent = document.createElement('div');
+    cellContent.className = 'layer-content';
+    cellContent.id = `layer-content-${index}`;
+    layer.appendChild(cellContent);
+    
+    layersDiv.appendChild(layer);
+  });
+  
+  container.appendChild(layersDiv);
+}
+
+// Unlock next excavation layer when current is completed
+function unlockNextLayer(currentIndex) {
+  const currentLayer = document.getElementById(`layer-${currentIndex}`);
+  const nextLayer = document.getElementById(`layer-${currentIndex + 1}`);
+  
+  if (currentLayer) {
+    currentLayer.classList.remove('active');
+    currentLayer.classList.add('completed');
+    
+    const header = currentLayer.querySelector('.layer-header');
+    if (header) {
+      const discovery = header.querySelector('.instruction');
+      if (discovery) {
+        discovery.className = 'discovery';
+        discovery.textContent = '✓ Layer completed!';
+      }
+    }
+  }
+  
+  if (nextLayer) {
+    nextLayer.classList.remove('locked');
+    nextLayer.classList.add('active');
+    
+    const header = nextLayer.querySelector('.layer-header');
+    if (header) {
+      header.innerHTML = header.innerHTML.replace('🔒', '⚒️');
+    }
+  }
+}
+
+// Add narrative responses based on code output
+function getNarrativeResponse(stageId, cellIndex, output) {
+  const narratives = {
+    1: {
+      0: "Yes! {output} fragments... that matches the constellation count!",
+      1: "Excellent! The total is {output} characters. This could be a coordinate!"
+    },
+    2: {
+      0: "Interesting... {output} short fragments. The pattern is emerging!",
+      1: "{output} medium ones... we're getting closer to the truth."
+    }
+    // Add more narratives for other stages
+  };
+  
+  if (narratives[stageId] && narratives[stageId][cellIndex]) {
+    return narratives[stageId][cellIndex].replace('{output}', output);
+  }
+  
+  return "Good work! Keep digging into the data...";
+}

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Narrative Integration - Visual Test</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Additional demo styling */
+    .demo-output {
+      background: #f8f9fa;
+      padding: 1rem;
+      border-radius: 4px;
+      margin: 1rem 0;
+      font-family: 'Courier New', monospace;
+    }
+
+    .demo-controls {
+      margin: 1rem 0;
+      padding: 1rem;
+      background: rgba(212, 165, 116, 0.1);
+      border-radius: 8px;
+    }
+
+    .demo-button {
+      background: #d4a574;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .demo-button:hover {
+      background: #a87c4f;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Integrated Narrative-Code Design</h1>
+      <p class="subtitle">Visual Test & Demonstration</p>
+    </div>
+
+    <div class="game-area">
+      <!-- Narrative Strip at Top -->
+      <div class="narrative-strip">
+        <div class="story-progress" id="story-progress">
+          📜 Dr. Rodriguez: "These fragment lengths hide a pattern... let me show you!"
+        </div>
+        <div class="current-objective" id="current-objective">
+          🎯 Click the buttons below to see the narrative integration in action
+        </div>
+      </div>
+
+      <!-- Workspace with Reference Panel and Code Panel -->
+      <div class="workspace">
+        <!-- Left: Compact Reference Panel -->
+        <div class="reference-panel">
+          <div class="data-card">
+            <h3>📊 Fragment Data</h3>
+            <code>[45, 23, 67, 12, 89, 34, 56, 78, 21, 43]</code>
+            <p>Categories: &lt;30, 30-60, &gt;60 chars</p>
+          </div>
+
+          <details class="concept-reference" open>
+            <summary>🔍 Python References</summary>
+            <div class="concept-content">
+              <ul>
+                <li><code>len(list)</code> — count items</li>
+                <li><code>sum(list)</code> — total value</li>
+                <li><code>[x for x in list if ...]</code> — filter</li>
+                <li><code>max(list)</code> — find maximum</li>
+                <li><code>min(list)</code> — find minimum</li>
+              </ul>
+            </div>
+          </details>
+
+          <div class="investigation-log">
+            <h3>🔎 Your Findings</h3>
+            <div id="live-discoveries">
+              <div class="discovery-item">
+                <div
+                  style="padding: 0.5rem; border-left: 2px solid #d4a574; margin-bottom: 0.5rem; background: rgba(212, 165, 116, 0.1);">
+                  ✓ Starting investigation...
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Primary Code Panel -->
+        <div class="code-panel">
+          <h2>Interactive Demo</h2>
+
+          <div class="demo-controls">
+            <h3 style="margin-top: 0;">Test Narrative Features:</h3>
+            <button class="demo-button" onclick="testNarrative()">Show Dr. Rodriguez Reaction</button>
+            <button class="demo-button" onclick="testDiscovery()">Add Discovery</button>
+            <button class="demo-button" onclick="testUpdate()">Update Narrative Strip</button>
+            <button class="demo-button" onclick="testLayers()">Demo Excavation Layers</button>
+          </div>
+
+          <div class="demo-output" id="demo-output">
+            <div style="color: #4e9a51; font-weight: bold;">Output: 10</div>
+            <div style="color: #666; margin-top: 0.5rem;">Total fragments found: 10</div>
+          </div>
+
+          <div id="reaction-area"></div>
+
+          <div id="layers-demo" style="margin-top: 1.5rem;"></div>
+
+          <div style="margin-top: 2rem; padding: 1rem; background: #e8f5e8; border-radius: 8px;">
+            <h3 style="margin-top: 0; color: #4e9a51;">✓ Layout Features Working:</h3>
+            <ul style="margin-bottom: 0;">
+              <li>Narrative strip at top (story + objective)</li>
+              <li>Two-column workspace (1fr reference, 1.5fr code)</li>
+              <li>Compact, scannable reference panel</li>
+              <li>Prominent code area with 3px border</li>
+              <li>Collapsible Python reference</li>
+              <li>Live discoveries tracking</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let discoveryCount = 1;
+
+    function testNarrative() {
+      const reactionArea = document.getElementById('reaction-area');
+      const reaction = document.createElement('div');
+      reaction.className = 'rodriguez-reaction';
+      reaction.innerHTML = `
+        <div class="character-inline">
+          <span style="font-size: 32px; margin-right: 0.75rem;">👨‍🔬</span>
+          <p>"Excellent! 10 fragments found... this matches the constellation pattern!"</p>
+        </div>
+      `;
+      reactionArea.innerHTML = '';
+      reactionArea.appendChild(reaction);
+    }
+
+    function testDiscovery() {
+      const discoveries = document.getElementById('live-discoveries');
+      const discovery = document.createElement('div');
+      discovery.className = 'discovery-item';
+      discovery.innerHTML = `
+        <div style="padding: 0.5rem; border-left: 2px solid #d4a574; margin-bottom: 0.5rem; background: rgba(212, 165, 116, 0.1);">
+          ✓ Discovery ${discoveryCount++}: Pattern detected in fragment distribution
+        </div>
+      `;
+      discoveries.appendChild(discovery);
+    }
+
+    function testUpdate() {
+      document.getElementById('story-progress').innerHTML =
+        '📜 Dr. Rodriguez: "The data is revealing ancient coordinates... remarkable!"';
+      document.getElementById('current-objective').innerHTML =
+        '🎯 Decode the coordinate system hidden in the fragments';
+    }
+
+    function testLayers() {
+      const layersDemo = document.getElementById('layers-demo');
+      layersDemo.innerHTML = `
+        <h3>Excavation Layers Demo:</h3>
+        <div class="excavation-layers">
+          <div class="layer completed">
+            <div class="layer-header">
+              ✓ Surface Layer: Fragment Count
+              <span class="discovery">Revealed: Total of 10 fragments</span>
+            </div>
+          </div>
+          
+          <div class="layer active">
+            <div class="layer-header">
+              ⚒️ Middle Layer: Character Analysis
+              <span class="instruction">Dig deeper into the data...</span>
+            </div>
+          </div>
+          
+          <div class="layer locked">
+            <div class="layer-header">
+              🔒 Deep Layer: Pattern Recognition
+              <span class="hint">Complete previous layer to unlock</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+  </script>
+</body>
+
+</html>
