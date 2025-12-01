@@ -1,3 +1,43 @@
+/* CSS Custom Properties for consistent theming */
+:root {
+  /* Primary colors */
+  --color-gold-primary: #d4af37;
+  --color-gold-secondary: #c9b037;
+  --color-gold-light: #ffd700;
+  --color-gold-muted: #e6d19a;
+
+  /* Background colors */
+  --color-bg-dark: #2c1810;
+  --color-bg-medium: #4a3429;
+  --color-bg-light: #3d2817;
+
+  /* Text colors */
+  --color-text-light: #f4f1e8;
+  --color-text-dark: #202124;
+  --color-text-muted: #3c4043;
+
+  /* Border colors */
+  --color-border-brown: #8b7355;
+  --color-border-tan: #d4a574;
+
+  /* Status colors */
+  --color-success: #34a853;
+  --color-error: #ea4335;
+  --color-warning: #ffc107;
+  --color-info: #1a73e8;
+
+  /* Spacing scale */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 20px;
+  --spacing-2xl: 30px;
+
+  /* Touch target minimum */
+  --touch-target-min: 44px;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -6,8 +46,8 @@
 
 body {
   font-family: "Roboto", sans-serif;
-  background: linear-gradient(135deg, #2c1810, #4a3429);
-  color: #f4f1e8;
+  background: linear-gradient(135deg, var(--color-bg-dark), var(--color-bg-medium));
+  color: var(--color-text-light);
   min-height: 100vh;
   line-height: 1.6;
 }
@@ -20,22 +60,22 @@ body {
 
 .header {
   text-align: center;
-  margin-bottom: 30px;
-  padding: 20px;
+  margin-bottom: var(--spacing-2xl);
+  padding: var(--spacing-xl);
   background: rgba(0, 0, 0, 0.3);
   border-radius: 15px;
-  border: 2px solid #8b7355;
+  border: 2px solid var(--color-border-brown);
 }
 
 h1 {
-  color: #d4af37;
+  color: var(--color-gold-primary);
   font-size: 2.5em;
   margin-bottom: 10px;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .subtitle {
-  color: #c9b037;
+  color: var(--color-gold-secondary);
   font-style: italic;
   font-size: 1.2em;
 }
@@ -45,14 +85,14 @@ h1 {
   height: 20px;
   background: #3a2c1f;
   border-radius: 10px;
-  margin: 20px 0;
-  border: 1px solid #8b7355;
+  margin: var(--spacing-xl) 0;
+  border: 1px solid var(--color-border-brown);
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #d4af37, #ffd700);
+  background: linear-gradient(90deg, var(--color-gold-primary), var(--color-gold-light));
   transition: width 0.5s ease;
   width: 0%;
 }
@@ -68,8 +108,8 @@ h1 {
 .code-panel {
   background: rgba(0, 0, 0, 0.4);
   border-radius: 10px;
-  padding: 20px;
-  border: 1px solid #8b7355;
+  padding: var(--spacing-xl);
+  border: 1px solid var(--color-border-brown);
 }
 
 .code-panel {
@@ -117,12 +157,12 @@ h1 {
 .cell-header {
   background: #f8f9fa;
   border-bottom: 1px solid #e8eaed;
-  padding: 8px 16px;
+  padding: var(--spacing-sm) var(--spacing-lg);
   font-size: 13px;
-  color: #5f6368;
+  color: var(--color-text-muted); /* Improved contrast: #3c4043 vs old #5f6368 */
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--spacing-md);
   min-height: 40px;
   transition: background-color 0.2s ease;
 }
@@ -342,16 +382,7 @@ h1 {
   display: none;
 }
 
-/* Legacy code editor styling - updated for Colab compatibility */
-.code-editor {
-  margin-bottom: 0;
-  height: auto;
-  min-height: 120px;
-  border-radius: 8px;
-  overflow: hidden;
-  border: 1px solid #dadce0;
-  background: #ffffff;
-}
+/* Legacy code editor styling removed - duplicate of .code-editor above */
 
 /* Collapsible output area (Google Colab style) */
 .output-container {
@@ -388,7 +419,7 @@ h1 {
 .output-label {
   font-size: 13px;
   font-weight: 500;
-  color: #5f6368;
+  color: var(--color-text-muted); /* Improved contrast: #3c4043 vs old #5f6368 */
   flex-grow: 1;
 }
 
@@ -528,18 +559,24 @@ h1 {
 
 .hint-button {
   background: transparent;
-  color: #c9b037;
-  border: 1px solid #8b7355;
+  color: var(--color-gold-secondary);
+  border: 1px solid var(--color-border-brown);
   padding: 5px 15px;
   border-radius: 5px;
   cursor: pointer;
   margin-right: 10px;
   margin-bottom: 10px;
   font-size: 12px;
+  min-height: var(--touch-target-min);
 }
 
 .hint-button:hover {
   background: rgba(255, 255, 255, 0.1);
+}
+
+.hint-button:focus {
+  outline: 2px solid var(--color-gold-primary);
+  outline-offset: 2px;
 }
 
 .hint-text {
@@ -647,18 +684,19 @@ h1 {
 }
 
 .next-button {
-  background: #d4af37;
-  color: #2c1810;
+  background: var(--color-gold-primary);
+  color: var(--color-bg-dark);
   border: none;
   padding: 15px 30px;
   border-radius: 5px;
   font-size: 1.2em;
   font-weight: bold;
   cursor: pointer;
-  margin-top: 20px;
+  margin-top: var(--spacing-xl);
   width: 100%;
   display: none;
   transition: background 0.3s;
+  min-height: var(--touch-target-min);
 }
 
 .next-button.active {
@@ -666,7 +704,12 @@ h1 {
 }
 
 .next-button:hover {
-  background: #ffd700;
+  background: var(--color-gold-light);
+}
+
+.next-button:focus {
+  outline: 2px solid var(--color-gold-primary);
+  outline-offset: 2px;
 }
 
 .celebration {
@@ -1303,18 +1346,24 @@ body {
 }
 
 .refresh-btn {
-  padding: 4px 8px;
+  padding: var(--spacing-xs) var(--spacing-sm);
   background: transparent;
-  border: 1px solid #8b7355;
+  border: 1px solid var(--color-border-brown);
   border-radius: 4px;
-  color: #c9b037;
+  color: var(--color-gold-secondary);
   cursor: pointer;
   font-size: 11px;
   transition: background 0.2s;
+  min-height: var(--touch-target-min);
 }
 
 .refresh-btn:hover {
   background: rgba(255, 255, 255, 0.1);
+}
+
+.refresh-btn:focus {
+  outline: 2px solid var(--color-gold-primary);
+  outline-offset: 2px;
 }
 
 .llm-status {
