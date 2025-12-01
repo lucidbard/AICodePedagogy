@@ -99,7 +99,7 @@ h1 {
 
 .game-area {
   display: grid;
-  grid-template-columns: 1fr 2fr 1fr;
+  grid-template-columns: 1fr;
   gap: 16px;
   margin-bottom: 20px;
 }
