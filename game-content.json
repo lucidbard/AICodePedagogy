@@ -11,6 +11,17 @@
     "personality": "Brilliant, passionate about archaeology, supportive mentor who carries the weight of a family legacy",
     "backstory": "Has been investigating these fragments for 5 years after discovering them in a forgotten server in the Alexandria Library's digital archives. Her grandmother was a member of a secret society called the Keepers of Alexandria, who have protected ancient knowledge for generations."
   },
+  "researchAssistantInfo": {
+    "name": "Jamie Chen",
+    "title": "Graduate Research Assistant",
+    "personality": "Energetic, tech-savvy, occasionally sarcastic but deeply loyal. Provides comic relief while being genuinely helpful.",
+    "backstory": "A second-year PhD student in computational linguistics who joined Dr. Rodriguez's lab after hacking into an ancient Sumerian database 'for fun.' Jamie handles the technical infrastructure and often serves as the voice of practical skepticism.",
+    "voiceExamples": [
+      "Dr. R, the coffee machine is older than some of these manuscripts. Can we please upgrade?",
+      "I ran the analysis three times. Either we found something huge, or I need more sleep.",
+      "Not to be dramatic, but if this pattern holds, we're looking at something that could rewrite history. Also, we're out of Post-its."
+    ]
+  },
   "aiAssistantInfo": {
     "name": "ARIA",
     "fullName": "Archaeological Research Intelligence Assistant",
@@ -40,7 +51,7 @@
     {
       "id": 1,
       "title": "The Mysterious Manuscript",
-      "narrativeIntro": "Dr. Elena Rodriguez has discovered fragments of an ancient manuscript hidden deep within the Alexandria Library's digital archives. The fragments contain cryptic references to a lost civilization\u2014but they're scattered and encoded. She's called you in to help piece together this mystery using computational analysis.",
+      "narrativeIntro": "A video call window opens on your screen. Dr. Elena Rodriguez appears, her office cluttered with ancient texts and glowing monitors. Behind her, a younger researcher—Jamie Chen, her graduate assistant—waves enthusiastically before getting shooed out of frame.",
       "story": "Dr. Elena Rodriguez has discovered fragments of an ancient manuscript in the digital archives of the Alexandria Library. The fragments contain references to a lost civilization, but they're scattered and encoded.\n\nYou've been called in as a digital archaeologist to help piece together this mystery using computational analysis.\n\n<strong>\ud83d\udd0d Python Concepts: Variables and Print Statements</strong>\n\nIn Python, we store information in <em>variables</em>. Think of variables as labeled boxes that hold data:\n\u2022 Text (strings) must be in quotes: <code>name = \"Alexandria\"</code>\n\u2022 Numbers don't need quotes: <code>count = 23</code>\n\u2022 Use <code>print()</code> to display information\n\nPractice using variables and print statements with the manuscript data provided below.",
       "challenge": "Your task: Complete the code to store the fragment count as a variable, then display both pieces of information using print statements.",
       "data": "Manuscript ID: \"MS-ALEX-2847\"\nFragment Count: 23",
@@ -64,7 +75,7 @@
         "When you need to combine text and numbers in print(), what function converts numbers to text?"
       ],
       "completionSegment": {
-        "narrative": "As the fragment count appears on screen, the terminal suddenly flickers. A video call window opens\u2014it's Dr. Rodriguez, and she looks both excited and concerned.\n\n\"{{playerName}}, excellent work cataloging that initial data! But I need to tell you something... These aren't just random fragments. Look at this\u2014\" She shares her screen, showing a pattern analysis. \"23 fragments, all deliberately separated. Someone wanted to hide something important.\"\n\nShe pauses, studying the data you've just processed. \"The manuscript ID you logged... MS-ALEX-2847... that's from the restricted archive section. How did these fragments end up there?\"",
+        "narrative": "As the fragment count appears on screen, the video feed expands. Dr. Rodriguez leans forward, eyes bright with excitement.\n\n\"Excellent work! You've confirmed what I suspected—23 fragments, all deliberately separated.\"\n\nJamie's face appears over her shoulder. \"Wait, 23? That's not random. In ancient numerology—\"\n\n\"Jamie, not now.\" Dr. Rodriguez waves them off, but she's smiling. \"Though... you might be onto something.\"\n\n\"I'm always onto something,\" Jamie mutters, retreating to their workstation. \"Also, the coffee machine is broken again.\"\n\nDr. Rodriguez turns back to you. \"The manuscript ID you logged—MS-ALEX-2847—that's from the restricted archive section. Someone went to great lengths to hide these fragments. The question is: why?\"",
         "characterResponse": {
           "success": "\"Your code was clean and efficient. {{playerAction}}\u2014that's exactly the systematic approach we need for this investigation.\"",
           "struggle": "\"I see you worked through {{struggledConcept}}. Don't worry, even experienced archaeologists struggle with new tools. What matters is you got the data we needed.\""
