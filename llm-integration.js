@@ -37,19 +37,21 @@ class LLMIntegration {
     this.agencyLevel = 1; // 1=hints only, 2=suggestions, 3=can edit code
 
     // Set Ollama URL based on current host
-    // If served from a remote host, use that host for Ollama
-    // For WSL development, use Windows host IP (172.29.16.1)
-    // Otherwise default to localhost
+    // Ollama URL detection:
+    // - Always try localhost first (user's local Ollama)
+    // - Browsers allow HTTPS pages to fetch from http://localhost (special case)
+    // - For WSL, fall back to Windows host IP
     if (this.isBrowserEnvironment()) {
       const currentHost = window.location.hostname;
-      const currentProtocol = window.location.protocol;
 
-      // If not on localhost, use the current host for Ollama
-      if (currentHost !== 'localhost' && currentHost !== '127.0.0.1') {
-        this.ollamaBaseUrl = `${currentProtocol}//${currentHost}:11434`;
-      } else {
-        // For WSL: try Windows host IP first (Ollama runs on Windows)
+      // Check if we're in WSL (accessing from localhost but need Windows host)
+      if (currentHost === 'localhost' || currentHost === '127.0.0.1') {
+        // Try Windows host IP for WSL compatibility
         this.ollamaBaseUrl = 'http://172.29.16.1:11434';
+      } else {
+        // Remote site (jtm.io, github.io, etc.) - user needs local Ollama
+        // Browsers allow http://localhost from HTTPS pages as special case
+        this.ollamaBaseUrl = 'http://localhost:11434';
       }
     } else {
       // Node.js: use Windows host IP for WSL compatibility
