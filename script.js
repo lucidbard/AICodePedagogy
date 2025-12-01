@@ -10,6 +10,14 @@ let skulptEnvironment = null // Persistent Skulpt environment for multi-cell sta
 let successfulCellExecutions = {} // Track which cells have executed successfully by stage
 let savedCellContent = {} // Track cell content across all stages
 
+// Toggle reference panel collapse
+function toggleReferencePanel() {
+  const panel = document.getElementById('reference-panel');
+  if (panel) {
+    panel.classList.toggle('collapsed');
+  }
+}
+
 // Offline storage utility functions
 function saveGameState () {
   try {

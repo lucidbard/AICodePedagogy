@@ -49,36 +49,9 @@
         </div>
       </div>
 
-      <!-- Workspace with Reference Panel and Code Panel -->
+      <!-- Workspace: Code (left) | Chat + Reference (right) -->
       <div class="workspace">
-        <!-- Left: Compact Reference Panel -->
-        <div class="reference-panel">
-          <div class="data-card">
-            <h3>📊 Fragment Data</h3>
-            <code>[45, 23, 67, 12, 89, 34, 56, 78, 21, 43]</code>
-            <p>Categories: &lt;30, 30-60, &gt;60 chars</p>
-          </div>
-
-          <details class="concept-reference">
-            <summary>🔍 Python References</summary>
-            <div class="concept-content">
-              <ul>
-                <li><code>len(list)</code> — count items</li>
-                <li><code>sum(list)</code> — total value</li>
-                <li><code>[x for x in list if ...]</code> — filter</li>
-              </ul>
-            </div>
-          </details>
-
-          <div class="investigation-log">
-            <h3>🔎 Your Findings</h3>
-            <div id="live-discoveries">
-              <!-- Updates as they complete tasks -->
-            </div>
-          </div>
-        </div>
-
-        <!-- Right: Primary Code Panel -->
+        <!-- Left: Primary Code Panel (50%) -->
         <div class="code-panel">
           <h2>Your Code</h2>
           <div id="cells-container">
@@ -108,6 +81,39 @@
         <!-- Right: Dr. Rodriguez Chat Panel -->
         <div class="chat-panel" id="chat-panel">
           <!-- Chat interface will be dynamically populated -->
+        </div>
+
+        <!-- Bottom Right: Collapsible Reference Panel -->
+        <div class="reference-panel" id="reference-panel">
+          <div class="reference-panel-header" onclick="toggleReferencePanel()">
+            <h3>📚 Reference & Data</h3>
+            <button class="reference-panel-toggle">▼</button>
+          </div>
+          <div class="reference-panel-content">
+            <div class="data-card">
+              <h3>📊 Fragment Data</h3>
+              <code>[45, 23, 67, 12, 89, 34, 56, 78, 21, 43]</code>
+              <p>Categories: &lt;30, 30-60, &gt;60 chars</p>
+            </div>
+
+            <details class="concept-reference">
+              <summary>🔍 Python References</summary>
+              <div class="concept-content">
+                <ul>
+                  <li><code>len(list)</code> — count items</li>
+                  <li><code>sum(list)</code> — total value</li>
+                  <li><code>[x for x in list if ...]</code> — filter</li>
+                </ul>
+              </div>
+            </details>
+
+            <div class="investigation-log">
+              <h3>🔎 Your Findings</h3>
+              <div id="live-discoveries">
+                <!-- Updates as they complete tasks -->
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
