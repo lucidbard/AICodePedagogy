@@ -3056,6 +3056,283 @@ function getNarrativeResponse(stageId, cellIndex, output) {
   if (narratives[stageId] && narratives[stageId][cellIndex]) {
     return narratives[stageId][cellIndex].replace('{output}', output);
   }
-  
+
   return "Good work! Keep digging into the data...";
 }
+
+// ============================================
+// GAME API - Programmatic control for testing
+// ============================================
+
+/**
+ * Game API for automated testing and LLM agents
+ * Access via window.gameAPI in browser console or Playwright
+ */
+window.gameAPI = {
+  /**
+   * Get current game state as JSON
+   */
+  getState: function() {
+    const stage = gameContent?.stages?.find(s => s.id === currentStage);
+    return {
+      currentStage: currentStage,
+      totalStages: gameContent?.gameInfo?.totalStages || 0,
+      stageTitle: stage?.title || '',
+      stageType: stage?.type || 'single-cell',
+      challenge: stage?.challenge || '',
+      data: stage?.data || '',
+      hints: stage?.hints || [],
+      completedStages: completedStages,
+      isStageComplete: completedStages.includes(currentStage),
+      llmEnabled: window.llmIntegration?.isEnabled || false,
+      agencyLevel: window.llmIntegration?.agencyLevel || 1
+    };
+  },
+
+  /**
+   * Get current code from editor(s)
+   */
+  getCode: function() {
+    const stage = gameContent?.stages?.find(s => s.id === currentStage);
+    if (stage?.type === 'multi-cell' && cellEditors.length > 0) {
+      return cellEditors.map((ed, i) => ({
+        cell: i,
+        code: ed.getValue()
+      }));
+    } else if (editor) {
+      return editor.getValue();
+    }
+    return null;
+  },
+
+  /**
+   * Set code in editor
+   * @param {string} code - Code to set
+   * @param {number} cellIndex - Optional cell index for multi-cell stages
+   */
+  setCode: function(code, cellIndex = null) {
+    const stage = gameContent?.stages?.find(s => s.id === currentStage);
+    if (stage?.type === 'multi-cell' && cellIndex !== null && cellEditors[cellIndex]) {
+      cellEditors[cellIndex].setValue(code);
+      return true;
+    } else if (editor) {
+      editor.setValue(code);
+      return true;
+    }
+    return false;
+  },
+
+  /**
+   * Run the current code
+   * @param {number} cellIndex - Optional cell index for multi-cell stages
+   * @returns {Promise<object>} Result with output and success status
+   */
+  runCode: async function(cellIndex = null) {
+    return new Promise((resolve) => {
+      const stage = gameContent?.stages?.find(s => s.id === currentStage);
+
+      // Set up observer to detect when execution completes
+      const checkComplete = () => {
+        setTimeout(() => {
+          const output = this.getOutput(cellIndex);
+          const state = this.getState();
+          resolve({
+            output: output,
+            isComplete: state.isStageComplete,
+            hasError: output.includes('Error:') || output.includes('error')
+          });
+        }, 1500); // Give time for execution and validation to complete
+      };
+
+      if (stage?.type === 'multi-cell' && cellIndex !== null) {
+        // Click the cell number to run (it has the onclick handler)
+        const cellNumber = document.getElementById(`cell-number-${cellIndex}`);
+        if (cellNumber) {
+          cellNumber.click();
+          checkComplete();
+        } else {
+          resolve({ output: '', isComplete: false, error: 'Cell number element not found' });
+        }
+      } else {
+        // Single cell - click the cell number to run
+        const cellNumber = document.getElementById('single-cell-number');
+        if (cellNumber) {
+          cellNumber.click();
+          checkComplete();
+        } else {
+          resolve({ output: '', isComplete: false, error: 'Cell number element not found' });
+        }
+      }
+    });
+  },
+
+  /**
+   * Get output from the output area
+   * @param {number} cellIndex - Optional cell index for multi-cell stages
+   */
+  getOutput: function(cellIndex = null) {
+    const stage = gameContent?.stages?.find(s => s.id === currentStage);
+    if (stage?.type === 'multi-cell' && cellIndex !== null) {
+      const outputArea = document.getElementById(`output-area-${cellIndex}`);
+      return outputArea?.textContent || '';
+    } else {
+      const outputArea = document.getElementById('single-output-area');
+      return outputArea?.textContent || '';
+    }
+  },
+
+  /**
+   * Get all outputs for multi-cell stages
+   */
+  getAllOutputs: function() {
+    const stage = gameContent?.stages?.find(s => s.id === currentStage);
+    if (stage?.type === 'multi-cell') {
+      return cellEditors.map((_, i) => ({
+        cell: i,
+        output: this.getOutput(i)
+      }));
+    }
+    return [{ cell: 0, output: this.getOutput() }];
+  },
+
+  /**
+   * Navigate to next stage
+   */
+  nextStage: function() {
+    const nextBtn = document.getElementById('next-button');
+    if (nextBtn && nextBtn.classList.contains('active')) {
+      nextBtn.click();
+      return true;
+    }
+    return false;
+  },
+
+  /**
+   * Load a specific stage
+   * @param {number} stageId - Stage number to load
+   */
+  loadStage: function(stageId) {
+    if (stageId >= 1 && stageId <= (gameContent?.gameInfo?.totalStages || 0)) {
+      loadStage(stageId);
+      return true;
+    }
+    return false;
+  },
+
+  /**
+   * Get hint from static hints
+   * @param {number} index - Hint index
+   */
+  getHint: function(index = 0) {
+    const stage = gameContent?.stages?.find(s => s.id === currentStage);
+    if (stage?.hints && stage.hints[index]) {
+      return stage.hints[index];
+    }
+    return null;
+  },
+
+  /**
+   * Query the LLM (if enabled)
+   * @param {string} type - Query type: 'hint', 'debug', 'explain', 'suggest', 'fix'
+   * @returns {Promise<string>} LLM response
+   */
+  queryLLM: async function(type = 'hint') {
+    if (!window.llmIntegration?.isEnabled) {
+      return { error: 'LLM not enabled' };
+    }
+
+    return new Promise((resolve) => {
+      // Store original showLLMResponse to capture the result
+      const originalShow = window.llmIntegration.showLLMResponse.bind(window.llmIntegration);
+
+      window.llmIntegration.showLLMResponse = function(status, content) {
+        originalShow(status, content);
+        if (status === 'success') {
+          resolve({ response: content });
+        } else if (status === 'error') {
+          resolve({ error: content });
+        }
+      };
+
+      window.llmIntegration.queryLLM(type);
+
+      // Timeout after 30 seconds
+      setTimeout(() => {
+        resolve({ error: 'Timeout waiting for LLM response' });
+      }, 30000);
+    });
+  },
+
+  /**
+   * Set LLM agency level
+   * @param {number} level - 1, 2, or 3
+   */
+  setAgencyLevel: function(level) {
+    if (window.llmIntegration) {
+      window.llmIntegration.setAgencyLevel(level);
+      return true;
+    }
+    return false;
+  },
+
+  /**
+   * Get the solution for the current stage (for testing)
+   */
+  getSolution: function() {
+    const stage = gameContent?.stages?.find(s => s.id === currentStage);
+    return stage?.solution || stage?.cells?.map(c => c.solution) || null;
+  },
+
+  /**
+   * Get Dr. Rodriguez's last reaction (if any)
+   */
+  getLastReaction: function() {
+    const reactionArea = document.getElementById('rodriguez-reaction-area');
+    if (reactionArea) {
+      const text = reactionArea.querySelector('.character-text');
+      return text?.innerHTML || null;
+    }
+    return null;
+  },
+
+  /**
+   * Wait for a condition
+   * @param {function} condition - Function that returns true when condition is met
+   * @param {number} timeout - Max wait time in ms
+   */
+  waitFor: function(condition, timeout = 5000) {
+    return new Promise((resolve, reject) => {
+      const startTime = Date.now();
+      const check = () => {
+        if (condition()) {
+          resolve(true);
+        } else if (Date.now() - startTime > timeout) {
+          reject(new Error('Timeout waiting for condition'));
+        } else {
+          setTimeout(check, 100);
+        }
+      };
+      check();
+    });
+  },
+
+  /**
+   * Full game state for LLM context
+   */
+  getFullContext: function() {
+    const state = this.getState();
+    const code = this.getCode();
+    const outputs = this.getAllOutputs();
+    const reaction = this.getLastReaction();
+
+    return {
+      ...state,
+      currentCode: code,
+      outputs: outputs,
+      lastReaction: reaction,
+      solution: this.getSolution() // Include for testing
+    };
+  }
+};
+
+console.log('🎮 Game API loaded. Access via window.gameAPI');
