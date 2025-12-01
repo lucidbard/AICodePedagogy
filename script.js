@@ -361,7 +361,7 @@ function setupSingleCellStage (stage) {
     <svg class="play-icon" viewBox="0 0 24 24">
       <path d="M8 5v14l11-7z"/>
     </svg>
-    <svg class="stop-icon" viewBox="0 24 24" style="display: none;">
+    <svg class="stop-icon" viewBox="0 0 24 24" style="display: none;">
       <rect x="6" y="6" width="12" height="12"/>
     </svg>
   `
