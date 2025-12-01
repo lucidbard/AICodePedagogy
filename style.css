@@ -2269,3 +2269,256 @@ body {
   border-radius: 3px;
   font-family: 'Roboto Mono', monospace;
 }
+
+/* ============================================
+   Dr. Rodriguez Discovery Reactions
+   ============================================ */
+
+.rodriguez-reaction-container {
+  margin: 1rem 0;
+  padding: 0;
+}
+
+.rodriguez-reaction {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.character-response {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 1rem;
+  background: linear-gradient(135deg, rgba(212, 165, 116, 0.15), rgba(139, 115, 85, 0.1));
+  border-radius: 12px;
+  border-left: 4px solid #d4a574;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.character-avatar {
+  font-size: 2rem;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(212, 175, 55, 0.2);
+  border-radius: 50%;
+  border: 2px solid #d4af37;
+}
+
+.character-bubble {
+  flex: 1;
+  min-width: 0;
+}
+
+.character-name {
+  font-weight: 600;
+  color: #d4af37;
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.character-text {
+  color: #f4f1e8;
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+.character-text p {
+  margin: 0.5rem 0;
+}
+
+.character-text p:first-child {
+  margin-top: 0;
+}
+
+.character-text p:last-child {
+  margin-bottom: 0;
+}
+
+.character-text code {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.85em;
+}
+
+.character-text strong {
+  color: #d4af37;
+}
+
+.character-text em {
+  color: #c9b037;
+  font-style: italic;
+}
+
+/* LLM hint styling updates for Dr. Rodriguez persona */
+.llm-hint .llm-header {
+  color: #d4af37;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(212, 165, 116, 0.3);
+}
+
+.llm-hint {
+  background: linear-gradient(135deg, rgba(212, 165, 116, 0.1), rgba(139, 115, 85, 0.05));
+  border-left: 3px solid #d4a574;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-top: 1rem;
+}
+
+.llm-hint.loading {
+  opacity: 0.7;
+}
+
+.llm-hint.error {
+  border-left-color: #e57373;
+  background: rgba(229, 115, 115, 0.1);
+}
+
+.llm-content {
+  color: #f4f1e8;
+  line-height: 1.6;
+}
+
+.llm-content code {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  font-family: 'Roboto Mono', monospace;
+}
+
+.llm-content pre {
+  background: rgba(0, 0, 0, 0.4);
+  padding: 0.75rem;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: 0.5rem 0;
+}
+
+.llm-content ul, .llm-content ol {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.llm-content li {
+  margin: 0.25rem 0;
+}
+
+/* ============================================
+   AI Assistant Header & Agency Levels
+   ============================================ */
+
+.ai-assistant-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(212, 165, 116, 0.2);
+  color: #d4af37;
+  font-size: 0.9rem;
+}
+
+.agency-level {
+  background: rgba(212, 165, 116, 0.2);
+  padding: 0.15rem 0.5rem;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #d4a574;
+}
+
+/* Agentic action buttons */
+.llm-query-button.agentic {
+  background: linear-gradient(135deg, #4a7c59, #3d6b4a);
+  border: 1px solid #5a9c69;
+}
+
+.llm-query-button.agentic:hover {
+  background: linear-gradient(135deg, #5a9c69, #4a7c59);
+}
+
+/* LLM Action Bar (for apply/copy buttons) */
+.llm-action-bar {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(212, 165, 116, 0.2);
+}
+
+.llm-action-button {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.llm-action-button.apply {
+  background: linear-gradient(135deg, #4a7c59, #3d6b4a);
+  color: white;
+}
+
+.llm-action-button.apply:hover {
+  background: linear-gradient(135deg, #5a9c69, #4a7c59);
+  transform: translateY(-1px);
+}
+
+.llm-action-button.apply:disabled {
+  background: #555;
+  cursor: default;
+  transform: none;
+}
+
+.llm-action-button.copy {
+  background: rgba(212, 165, 116, 0.2);
+  color: #f4f1e8;
+  border: 1px solid rgba(212, 165, 116, 0.3);
+}
+
+.llm-action-button.copy:hover {
+  background: rgba(212, 165, 116, 0.3);
+}
+
+/* Code Applied Notification */
+.ai-code-applied-notification {
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: linear-gradient(135deg, #4a7c59, #3d6b4a);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  transition: all 0.3s ease;
+  z-index: 1000;
+  font-weight: 500;
+}
+
+.ai-code-applied-notification.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}

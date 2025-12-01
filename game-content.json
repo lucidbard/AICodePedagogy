@@ -40,21 +40,22 @@
     {
       "id": 1,
       "title": "The Mysterious Manuscript",
-      "story": "Dr. Elena Rodriguez has discovered fragments of an ancient manuscript in the digital archives of the Alexandria Library. The fragments contain references to a lost civilization, but they're scattered and encoded.\n\nYou've been called in as a digital archaeologist to help piece together this mystery using computational analysis.\n\n<strong>🔍 Python Concepts: Variables and Print Statements</strong>\n\nIn Python, we store information in <em>variables</em>. Think of variables as labeled boxes that hold data:\n• Text (strings) must be in quotes: <code>name = \"Alexandria\"</code>\n• Numbers don't need quotes: <code>count = 23</code>\n• Use <code>print()</code> to display information\n\nPractice using variables and print statements with the manuscript data provided below.",
+      "narrativeIntro": "Dr. Elena Rodriguez has discovered fragments of an ancient manuscript hidden deep within the Alexandria Library's digital archives. The fragments contain cryptic references to a lost civilization\u2014but they're scattered and encoded. She's called you in to help piece together this mystery using computational analysis.",
+      "story": "Dr. Elena Rodriguez has discovered fragments of an ancient manuscript in the digital archives of the Alexandria Library. The fragments contain references to a lost civilization, but they're scattered and encoded.\n\nYou've been called in as a digital archaeologist to help piece together this mystery using computational analysis.\n\n<strong>\ud83d\udd0d Python Concepts: Variables and Print Statements</strong>\n\nIn Python, we store information in <em>variables</em>. Think of variables as labeled boxes that hold data:\n\u2022 Text (strings) must be in quotes: <code>name = \"Alexandria\"</code>\n\u2022 Numbers don't need quotes: <code>count = 23</code>\n\u2022 Use <code>print()</code> to display information\n\nPractice using variables and print statements with the manuscript data provided below.",
       "challenge": "Your task: Complete the code to store the fragment count as a variable, then display both pieces of information using print statements.",
       "data": "Manuscript ID: \"MS-ALEX-2847\"\nFragment Count: 23",
       "starterCode": "# Store the manuscript data as variables and display them\n# We've started with the catalog number - you complete the fragment count\n\ncatalog_number = \"MS-ALEX-2847\"\n# TODO: Create a variable called fragment_count and set it to 23\n\n# Print both variables using print statements\nprint(\"Manuscript Catalog: \" + catalog_number)\n# TODO: Add your print statement for fragment_count here using string concatenation",
       "solution": "catalog_number = \"MS-ALEX-2847\"\nfragment_count = 23\nprint(\"Manuscript Catalog: \" + catalog_number)\nprint(\"Fragments Found: \" + str(fragment_count))",
       "validation": {
         "codePatterns": [
-          "fragment_count\\s*=\\s*23",
+          "fragment_count\\s*=\\s*(23|\"23\")",
           "print\\s*\\(.*fragment_count.*\\)"
         ],
         "outputPatterns": [
           "Manuscript Catalog.*MS-ALEX-2847",
-          "(Fragments.*23|23.*Fragment)"
+          "(Fragment.*23|23.*Fragment|fragment.*23)"
         ],
-        "description": "Must define fragment_count = 23 and print both variables"
+        "description": "Must define fragment_count and print both variables"
       },
       "hints": [
         "What kind of data is the fragment count—text or a number? How might that affect whether you need quotes?",
@@ -63,9 +64,9 @@
         "When you need to combine text and numbers in print(), what function converts numbers to text?"
       ],
       "completionSegment": {
-        "narrative": "As the fragment count appears on screen, the terminal suddenly flickers. A video call window opens—it's Dr. Rodriguez, and she looks both excited and concerned.\n\n\"{{playerName}}, excellent work cataloging that initial data! But I need to tell you something... These aren't just random fragments. Look at this—\" She shares her screen, showing a pattern analysis. \"23 fragments, all deliberately separated. Someone wanted to hide something important.\"\n\nShe pauses, studying the data you've just processed. \"The manuscript ID you logged... MS-ALEX-2847... that's from the restricted archive section. How did these fragments end up there?\"",
+        "narrative": "As the fragment count appears on screen, the terminal suddenly flickers. A video call window opens\u2014it's Dr. Rodriguez, and she looks both excited and concerned.\n\n\"{{playerName}}, excellent work cataloging that initial data! But I need to tell you something... These aren't just random fragments. Look at this\u2014\" She shares her screen, showing a pattern analysis. \"23 fragments, all deliberately separated. Someone wanted to hide something important.\"\n\nShe pauses, studying the data you've just processed. \"The manuscript ID you logged... MS-ALEX-2847... that's from the restricted archive section. How did these fragments end up there?\"",
         "characterResponse": {
-          "success": "\"Your code was clean and efficient. {{playerAction}}—that's exactly the systematic approach we need for this investigation.\"",
+          "success": "\"Your code was clean and efficient. {{playerAction}}\u2014that's exactly the systematic approach we need for this investigation.\"",
           "struggle": "\"I see you worked through {{struggledConcept}}. Don't worry, even experienced archaeologists struggle with new tools. What matters is you got the data we needed.\""
         },
         "choice": {
@@ -75,7 +76,7 @@
               "id": "investigate_restriction",
               "text": "Investigate why these fragments were in the restricted section",
               "consequence": "secrecyPath",
-              "preview": "Focus on the conspiracy angle—who hid these and why?"
+              "preview": "Focus on the conspiracy angle\u2014who hid these and why?"
             },
             {
               "id": "analyze_separation",
@@ -90,17 +91,17 @@
     {
       "id": 2,
       "title": "Analyzing Fragment Lengths",
-      "story": "The manuscript fragments vary greatly in length. Some are mere words, others are complete sentences. Understanding the distribution of fragment sizes might reveal patterns about how the original text was structured.\n\n<strong>🔍 Python Concepts: Lists, For Loops, Conditional Statements, and Functions</strong>\n\n<em>Lists</em> store multiple values in a single variable:\n• Create lists with square brackets: <code>numbers = [1, 2, 3, 4]</code>\n• <em>For loops</em> let you process each item: <code>for item in my_list:</code>\n• <code>len()</code> returns how many items are in a list\n\n<em>Conditional statements</em> let your program make decisions:\n• <code>if</code> checks a condition: <code>if length < 30:</code>\n• <code>elif</code> checks additional conditions: <code>elif length <= 60:</code>\n• <code>else</code> handles all other cases: <code>else:</code>\n• Use comparison operators: <code><</code> (less than), <code><=</code> (less than or equal), <code>></code> (greater than)\n• Remember to indent code inside if/elif/else blocks!\n\n<em>Functions</em> let you organize and reuse code:\n• Define with <code>def function_name(parameters):</code>\n• Return values with <code>return value1, value2</code>\n• Call functions to get results: <code>result = my_function(data)</code>\n• Functions make code more organized and testable\n\n<strong>Example:</strong>\n<code>\ndef categorize_age(age):\n    if age < 18:\n        return \"Child\"\n    elif age <= 65:\n        return \"Adult\"\n    else:\n        return \"Senior\"\n\nresult = categorize_age(25)\nprint(result)  # Prints \"Adult\"\n</code>\n\nPractice combining lists, loops, conditionals, and functions to analyze the fragment data below.",
+      "story": "The manuscript fragments vary greatly in length. Some are mere words, others are complete sentences. Understanding the distribution of fragment sizes might reveal patterns about how the original text was structured.\n\n<strong>\ud83d\udd0d Python Concepts: Lists, For Loops, Conditional Statements, and Functions</strong>\n\n<em>Lists</em> store multiple values in a single variable:\n\u2022 Create lists with square brackets: <code>numbers = [1, 2, 3, 4]</code>\n\u2022 <em>For loops</em> let you process each item: <code>for item in my_list:</code>\n\u2022 <code>len()</code> returns how many items are in a list\n\n<em>Conditional statements</em> let your program make decisions:\n\u2022 <code>if</code> checks a condition: <code>if length < 30:</code>\n\u2022 <code>elif</code> checks additional conditions: <code>elif length <= 60:</code>\n\u2022 <code>else</code> handles all other cases: <code>else:</code>\n\u2022 Use comparison operators: <code><</code> (less than), <code><=</code> (less than or equal), <code>></code> (greater than)\n\u2022 Remember to indent code inside if/elif/else blocks!\n\n<em>Functions</em> let you organize and reuse code:\n\u2022 Define with <code>def function_name(parameters):</code>\n\u2022 Return values with <code>return value1, value2</code>\n\u2022 Call functions to get results: <code>result = my_function(data)</code>\n\u2022 Functions make code more organized and testable\n\n<strong>Example:</strong>\n<code>\ndef categorize_age(age):\n    if age < 18:\n        return \"Child\"\n    elif age <= 65:\n        return \"Adult\"\n    else:\n        return \"Senior\"\n\nresult = categorize_age(25)\nprint(result)  # Prints \"Adult\"\n</code>\n\nPractice combining lists, loops, conditionals, and functions to analyze the fragment data below.",
       "challenge": "Using the provided fragment lengths list, calculate statistics and count fragments by size categories to understand the distribution.",
-      "data": "Fragment lengths (characters): [45, 23, 67, 12, 89, 34, 56, 78, 21, 43]\n\nCategories for analysis:\n• Short fragments:     less than 30 characters\n• Medium fragments:    30-60 characters  \n• Long fragments:      more than 60 characters",
+      "data": "Fragment lengths (characters): [45, 23, 67, 12, 89, 34, 56, 78, 21, 43]\n\nCategories for analysis:\n\u2022 Short fragments:     less than 30 characters\n\u2022 Medium fragments:    30-60 characters  \n\u2022 Long fragments:      more than 60 characters",
       "storyModifiers": {
         "secrecyPath": {
           "additionalContext": "\n\nDr. Rodriguez whispers: \"I found something. These fragment lengths... they match a known encryption pattern used by a secret society in the 3rd century. We might be dealing with intentionally hidden knowledge.\"",
           "bonusReveal": "The short fragments all contain warning words in ancient Greek!"
         },
         "scientificPath": {
-          "additionalContext": "\n\nDr. Rodriguez's analysis revealed: \"The mathematical distribution is deliberate—it follows a Fibonacci-like sequence. This civilization understood advanced mathematics!\"",
-          "bonusReveal": "Fragment lengths encode coordinates: 45.23°N, 67.12°E—an unexplored archaeological site!"
+          "additionalContext": "\n\nDr. Rodriguez's analysis revealed: \"The mathematical distribution is deliberate\u2014it follows a Fibonacci-like sequence. This civilization understood advanced mathematics!\"",
+          "bonusReveal": "Fragment lengths encode coordinates: 45.23\u00b0N, 67.12\u00b0E\u2014an unexplored archaeological site!"
         }
       },
       "cells": [
@@ -160,22 +161,22 @@
         {
           "title": "Task 3: Categorize Fragments",
           "instruction": "Create a function that categorizes fragments by size and returns the counts",
-          "starterCode": "# Task 3: Create a function to categorize fragments by size\n# Note: fragment_lengths is still available from previous tasks\n\ndef categorize_fragments(lengths):\n    \"\"\"Categorize fragments by size and return counts.\n    \n    Args:\n        lengths: List of fragment lengths\n        \n    Returns:\n        tuple: (short_count, medium_count, long_count)\n            - short_count: fragments < 30 characters\n            - medium_count: fragments 30-60 characters  \n            - long_count: fragments > 60 characters\n    \"\"\"\n    short_count = 0\n    medium_count = 0\n    long_count = 0\n    \n    # TODO: Write a for loop to go through each length in the lengths parameter\n    # TODO: Use if/elif/else to check the length and increment the right counter\n    # TODO: Return the three counts as a tuple\n    \n    return short_count, medium_count, long_count\n\n# Test your function and display results\nshort, medium, long = categorize_fragments(fragment_lengths)\nprint(f\"Short fragments (< 30 chars): {short}\")\nprint(f\"Medium fragments (30-60 chars): {medium}\")\nprint(f\"Long fragments (> 60 chars): {long}\")",
+          "starterCode": "# Task 3: Create a function to categorize fragments by size\n# Note: fragment_lengths is still available from previous tasks\n# Categories: short (< 30), medium (30-60), long (> 60)\n\ndef categorize_fragments(lengths):\n    short_count = 0\n    medium_count = 0\n    long_count = 0\n    \n    # TODO: Write a for loop to go through each length in the lengths parameter\n    # TODO: Use if/elif/else to check the length and increment the right counter\n    \n    return short_count, medium_count, long_count\n\n# Test your function and display results\nshort, medium, long = categorize_fragments(fragment_lengths)\nprint(\"Short fragments (< 30 chars): \" + str(short))\nprint(\"Medium fragments (30-60 chars): \" + str(medium))\nprint(\"Long fragments (> 60 chars): \" + str(long))",
           "expectedOutput": [
             "Short fragments (< 30 chars): 3",
-            "Medium fragments (30-60 chars): 5",
-            "Long fragments (> 60 chars): 2"
+            "Medium fragments (30-60 chars): 4",
+            "Long fragments (> 60 chars): 3"
           ],
           "validation": {
             "requiredNumbers": [
               3,
-              5,
-              2
+              4,
+              3
             ],
             "outputPatterns": [
               "[Ss]hort.*3|3.*[Ss]hort",
-              "[Mm]edium.*5|5.*[Mm]edium",
-              "[Ll]ong.*2|2.*[Ll]ong"
+              "[Mm]edium.*4|4.*[Mm]edium",
+              "[Ll]ong.*3|3.*[Ll]ong"
             ],
             "codePatterns": [
               "def\\s+categorize_fragments\\s*\\(",
@@ -195,12 +196,12 @@
       "completionSegment": {
         "narrative": "Your analysis completes, and the pattern becomes clear. Dr. Rodriguez's eyes widen as she reviews your findings.\n\n\"This distribution isn't random at all! Look—\" She overlays your data with a map. \"The fragment lengths correspond to something else entirely. We're not just dealing with a text; this is a coded message system.\"\n\n{{pathSpecificRevelation}}\n\nShe glances over her shoulder, then lowers her voice. \"I need to tell you something. My grandmother... she was part of a group that protected knowledge like this. The Keepers of Alexandria, they called themselves. She always said someday someone with the right skills would come along to decode what they'd been guarding.\"\n\nHer computer chimes with an alert. Her expression hardens. \"Someone just tried to access our research server. A company called Vale Archives International. They've been acquiring ancient manuscripts through... questionable means. We need to be careful.\"",
         "pathSpecificRevelations": {
-          "secrecyPath": "The short fragments—all under 30 characters—they're warnings. 'Danger.' 'Hidden.' 'Forbidden.' Someone was trying to keep people away from something.",
+          "secrecyPath": "The short fragments\u2014all under 30 characters\u2014they're warnings. 'Danger.' 'Hidden.' 'Forbidden.' Someone was trying to keep people away from something.",
           "scientificPath": "The mathematical pattern in these lengths... it's encoding geographic coordinates! This civilization was mapping something across the ancient world."
         },
         "characterResponse": {
           "success": "\"Incredible work with those functions! {{playerAction}}. You're thinking like a true computational archaeologist.\"",
-          "struggle": "\"Functions can be tricky at first, especially {{struggledConcept}}. But you pushed through—that's what separates real researchers from dilettantes.\""
+          "struggle": "\"Functions can be tricky at first, especially {{struggledConcept}}. But you pushed through\u2014that's what separates real researchers from dilettantes.\""
         },
         "choice": {
           "prompt": "Dr. Rodriguez looks serious. \"With Vale Archives sniffing around, we need to decide our approach:\"",
@@ -239,7 +240,7 @@
     {
       "id": 3,
       "title": "Decoding Fragment Languages",
-      "story": "Some fragments appear to be in Latin, others in ancient Greek, and some are too damaged to identify. Understanding the language distribution might help us understand the cultural context.\n\n<strong>🔍 Python Concepts: Conditional Statements and Functions</strong>\n\n<em>Conditional statements</em> let your program make decisions:\n• <code>if</code> checks a condition: <code>if age >= 18:</code>\n• <code>elif</code> checks additional conditions: <code>elif age >= 13:</code>\n• <code>==</code> compares values (different from <code>=</code> which assigns)\n• Remember to indent code inside if/elif blocks!\n\n<em>Functions</em> organize and structure your code:\n• Define with <code>def function_name(parameters):</code>\n• Return multiple values: <code>return value1, value2, value3</code>\n• Call functions to get results: <code>latin, greek, unknown = count_languages(codes)</code>\n\nPractice using conditionals within functions to analyze language distribution.",
+      "story": "Some fragments appear to be in Latin, others in ancient Greek, and some are too damaged to identify. Understanding the language distribution might help us understand the cultural context.\n\n<strong>\ud83d\udd0d Python Concepts: Conditional Statements and Functions</strong>\n\n<em>Conditional statements</em> let your program make decisions:\n\u2022 <code>if</code> checks a condition: <code>if age >= 18:</code>\n\u2022 <code>elif</code> checks additional conditions: <code>elif age >= 13:</code>\n\u2022 <code>==</code> compares values (different from <code>=</code> which assigns)\n\u2022 Remember to indent code inside if/elif blocks!\n\n<em>Functions</em> organize and structure your code:\n\u2022 Define with <code>def function_name(parameters):</code>\n\u2022 Return multiple values: <code>return value1, value2, value3</code>\n\u2022 Call functions to get results: <code>latin, greek, unknown = count_languages(codes)</code>\n\nPractice using conditionals within functions to analyze language distribution.",
       "challenge": "Create a function that analyzes language codes and returns counts for each language type.",
       "data": "Language codes: [\"LAT\", \"GRK\", \"UNK\", \"LAT\", \"UNK\", \"LAT\", \"GRK\", \"LAT\", \"UNK\", \"GRK\", \"LAT\", \"UNK\"]",
       "storyModifiers": {
@@ -254,11 +255,11 @@
         "secretPath": {
           "additionalContext": "\n\nDr. Rodriguez lowers her voice: \"Good call on staying quiet. I've detected someone trying to hack into our research server. Someone else is looking for these fragments.\"",
           "threat": "Unknown party attempting to access your data",
-          "bonusData": "Secret pattern discovered: UNK (unknown) fragments aren't damaged—they're in a third, unidentified language!"
+          "bonusData": "Secret pattern discovered: UNK (unknown) fragments aren't damaged\u2014they're in a third, unidentified language!"
         }
       },
-      "starterCode": "# Create a function to count language types\n# Language codes: [\"LAT\", \"GRK\", \"UNK\", \"LAT\", \"UNK\", \"LAT\", \"GRK\", \"LAT\", \"UNK\", \"GRK\", \"LAT\", \"UNK\"]\n# LAT = Latin, GRK = Greek, UNK = Unknown\n\ndef count_languages(language_codes):\n    \"\"\"Count fragments by language type.\n    \n    Args:\n        language_codes: List of language codes (LAT, GRK, UNK)\n        \n    Returns:\n        tuple: (latin_count, greek_count, unknown_count)\n    \"\"\"\n    latin_count = 0\n    greek_count = 0\n    unknown_count = 0\n    \n    # TODO: Write a for loop to go through each code in language_codes\n    # TODO: Use if/elif/else to check the code and increment the right counter\n    # TODO: Return the three counts as a tuple\n    \n    return latin_count, greek_count, unknown_count\n\n# Test your function\nlanguages = [\"LAT\", \"GRK\", \"UNK\", \"LAT\", \"UNK\", \"LAT\", \"GRK\", \"LAT\", \"UNK\", \"GRK\", \"LAT\", \"UNK\"]\nlatin, greek, unknown = count_languages(languages)\n\nprint(f\"Latin fragments: {latin}\")\nprint(f\"Greek fragments: {greek}\")\nprint(f\"Unknown fragments: {unknown}\")",
-      "solution": "def count_languages(language_codes):\n    \"\"\"Count fragments by language type.\"\"\"\n    latin_count = 0\n    greek_count = 0\n    unknown_count = 0\n    \n    for lang in language_codes:\n        if lang == \"LAT\":\n            latin_count += 1\n        elif lang == \"GRK\":\n            greek_count += 1\n        elif lang == \"UNK\":\n            unknown_count += 1\n    \n    return latin_count, greek_count, unknown_count\n\n# Test the function\nlanguages = [\"LAT\", \"GRK\", \"UNK\", \"LAT\", \"UNK\", \"LAT\", \"GRK\", \"LAT\", \"UNK\", \"GRK\", \"LAT\", \"UNK\"]\nlatin, greek, unknown = count_languages(languages)\n\nprint(f\"Latin fragments: {latin}\")\nprint(f\"Greek fragments: {greek}\")\nprint(f\"Unknown fragments: {unknown}\")",
+      "starterCode": "# Create a function to count language types\n# Language codes: [\"LAT\", \"GRK\", \"UNK\", \"LAT\", \"UNK\", \"LAT\", \"GRK\", \"LAT\", \"UNK\", \"GRK\", \"LAT\", \"UNK\"]\n# LAT = Latin, GRK = Greek, UNK = Unknown\n\ndef count_languages(language_codes):\n    \"\"\"Count fragments by language type.\n    \n    Args:\n        language_codes: List of language codes (LAT, GRK, UNK)\n        \n    Returns:\n        tuple: (latin_count, greek_count, unknown_count)\n    \"\"\"\n    latin_count = 0\n    greek_count = 0\n    unknown_count = 0\n    \n    # TODO: Write a for loop to go through each code in language_codes\n    # TODO: Use if/elif/else to check the code and increment the right counter\n    # TODO: Return the three counts as a tuple\n    \n    return latin_count, greek_count, unknown_count\n\n# Test your function\nlanguages = [\"LAT\", \"GRK\", \"UNK\", \"LAT\", \"UNK\", \"LAT\", \"GRK\", \"LAT\", \"UNK\", \"GRK\", \"LAT\", \"UNK\"]\nlatin, greek, unknown = count_languages(languages)\n\nprint(\"Latin fragments: \" + str(latin))\nprint(\"Greek fragments: \" + str(greek))\nprint(\"Unknown fragments: \" + str(unknown))",
+      "solution": "def count_languages(language_codes):\n    \"\"\"Count fragments by language type.\"\"\"\n    latin_count = 0\n    greek_count = 0\n    unknown_count = 0\n    \n    for lang in language_codes:\n        if lang == \"LAT\":\n            latin_count += 1\n        elif lang == \"GRK\":\n            greek_count += 1\n        elif lang == \"UNK\":\n            unknown_count += 1\n    \n    return latin_count, greek_count, unknown_count\n\n# Test the function\nlanguages = [\"LAT\", \"GRK\", \"UNK\", \"LAT\", \"UNK\", \"LAT\", \"GRK\", \"LAT\", \"UNK\", \"GRK\", \"LAT\", \"UNK\"]\nlatin, greek, unknown = count_languages(languages)\n\nprint(\"Latin fragments: \" + str(latin))\nprint(\"Greek fragments: \" + str(greek))\nprint(\"Unknown fragments: \" + str(unknown))",
       "validation": {
         "codePatterns": [
           "def\\s+count_languages\\s*\\(",
@@ -281,10 +282,10 @@
         "Think about what happens for each code in the list. Does your logic handle all three possibilities (LAT, GRK, UNK)?"
       ],
       "completionSegment": {
-        "narrative": "The language analysis completes, revealing an unexpected pattern. Dr. Rodriguez's face goes pale.\n\n\"This changes everything. The mix of Latin and Greek isn't random—it's a diplomatic cipher used only during one specific period: the Crisis of the Third Century. But these unknown fragments...\"\n\nShe pulls up a linguistic database. \"They match no known ancient language. Either we're dealing with a completely lost dialect, or...\" She pauses. \"Or this is something else entirely. A constructed language, perhaps. A code within a code.\"\n\n{{pathSpecificDiscovery}}",
+        "narrative": "The language analysis completes, revealing an unexpected pattern. Dr. Rodriguez's face goes pale.\n\n\"This changes everything. The mix of Latin and Greek isn't random\u2014it's a diplomatic cipher used only during one specific period: the Crisis of the Third Century. But these unknown fragments...\"\n\nShe pulls up a linguistic database. \"They match no known ancient language. Either we're dealing with a completely lost dialect, or...\" She pauses. \"Or this is something else entirely. A constructed language, perhaps. A code within a code.\"\n\n{{pathSpecificDiscovery}}",
         "pathSpecificDiscoveries": {
           "transparencyPath": "Your collaborator in Athens just sent an urgent message: 'The unknown fragments match star positions! This civilization was encoding astronomical data!'",
-          "secretPath": "A private message flashes on your screen: 'Stop digging or face consequences.' But there's more—the message is written in the same unknown language as the fragments!"
+          "secretPath": "A private message flashes on your screen: 'Stop digging or face consequences.' But there's more\u2014the message is written in the same unknown language as the fragments!"
         },
         "characterResponse": {
           "success": "\"Perfect implementation of that language counter! {{playerAction}} shows you understand both the code and the archaeological implications.\"",
@@ -324,29 +325,26 @@
       "storyModifiers": {
         "technologyPath": {
           "additionalContext": "\n\nThe AI analysis returns shocking results: \"Language pattern identified. 87% probability: Modified Proto-Indo-European with mathematical notation embedded. This civilization encoded equations in their language structure!\"",
-          "techDiscovery": "Each date corresponds to a astronomical event—eclipses, planetary alignments"
+          "techDiscovery": "Each date corresponds to a astronomical event\u2014eclipses, planetary alignments"
         },
         "historicalPath": {
           "additionalContext": "\n\nYour historical research uncovers a pattern: \"Every date matches a documented crisis or disaster. 150 CE: Antonine Plague begins. 230 CE: Crisis of the Third Century. They were documenting catastrophes!\"",
           "historyDiscovery": "The fragments are a survival guide for future civilizations"
         }
       },
-      "starterCode": "# Create functions to analyze fragment dating patterns\n# Dates (CE): [150, 230, 180, 340, 290, 160, 380, 200, 220, 310]\n\ndef find_date_range(dates):\n    \"\"\"Find the oldest and newest dates in the collection.\n    \n    Args:\n        dates: List of dates (integers)\n        \n    Returns:\n        tuple: (oldest_date, newest_date)\n    \"\"\"\n    # TODO: Initialize oldest and newest with the first date\n    # TODO: Loop through all dates to find min and max\n    # TODO: Return both values as a tuple\n    \n    return oldest_date, newest_date\n\ndef count_by_century(dates):\n    \"\"\"Count fragments by century periods.\n    \n    Args:\n        dates: List of dates (integers)\n        \n    Returns:\n        tuple: (second_century_count, third_century_count, fourth_century_count)\n    \"\"\"\n    second_century = 0  # 100-199 CE\n    third_century = 0   # 200-299 CE\n    fourth_century = 0  # 300-399 CE\n    \n    # TODO: Loop through dates and categorize by century\n    # TODO: Use if/elif/else to count each century\n    # TODO: Return all three counts\n    \n    return second_century, third_century, fourth_century\n\n# Test your functions\ndates = [150, 230, 180, 340, 290, 160, 380, 200, 220, 310]\n\n# Analyze date range\noldest, newest = find_date_range(dates)\nprint(f\"Date range: {oldest} CE to {newest} CE\")\nprint(f\"Time span: {newest - oldest} years\")\n\n# Analyze by century\nsecond, third, fourth = count_by_century(dates)\nprint(f\"2nd century (100-199 CE): {second} fragments\")\nprint(f\"3rd century (200-299 CE): {third} fragments\")\nprint(f\"4th century (300-399 CE): {fourth} fragments\")",
-      "solution": "# Create functions to analyze fragment dating patterns\n\ndef find_date_range(dates):\n    \"\"\"Find the oldest and newest dates in the collection.\"\"\"\n    oldest_date = dates[0]\n    newest_date = dates[0]\n    \n    for date in dates:\n        if date < oldest_date:\n            oldest_date = date\n        if date > newest_date:\n            newest_date = date\n    \n    return oldest_date, newest_date\n\ndef count_by_century(dates):\n    \"\"\"Count fragments by century periods.\"\"\"\n    second_century = 0  # 100-199 CE\n    third_century = 0   # 200-299 CE\n    fourth_century = 0  # 300-399 CE\n    \n    for date in dates:\n        if date >= 100 and date < 200:\n            second_century += 1\n        elif date >= 200 and date < 300:\n            third_century += 1\n        elif date >= 300 and date < 400:\n            fourth_century += 1\n    \n    return second_century, third_century, fourth_century\n\n# Test the functions\ndates = [150, 230, 180, 340, 290, 160, 380, 200, 220, 310]\n\n# Analyze date range\noldest, newest = find_date_range(dates)\nprint(f\"Date range: {oldest} CE to {newest} CE\")\nprint(f\"Time span: {newest - oldest} years\")\n\n# Analyze by century\nsecond, third, fourth = count_by_century(dates)\nprint(f\"2nd century (100-199 CE): {second} fragments\")\nprint(f\"3rd century (200-299 CE): {third} fragments\")\nprint(f\"4th century (300-399 CE): {fourth} fragments\")",
+      "starterCode": "# Create functions to analyze fragment dating patterns\n# Dates (CE): [150, 230, 180, 340, 290, 160, 380, 200, 220, 310]\n\ndef find_date_range(dates):\n    # TODO: Initialize oldest and newest with the first date\n    # TODO: Loop through all dates to find min and max\n    # TODO: Return both values as a tuple\n    \n    return oldest_date, newest_date\n\ndef count_by_century(dates):\n    second_century = 0  # 100-199 CE\n    third_century = 0   # 200-299 CE\n    fourth_century = 0  # 300-399 CE\n    \n    # TODO: Loop through dates and categorize by century\n    # TODO: Use if/elif/else to count each century\n    # TODO: Return all three counts\n    \n    return second_century, third_century, fourth_century\n\n# Test your functions\ndates = [150, 230, 180, 340, 290, 160, 380, 200, 220, 310]\n\n# Analyze date range\noldest, newest = find_date_range(dates)\nprint(\"Date range: \" + str(oldest) + \" CE to \" + str(newest) + \" CE\")\nprint(\"Time span: \" + str(newest - oldest) + \" years\")\n\n# Analyze by century\nsecond, third, fourth = count_by_century(dates)\nprint(\"2nd century (100-199 CE): \" + str(second) + \" fragments\")\nprint(\"3rd century (200-299 CE): \" + str(third) + \" fragments\")\nprint(\"4th century (300-399 CE): \" + str(fourth) + \" fragments\")",
+      "solution": "def find_date_range(dates):\n    oldest_date = dates[0]\n    newest_date = dates[0]\n    for date in dates:\n        if date < oldest_date:\n            oldest_date = date\n        if date > newest_date:\n            newest_date = date\n    return oldest_date, newest_date\n\ndef count_by_century(dates):\n    second_century = 0\n    third_century = 0\n    fourth_century = 0\n    for date in dates:\n        if date >= 100 and date < 200:\n            second_century += 1\n        elif date >= 200 and date < 300:\n            third_century += 1\n        elif date >= 300 and date < 400:\n            fourth_century += 1\n    return second_century, third_century, fourth_century\n\ndates = [150, 230, 180, 340, 290, 160, 380, 200, 220, 310]\noldest, newest = find_date_range(dates)\nprint(\"Date range: \" + str(oldest) + \" CE to \" + str(newest) + \" CE\")\nprint(\"Time span: \" + str(newest - oldest) + \" years\")\nsecond, third, fourth = count_by_century(dates)\nprint(\"2nd century (100-199 CE): \" + str(second) + \" fragments\")\nprint(\"3rd century (200-299 CE): \" + str(third) + \" fragments\")\nprint(\"4th century (300-399 CE): \" + str(fourth) + \" fragments\")",
       "validation": {
         "codePatterns": [
-          "def\\s+find_date_range\\s*\\(",
-          "def\\s+count_by_century\\s*\\(",
+          "def\\s+\\w+\\s*\\(",
           "for\\s+\\w+\\s+in"
         ],
         "outputPatterns": [
           "150.*380|380.*150",
-          "230",
           "2.*century|second.*century",
           "3.*century|third.*century",
           "4.*century|fourth.*century"
         ],
-        "requiredNumbers": [150, 380, 230, 2, 4, 4],
         "flexible": true,
         "description": "Must create functions for date range analysis and century counting"
       },
@@ -361,10 +359,10 @@
         "narrative": "The temporal analysis reveals a chilling pattern. Dr. Rodriguez stares at the results, her hands trembling slightly.\n\n\"230 years... That's not just a time span. That's almost exactly eight generations. In many ancient cultures, eight generations was considered a complete cycle of cultural memory.\"\n\n{{pathSpecificRevelation}}\n\nShe stands up abruptly. \"We need to make a decision. I've just received word that a team of 'private collectors' is heading to the Alexandria archives tomorrow. They're after the physical fragments.\"",
         "pathSpecificRevelations": {
           "technologyPath": "Your AI-enhanced analysis confirms it: 'The dates form a predictive model. The civilization was calculating future events. The next predicted date is... next month.'",
-          "historicalPath": "Your historical research reveals the truth: 'They weren't just recording disasters—they were recording successful responses to them. This is a survival manual.'"
+          "historicalPath": "Your historical research reveals the truth: 'They weren't just recording disasters\u2014they were recording successful responses to them. This is a survival manual.'"
         },
         "characterResponse": {
-          "success": "\"Your date analysis is flawless. {{playerAction}} particularly impressed me—you're thinking beyond the code to the meaning.\"",
+          "success": "\"Your date analysis is flawless. {{playerAction}} particularly impressed me\u2014you're thinking beyond the code to the meaning.\"",
           "struggle": "\"Dating analysis involves complex logic, and {{struggledConcept}} is a common challenge. But your persistence revealed something crucial.\""
         },
         "choice": {
@@ -379,7 +377,7 @@
             },
             {
               "id": "decode_priority",
-              "text": "Focus on decoding—the information matters more than the artifacts",
+              "text": "Focus on decoding\u2014the information matters more than the artifacts",
               "consequence": "knowledgePath",
               "preview": "Let others chase fragments while we chase meaning",
               "addsComplexity": true
@@ -391,22 +389,22 @@
     {
       "id": 5,
       "title": "Word Frequency Analysis",
-      "story": "You've transcribed some key words from the legible fragments. Analyzing word frequency might reveal important themes or repeated concepts in this ancient text.\n\n<strong>🔍 Python Concepts: Dictionary-like Counting and Functions</strong>\n\n<em>Functions</em> help organize data analysis tasks:\n• Define with <code>def function_name(parameters):</code>\n• Return structured data: <code>return counts_dict</code>\n• Functions make analysis reusable and clear\n\n<em>Counting with variables (simulating dictionary behavior):</em>\n• Use separate variables for each category\n• Compare strings with <code>==</code>: <code>if word == \"temple\":</code>\n• Increment counters: <code>temple_count += 1</code>\n• Track maximum values for analysis",
+      "story": "You've transcribed some key words from the legible fragments. Analyzing word frequency might reveal important themes or repeated concepts in this ancient text.\n\n<strong>\ud83d\udd0d Python Concepts: Dictionary-like Counting and Functions</strong>\n\n<em>Functions</em> help organize data analysis tasks:\n\u2022 Define with <code>def function_name(parameters):</code>\n\u2022 Return structured data: <code>return counts_dict</code>\n\u2022 Functions make analysis reusable and clear\n\n<em>Counting with variables (simulating dictionary behavior):</em>\n\u2022 Use separate variables for each category\n\u2022 Compare strings with <code>==</code>: <code>if word == \"temple\":</code>\n\u2022 Increment counters: <code>temple_count += 1</code>\n\u2022 Track maximum values for analysis",
       "challenge": "Create a function to analyze word frequencies and identify the most common themes in the fragments.",
       "data": "Words found: [\"temple\", \"gold\", \"sacred\", \"temple\", \"ritual\", \"gold\", \"temple\", \"sacred\", \"gold\", \"temple\", \"ritual\", \"sacred\"]",
       "storyModifiers": {
         "preservationPath": {
-          "additionalContext": "\n\nDr. Rodriguez messages from Alexandria: \"We secured the fragments just in time! But look at this—hidden writing appears under UV light. These new words change everything!\"",
+          "additionalContext": "\n\nDr. Rodriguez messages from Alexandria: \"We secured the fragments just in time! But look at this\u2014hidden writing appears under UV light. These new words change everything!\"",
           "bonusWords": [
             "escape",
             "underground",
             "preservation",
             "future"
           ],
-          "urgentNote": "Time pressure increases—analyze quickly!"
+          "urgentNote": "Time pressure increases\u2014analyze quickly!"
         },
         "knowledgePath": {
-          "additionalContext": "\n\nWhile others chase fragments, your deep analysis pays off: \"The word frequencies follow a mathematical pattern. It's not just what they're saying, but how often—it's another layer of encoding!\"",
+          "additionalContext": "\n\nWhile others chase fragments, your deep analysis pays off: \"The word frequencies follow a mathematical pattern. It's not just what they're saying, but how often\u2014it's another layer of encoding!\"",
           "patternDiscovered": "Word frequency ratios: 4:3:3:2 = Musical intervals!",
           "insight": "They encoded music in their text frequency"
         }
@@ -437,17 +435,17 @@
         "Think about initializing: if you start with temple as the assumed maximum, what happens if another word has more occurrences?"
       ],
       "completionSegment": {
-        "narrative": "The word frequency analysis completes, and suddenly the pattern becomes crystal clear. Dr. Rodriguez gasps.\n\n\"Temple, gold, sacred, ritual... This isn't religious text. It's instructions! They're describing how to preserve knowledge using temple gold—a metal that doesn't corrode—inscribed with sacred rituals that ensure the knowledge is maintained.\"\n\n{{pathSpecificInsight}}\n\n\"We're close to understanding their complete message. But I need to share something with you...\" Dr. Rodriguez looks uncomfortable. \"I haven't been entirely honest about how I found these fragments.\"",
+        "narrative": "The word frequency analysis completes, and suddenly the pattern becomes crystal clear. Dr. Rodriguez gasps.\n\n\"Temple, gold, sacred, ritual... This isn't religious text. It's instructions! They're describing how to preserve knowledge using temple gold\u2014a metal that doesn't corrode\u2014inscribed with sacred rituals that ensure the knowledge is maintained.\"\n\n{{pathSpecificInsight}}\n\n\"We're close to understanding their complete message. But I need to share something with you...\" Dr. Rodriguez looks uncomfortable. \"I haven't been entirely honest about how I found these fragments.\"",
         "pathSpecificInsights": {
-          "preservationPath": "The UV-revealed words confirm it: 'escape,' 'underground,' 'preservation'—they were fleeing something catastrophic and left instructions for survivors!",
-          "knowledgePath": "The musical encoding in the frequencies isn't decorative—it's functional. When the frequencies are played as notes, they form a mathematical sequence that unlocks the next layer of the cipher!"
+          "preservationPath": "The UV-revealed words confirm it: 'escape,' 'underground,' 'preservation'\u2014they were fleeing something catastrophic and left instructions for survivors!",
+          "knowledgePath": "The musical encoding in the frequencies isn't decorative\u2014it's functional. When the frequencies are played as notes, they form a mathematical sequence that unlocks the next layer of the cipher!"
         },
         "characterResponse": {
           "success": "\"Your frequency analysis is brilliant! {{playerAction}} revealed exactly what we needed. You have a natural talent for pattern recognition.\"",
           "struggle": "\"Frequency analysis requires careful tracking, and {{struggledConcept}} added complexity. But you found the pattern that unlocks everything.\""
         },
         "choice": {
-          "prompt": "Dr. Rodriguez takes a deep breath. \"I found these fragments because... I was following clues left by my grandmother. She was part of a society that's been protecting this knowledge for generations. Now I need to know—can I trust you with the complete truth?\"",
+          "prompt": "Dr. Rodriguez takes a deep breath. \"I found these fragments because... I was following clues left by my grandmother. She was part of a society that's been protecting this knowledge for generations. Now I need to know\u2014can I trust you with the complete truth?\"",
           "options": [
             {
               "id": "demand_truth",
@@ -458,7 +456,7 @@
             },
             {
               "id": "trust_rodriguez",
-              "text": "Your grandmother's legacy is safe with me—let's finish this together",
+              "text": "Your grandmother's legacy is safe with me\u2014let's finish this together",
               "consequence": "trustPath",
               "preview": "Build alliance based on mutual trust",
               "strengthensRelationship": true
@@ -480,7 +478,7 @@
           "responsibility": "You're now being invited to join the Keepers"
         },
         "trustPath": {
-          "additionalContext": "\n\nDr. Rodriguez smiles with relief: \"Your trust means everything. Together, we can finish what my grandmother started. She left me one final clue—a fragment she kept hidden that connects all the others.\"",
+          "additionalContext": "\n\nDr. Rodriguez smiles with relief: \"Your trust means everything. Together, we can finish what my grandmother started. She left me one final clue\u2014a fragment she kept hidden that connects all the others.\"",
           "hiddenFragment": "The master key: 'When temple gold preserves the sacred ritual, time's spiral completes'",
           "bond": "Dr. Rodriguez now fully trusts you as a partner"
         }
@@ -522,14 +520,14 @@
           "options": [
             {
               "id": "activate_broadcast",
-              "text": "Yes—share this knowledge with humanity",
+              "text": "Yes\u2014share this knowledge with humanity",
               "consequence": "enlightenmentPath",
               "preview": "Release ancient wisdom to the world",
               "globalImpact": true
             },
             {
               "id": "secure_knowledge",
-              "text": "No—this needs to be studied carefully first",
+              "text": "No\u2014this needs to be studied carefully first",
               "consequence": "guardianPath",
               "preview": "Protect knowledge until humanity is ready",
               "createsResponsibility": true
@@ -546,7 +544,7 @@
       "data": "Sites: [\"Alexandria\", \"Memphis\", \"Thebes\", \"Aswan\"]\nFragment counts: [15, 8, 12, 5]",
       "storyModifiers": {
         "enlightenmentPath": {
-          "additionalContext": "\n\nThe global broadcast has begun. Responses are pouring in from archaeological sites worldwide: 'We have matching fragments!' The puzzle is bigger than anyone imagined—this civilization left messages across the entire ancient world!",
+          "additionalContext": "\n\nThe global broadcast has begun. Responses are pouring in from archaeological sites worldwide: 'We have matching fragments!' The puzzle is bigger than anyone imagined\u2014this civilization left messages across the entire ancient world!",
           "worldResponse": "UNESCO declares this the most significant archaeological discovery in human history",
           "newSites": [
             "Rome",
@@ -594,7 +592,7 @@
       "completionSegment": {
         "narrative": "The geographic analysis reveals a stunning truth. The sites form a perfect geometric pattern when plotted on a map—a pentagram with Alexandria at its heart.\n\nDr. Rodriguez pulls up an ancient star chart, her hands trembling slightly. \"These sites align with the constellation Draco as it appeared in 250 CE. They built a map of the heavens on Earth!\"\n\nShe's quiet for a moment, staring at the screen. \"My grandmother spent forty years mapping these locations by hand. Forty years of train tickets, dusty archives, and letters to colleagues who thought she was chasing fantasies.\" Her voice catches. \"She died six months before GPS satellites could have confirmed her work in seconds.\"\n\n{{pathSpecificDevelopment}}\n\nDr. Rodriguez straightens, her resolve renewed. \"We're approaching the culmination of everything we've discovered. My grandmother's work, the Bridge Builders' legacy, your skills—they're all converging. The final stage will require everything you've learned.\"",
         "pathSpecificDevelopments": {
-          "enlightenmentPath": "The worldwide revelation has triggered something unexpected: Ancient sites across the globe are resonating with electromagnetic energy. The fragments weren't just messages—they're components of a planetary-scale device!",
+          "enlightenmentPath": "The worldwide revelation has triggered something unexpected: Ancient sites across the globe are resonating with electromagnetic energy. The fragments weren't just messages\u2014they're components of a planetary-scale device!",
           "guardianPath": "Your decision to protect the knowledge has paid off. The Keepers reveal that each site contains a hidden chamber with more fragments. But you must choose which site to excavate first, knowing others are watching."
         },
         "characterResponse": {
@@ -602,7 +600,7 @@
           "struggle": "\"Geographic data analysis with {{struggledConcept}} is complex, but you've uncovered the celestial connection we needed. That persistence—that's what separates researchers from tourists.\""
         },
         "choice": {
-          "prompt": "Dr. Rodriguez shows you the final piece of the puzzle: 'The geographic pattern points to a central location we haven't excavated yet—a place where all the knowledge converges. But reaching it means making a choice about how this story ends.'",
+          "prompt": "Dr. Rodriguez shows you the final piece of the puzzle: 'The geographic pattern points to a central location we haven't excavated yet\u2014a place where all the knowledge converges. But reaching it means making a choice about how this story ends.'",
           "options": [
             {
               "id": "seek_source",
@@ -637,7 +635,7 @@
       "data": "Damaged text: \"th? s?cr?d t?mpl? w?s b??lt ?n ?nc??nt t?m?s\"",
       "storyModifiers": {
         "discoveryEnding": {
-          "additionalContext": "\n\nYou're racing against time to the convergence point. Your restoration algorithm will be crucial—the final message is heavily damaged, and only perfect restoration will reveal the ultimate truth.",
+          "additionalContext": "\n\nYou're racing against time to the convergence point. Your restoration algorithm will be crucial\u2014the final message is heavily damaged, and only perfect restoration will reveal the ultimate truth.",
           "pressure": "Other parties are hours behind you",
           "stakes": "First to decode wins everything"
         },
@@ -647,7 +645,7 @@
           "responsibility": "You're becoming the knowledge keeper"
         },
         "enlightenmentEnding": {
-          "additionalContext": "\n\nThe world watches as you restore the damaged text live. Millions are following your code, learning both programming and archaeology. You're not just revealing history—you're teaching it.",
+          "additionalContext": "\n\nThe world watches as you restore the damaged text live. Millions are following your code, learning both programming and archaeology. You're not just revealing history\u2014you're teaching it.",
           "audience": "Global livestream with 100 million viewers",
           "impact": "Inspiring a new generation of digital archaeologists"
         }
@@ -680,9 +678,9 @@
       "completionSegment": {
         "narrative": "The restoration completes perfectly. The ancient text reveals its final secret:\n\n'The sacred temple was built in ancient times... to preserve the echo of stars, the memory of mathematics, the soul of science. We are the Bridge Builders, connecting past to future. Our civilization ends, but our knowledge endures. To you who can read this: you are our descendants, not in blood, but in mind. Build your own bridges.'\n\n{{pathSpecificClimax}}\n\nDr. Rodriguez turns to you, tears streaming down her face. \"We did it. We actually did it.\"\n\nShe takes a shaky breath. \"When I was twelve, my grandmother gave me a locket. Inside was a tiny fragment of papyrus with five words I never understood until now: 'Build your own bridges, Elena.' She knew. Somehow, she always knew I'd be here, finishing what she started.\"\n\nShe opens the locket to show you—the papyrus is real, the handwriting ancient.",
         "pathSpecificClimaxes": {
-          "discoveryEnding": "At the convergence point, your restored text activates an ancient device. A holographic library materializes—containing the complete knowledge of the lost civilization. You stand in awe as centuries of wisdom unfold before you.",
+          "discoveryEnding": "At the convergence point, your restored text activates an ancient device. A holographic library materializes\u2014containing the complete knowledge of the lost civilization. You stand in awe as centuries of wisdom unfold before you.",
           "guardianEnding": "Your careful preservation ensures the knowledge survives. The Keepers make you their new leader, entrusting you with fragments from around the world. You'll spend your life protecting and sharing this wisdom.",
-          "enlightenmentEnding": "As millions watch your restoration, something miraculous happens: People worldwide begin finding new fragments, inspired by your work. The ancient civilization's dream is realized—their knowledge truly belongs to all humanity."
+          "enlightenmentEnding": "As millions watch your restoration, something miraculous happens: People worldwide begin finding new fragments, inspired by your work. The ancient civilization's dream is realized\u2014their knowledge truly belongs to all humanity."
         },
         "characterResponse": {
           "success": "\"Your restoration algorithm is perfect! {{playerAction}} brought ancient words back to life. My grandmother spent her whole life hoping someone would read these words again. Because of you, her hope wasn't in vain.\"",
@@ -694,51 +692,33 @@
       "id": 9,
       "title": "The Final Revelation",
       "story": "All your analysis has led to this moment. By combining the data from all previous stages, you can now piece together the complete story of this ancient civilization.\n\nDr. Rodriguez sits beside you, unusually quiet. Finally, she speaks: \"Before we begin this final step, I want you to know something. When I started this project five years ago, I was alone. Colleagues dismissed my research. Funding dried up. There were nights I almost gave up.\"\n\nShe looks at you with gratitude. \"Then you came along—someone who understood that code can be archaeology, that algorithms can unearth history. Whatever happens next, we've already succeeded. We've proven that the Bridge Builders were right: knowledge finds a way.\"\n\n<strong>🔍 Python Concepts: Bringing It All Together</strong>\n\nSynthesizing your skills:\n• Variables and data types (Stage 1)\n• Lists and loops (Stage 2)\n• Conditionals and functions (Stages 3-5)\n• String methods (Stage 6)\n• Parallel lists and percentages (Stage 7)\n• Text processing (Stage 8)\n\nThis final challenge asks you to create a comprehensive report using ALL these skills—proving you've become the computational archaeologist the Bridge Builders predicted.",
-      "challenge": "Create a comprehensive analysis report combining insights from all your previous investigations.",
-      "data": "Final data synthesis using all previous findings:\n• Fragment analysis\n• Language distribution\n• Dating results\n• Word frequencies\n• Geographic distribution",
-      "starterCode": "# Final Revelation - Comprehensive Archaeological Report\n# Synthesize all findings from your investigation\n\n# Archaeological data from all stages\ntotal_fragments = 40\ndate_range = [150, 380]  # CE\nlanguages = [\"Latin\", \"Greek\", \"Unknown\"]\nlanguage_counts = [18, 15, 7]\nsites = [\"Alexandria\", \"Memphis\", \"Thebes\", \"Aswan\"]\nsite_counts = [15, 8, 12, 5]\nkey_words = [\"temple\", \"gold\", \"sacred\", \"ritual\"]\nword_counts = [12, 9, 9, 6]\n\n# TODO: Create a comprehensive final report\n# 1. Print a header with title\n# 2. Show basic statistics (total fragments, date range, time span)\n# 3. Show language distribution with percentages\n# 4. Show geographic distribution with percentages\n# 5. Show key themes/words with occurrence counts\n# 6. Print a summary with key insights\n\nprint(\"TODO: Create your final report here\")",
-      "solution": "# Final Revelation - Comprehensive Archaeological Report\n# Synthesize all findings from your investigation\n\n# Archaeological data from all stages\ntotal_fragments = 40\ndate_range = [150, 380]  # CE\nlanguages = [\"Latin\", \"Greek\", \"Unknown\"]\nlanguage_counts = [18, 15, 7]\nsites = [\"Alexandria\", \"Memphis\", \"Thebes\", \"Aswan\"]\nsite_counts = [15, 8, 12, 5]\nkey_words = [\"temple\", \"gold\", \"sacred\", \"ritual\"]\nword_counts = [12, 9, 9, 6]\n\n# Create comprehensive final report\nprint(\"=\"*50)\nprint(\"\\U0001F3DB\\uFE0F DIGITAL ARCHAEOLOGY FINAL REPORT\")\nprint(\"=\"*50)\n\n# Basic statistics\nprint(f\"\\nTotal fragments discovered: {total_fragments}\")\nprint(f\"Date range: {date_range[0]} CE to {date_range[1]} CE\")\nprint(f\"Time span: {date_range[1] - date_range[0]} years\")\n\n# Language distribution\nprint(\"\\n--- LANGUAGE DISTRIBUTION ---\")\ntotal_lang = sum(language_counts)\nfor i in range(len(languages)):\n    percentage = round((language_counts[i] / total_lang) * 100, 1)\n    print(f\"  {languages[i]}: {language_counts[i]} fragments ({percentage}%)\")\n\n# Geographic distribution\nprint(\"\\n--- GEOGRAPHIC DISTRIBUTION ---\")\ntotal_sites = sum(site_counts)\nfor i in range(len(sites)):\n    percentage = round((site_counts[i] / total_sites) * 100, 1)\n    print(f\"  {sites[i]}: {site_counts[i]} fragments ({percentage}%)\")\n\n# Key themes\nprint(\"\\n--- KEY THEMES ---\")\nfor i in range(len(key_words)):\n    print(f\"  {key_words[i]}: {word_counts[i]} occurrences\")\n\n# Find most significant site\nmax_site = sites[0]\nmax_count = site_counts[0]\nfor i in range(len(sites)):\n    if site_counts[i] > max_count:\n        max_site = sites[i]\n        max_count = site_counts[i]\n\n# Find most common word\nmax_word = key_words[0]\nmax_word_count = word_counts[0]\nfor i in range(len(key_words)):\n    if word_counts[i] > max_word_count:\n        max_word = key_words[i]\n        max_word_count = word_counts[i]\n\n# Summary\nprint(\"\\n\" + \"=\"*50)\nprint(\"MISSION ACCOMPLISHED - KEY INSIGHTS\")\nprint(\"=\"*50)\nprint(f\"Most significant site: {max_site} ({max_count} fragments)\")\nprint(f\"Most common theme: {max_word} ({max_word_count} occurrences)\")\nprint(f\"Primary languages: {languages[0]} and {languages[1]}\")\nprint(f\"Research period: {date_range[1] - date_range[0]} years of history\")\nprint(\"\\nThe Bridge Builders' message has been decoded!\")",
+      "challenge": "Create a final analysis report using the summary data below. Calculate the total fragments, find the most common language, and identify the primary time period.",
+      "data": "Summary data from all investigations:\n\nfragments_by_site = {\"Alexandria\": 15, \"Memphis\": 8, \"Thebes\": 12, \"Aswan\": 5}\nlanguage_counts = {\"Latin\": 5, \"Greek\": 3, \"Unknown\": 4}\ncentury_counts = {\"2nd\": 3, \"3rd\": 4, \"4th\": 3}\nkey_words = [\"temple\", \"sacred\", \"gold\", \"ritual\"]",
+      "starterCode": "# Final Analysis Report\n# Summary data from all investigations\n\nfragments_by_site = {\"Alexandria\": 15, \"Memphis\": 8, \"Thebes\": 12, \"Aswan\": 5}\nlanguage_counts = {\"Latin\": 5, \"Greek\": 3, \"Unknown\": 4}\ncentury_counts = {\"2nd\": 3, \"3rd\": 4, \"4th\": 3}\nkey_words = [\"temple\", \"sacred\", \"gold\", \"ritual\"]\n\n# Task 1: Calculate total fragments across all sites\ntotal_fragments = 0\nfor site in fragments_by_site:\n    total_fragments = total_fragments + fragments_by_site[site]\n\nprint(\"=== FINAL ANALYSIS REPORT ===\")\nprint(\"Total fragments analyzed: \" + str(total_fragments))\n\n# Task 2: Find the site with the most fragments\n# TODO: Loop through fragments_by_site to find the site with highest count\n# Hint: Track the max count and the site name as you loop\n\n# Task 3: Find the most common language\n# TODO: Loop through language_counts to find the most common language\n\n# Task 4: Print the key words\nprint(\"Key themes discovered: \" + \", \".join(key_words))\n\nprint(\"=== END OF REPORT ===\")",
+      "solution": "# Final Analysis Report\nfragments_by_site = {\"Alexandria\": 15, \"Memphis\": 8, \"Thebes\": 12, \"Aswan\": 5}\nlanguage_counts = {\"Latin\": 5, \"Greek\": 3, \"Unknown\": 4}\ncentury_counts = {\"2nd\": 3, \"3rd\": 4, \"4th\": 3}\nkey_words = [\"temple\", \"sacred\", \"gold\", \"ritual\"]\n\n# Task 1: Calculate total fragments\ntotal_fragments = 0\nfor site in fragments_by_site:\n    total_fragments = total_fragments + fragments_by_site[site]\n\nprint(\"=== FINAL ANALYSIS REPORT ===\")\nprint(\"Total fragments analyzed: \" + str(total_fragments))\n\n# Task 2: Find site with most fragments\nmax_count = 0\ntop_site = \"\"\nfor site in fragments_by_site:\n    if fragments_by_site[site] > max_count:\n        max_count = fragments_by_site[site]\n        top_site = site\nprint(\"Primary excavation site: \" + top_site + \" (\" + str(max_count) + \" fragments)\")\n\n# Task 3: Find most common language\nmax_lang_count = 0\ntop_language = \"\"\nfor lang in language_counts:\n    if language_counts[lang] > max_lang_count:\n        max_lang_count = language_counts[lang]\n        top_language = lang\nprint(\"Dominant language: \" + top_language)\n\n# Task 4: Key words\nprint(\"Key themes discovered: \" + \", \".join(key_words))\n\nprint(\"=== END OF REPORT ===\")",
       "validation": {
         "codePatterns": [
-          "total_fragments\\s*=\\s*40",
-          "languages\\s*=\\s*\\[.*Latin.*Greek.*Unknown.*\\]",
-          "language_counts\\s*=\\s*\\[.*18.*15.*7.*\\]",
-          "date_range\\s*=\\s*\\[.*150.*380.*\\]",
-          "for\\s+i\\s+in\\s+range\\(",
-          "percentage\\s*=.*sum\\(",
-          "round\\(",
-          "print\\(f.*\\{.*\\}.*\\)"
+          "for\\s+\\w+\\s+in"
         ],
         "outputPatterns": [
-          "🏛️ DIGITAL ARCHAEOLOGY FINAL REPORT",
-          "Total fragments discovered.*40",
-          "Date range.*150.*380.*CE",
-          "Time span.*230.*years",
-          "Latin.*18.*45\\.0",
-          "Greek.*15.*37\\.5",
-          "Unknown.*7.*17\\.5",
-          "Alexandria.*15.*37\\.5",
-          "temple.*12.*occurrences",
-          "MISSION ACCOMPLISHED",
-          "Most significant site.*Alexandria.*15",
-          "Most common theme.*temple.*12",
-          "Primary languages.*Latin.*Greek",
-          "Research period.*230.*years"
+          "(40|Total.*40|fragments.*40)",
+          "(Alexandria|primary|Primary)",
+          "(Latin|language|Language)"
         ],
-        "description": "Must create comprehensive report using all programming concepts learned"
+        "description": "Must calculate totals and find maximums from the data"
       },
       "hints": [
-        "This final challenge combines everything you've learned. Start by reviewing: what techniques did you use in previous stages?",
-        "You have parallel lists (languages/counts, sites/counts). How do you loop through them together to show both names and numbers?",
-        "Percentages need a total first. Which values should you sum to get totals for languages? For sites?",
-        "To find the maximum in a list, what pattern have you used before? Initialize with the first value, then compare as you loop.",
+        "Total fragments: Loop through fragments_by_site and add up all the values",
+        "To find max: Track the current maximum and update when you find a larger value",
+        "Dictionary access: fragments_by_site[site] gives you the count for that site",
+        "The .join() method combines list items into a string",
         "For a professional report, think about organization: header, sections for each analysis, and a summary at the end."
       ],
       "completionSegment": {
-        "narrative": "Your final report compiles everything discovered on this incredible journey. The complete picture emerges:\n\nThe Bridge Builders were a secret society of scholars who foresaw the fall of classical civilization. They preserved not just knowledge, but a METHOD of thinking—computational thinking—encoded in a way that only a future technological civilization could decode.\n\nThey predicted that when humanity redeveloped computing, someone would find their fragments and understand their message: Knowledge transcends time when preserved with wisdom and shared with purpose.\n\n{{ending}}",
+        "narrative": "Your final report compiles everything discovered on this incredible journey. The complete picture emerges:\n\nThe Bridge Builders were a secret society of scholars who foresaw the fall of classical civilization. They preserved not just knowledge, but a METHOD of thinking\u2014computational thinking\u2014encoded in a way that only a future technological civilization could decode.\n\nThey predicted that when humanity redeveloped computing, someone would find their fragments and understand their message: Knowledge transcends time when preserved with wisdom and shared with purpose.\n\n{{ending}}",
         "characterResponse": {
-          "success": "\"You've done more than solve a mystery—you've bridged two thousand years of human knowledge. {{playerAction}} throughout this journey proved you're a true digital archaeologist. My grandmother would be so proud.\"",
-          "struggle": "\"Through every challenge, including {{struggledConcept}}, you persevered. That's what makes a real archaeologist—not perfection, but persistence. You've honored both the ancient scholars and modern science.\""
+          "success": "\"You've done more than solve a mystery\u2014you've bridged two thousand years of human knowledge. Your analytical skills throughout this journey proved you're a true digital archaeologist. My grandmother would be so proud.\"",
+          "struggle": "\"Through every challenge, you persevered. That's what makes a real archaeologist\u2014not perfection, but persistence. You've honored both the ancient scholars and modern science.\""
         }
       }
     }
@@ -752,7 +732,7 @@
         "sought_convergence",
         "chose_discovery"
       ],
-      "narrative": "At the convergence point, you discover the Bridge Builders still exist—descendants who've waited centuries for someone with your unique skills. They invite you to join them in preserving knowledge for future civilizations. You accept, becoming a bridge between past and future.\n\nDr. Rodriguez smiles. 'My grandmother always said the right person would know what to do. She was right about you.'\n\nYour Python skills and archaeological instincts have uncovered not just ancient history, but a living legacy. You are now part of something greater—a guardian of human knowledge across time.",
+      "narrative": "At the convergence point, you discover the Bridge Builders still exist\u2014descendants who've waited centuries for someone with your unique skills. They invite you to join them in preserving knowledge for future civilizations. You accept, becoming a bridge between past and future.\n\nDr. Rodriguez smiles. 'My grandmother always said the right person would know what to do. She was right about you.'\n\nYour Python skills and archaeological instincts have uncovered not just ancient history, but a living legacy. You are now part of something greater\u2014a guardian of human knowledge across time.",
       "badge": "seeker_badge",
       "description": "You followed the mystery to its source and joined an ancient tradition"
     },
@@ -788,7 +768,7 @@
         "chose_research",
         "valued_understanding"
       ],
-      "narrative": "Your meticulous analysis becomes the definitive academic work on the Bridge Builders. Years of careful study reveal layer after layer of meaning in their fragments—mathematical theorems, astronomical observations, even early quantum theory.\n\nYou become the world's leading expert, teaching at Alexandria's rebuilt library. Your students use your Python programs to make new discoveries, continuing your work.\n\nDr. Rodriguez writes in her final letter: 'You chose understanding over glory, wisdom over wealth. The Bridge Builders would recognize you as one of their own—a true scholar.'",
+      "narrative": "Your meticulous analysis becomes the definitive academic work on the Bridge Builders. Years of careful study reveal layer after layer of meaning in their fragments\u2014mathematical theorems, astronomical observations, even early quantum theory.\n\nYou become the world's leading expert, teaching at Alexandria's rebuilt library. Your students use your Python programs to make new discoveries, continuing your work.\n\nDr. Rodriguez writes in her final letter: 'You chose understanding over glory, wisdom over wealth. The Bridge Builders would recognize you as one of their own\u2014a true scholar.'",
       "badge": "scholar_badge",
       "description": "You devoted your life to understanding and teaching the ancient knowledge"
     }

@@ -6,7 +6,11 @@
   "scripts": {
     "test": "node test-runner-node.js",
     "test:browser": "echo 'Open test-runner.html in your browser to run tests'",
-    "test:serve": "python3 -m http.server 8000",
+    "test:serve": "python3 -m http.server 8001",
+    "test:api": "node tests/test-game-api.js",
+    "agent": "node tests/agent-player.js",
+    "agent:headless": "node tests/agent-player.js --headless",
+    "agent:stage": "node tests/agent-player.js --stage=",
     "lint": "echo 'No linting configured yet'"
   },
   "keywords": [
@@ -20,7 +24,8 @@
   "license": "MIT",
   "devDependencies": {
     "jsdom": "^22.0.0",
-    "node-fetch": "^3.3.0"
+    "node-fetch": "^3.3.0",
+    "playwright": "^1.57.0"
   },
   "engines": {
     "node": ">=14.0.0"
