@@ -2970,14 +2970,20 @@ function updateDataCard(stageData) {
 
 
 // Update the narrative strip with current story progress
-function updateNarrativeStrip(storyText, objectiveText) {
+function updateNarrativeStrip(storyText, objectiveText, isDialogue = false) {
   const storyProgress = document.getElementById('story-progress');
   const currentObjective = document.getElementById('current-objective');
-  
+
   if (storyProgress && storyText) {
-    storyProgress.innerHTML = `📜 Dr. Rodriguez: "${storyText}"`;
+    if (isDialogue) {
+      // Character dialogue - show as quote
+      storyProgress.innerHTML = `💬 <strong>Dr. Rodriguez:</strong> "${storyText}"`;
+    } else {
+      // Narrative prose - show as story text
+      storyProgress.innerHTML = `📜 ${storyText}`;
+    }
   }
-  
+
   if (currentObjective && objectiveText) {
     currentObjective.innerHTML = `🎯 ${objectiveText}`;
   }
