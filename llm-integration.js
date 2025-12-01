@@ -873,8 +873,8 @@ Then briefly explain what you changed and why.`;
     llmHint.appendChild(contentDiv);
     hintTextContainer.appendChild(llmHint);
 
-    // Scroll to the response
-    llmHint.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    // Scroll to the response - use 'end' to ensure new content is visible
+    llmHint.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }
 
   /**
@@ -964,8 +964,8 @@ Then briefly explain what you changed and why.`;
       reaction.style.transform = 'translateY(0)';
     });
 
-    // Scroll into view
-    reaction.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    // Scroll into view - use 'end' to ensure new content is visible
+    reaction.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }
 
   // ============================================
@@ -1146,7 +1146,8 @@ Then briefly explain what you changed and why.`;
     llmHint.appendChild(actionBar);
     hintTextContainer.appendChild(llmHint);
 
-    llmHint.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    // Scroll to ensure new content is visible
+    llmHint.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }
 }
 
