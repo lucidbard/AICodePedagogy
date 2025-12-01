@@ -2644,32 +2644,35 @@ class EnhancedLLMIntegration extends LLMIntegration {
   }
   
   updateHintSystem() {
-    const hintsContainer = document.getElementById('hints-container');
-    hintsContainer.innerHTML = '';
-    
+    // Use dedicated chat panel instead of hints container
+    const chatPanel = document.getElementById('chat-panel');
+    if (!chatPanel) return;
+
+    chatPanel.innerHTML = '';
+
     // Create character chat interface
     const chatInterface = document.createElement('div');
     chatInterface.className = 'character-chat';
     chatInterface.innerHTML = `
       <div class="chat-header">
         <img src="rodriguez-avatar.png" alt="Dr. Rodriguez" class="chat-avatar">
-        <span>Chat with Dr. Rodriguez</span>
+        <span>Dr. Rodriguez</span>
         <span class="status-indicator online"></span>
       </div>
       <div class="chat-messages" id="chat-messages">
         <div class="message character">
-          <p>Need help with the ${gameContent.stages[currentStage - 1].title.toLowerCase()}? 
+          <p>Need help with the ${gameContent.stages[currentStage - 1].title.toLowerCase()}?
           I'm here to guide you through this mystery!</p>
         </div>
       </div>
       <div class="chat-input-container">
-        <button id="quick-hint-btn" class="quick-action">🔍 Quick Hint</button>
-        <button id="explain-error-btn" class="quick-action">❌ Explain Error</button>
-        <button id="story-context-btn" class="quick-action">📖 Story Context</button>
+        <button id="quick-hint-btn" class="quick-action">🔍 Hint</button>
+        <button id="explain-error-btn" class="quick-action">❌ Error</button>
+        <button id="story-context-btn" class="quick-action">📖 Story</button>
       </div>
     `;
-    
-    hintsContainer.appendChild(chatInterface);
+
+    chatPanel.appendChild(chatInterface);
     
     // Wire up buttons
     document.getElementById('quick-hint-btn').addEventListener('click', async () => {

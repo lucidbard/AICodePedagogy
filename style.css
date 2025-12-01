@@ -99,8 +99,8 @@ h1 {
 
 .game-area {
   display: grid;
-  grid-template-columns: 2fr 3fr;
-  gap: 20px;
+  grid-template-columns: 1fr 2fr 1fr;
+  gap: 16px;
   margin-bottom: 20px;
 }
 
@@ -1314,7 +1314,53 @@ body {
 }
 
 .llm-settings {
-  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.llm-settings .provider-selection,
+.llm-settings .api-key-container,
+.llm-settings .model-selection {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+}
+
+.llm-settings .provider-selection label {
+  font-size: 11px;
+  color: #e6d19a;
+}
+
+.llm-settings .provider-selection select,
+.llm-settings .api-key-container input {
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid #8b7355;
+  border-radius: 4px;
+  color: #e6d19a;
+  font-size: 11px;
+}
+
+.llm-settings .api-key-container {
+  max-width: 200px;
+}
+
+.llm-settings .api-key-container input {
+  width: 120px;
+}
+
+.llm-settings .save-key-btn {
+  padding: 2px 6px;
+  font-size: 10px;
+  background: rgba(201, 176, 55, 0.2);
+  border: 1px solid #c9b037;
+  border-radius: 4px;
+  color: #c9b037;
+  cursor: pointer;
 }
 
 .model-selection {
@@ -2087,8 +2133,23 @@ body {
 
 .workspace {
   display: grid;
-  grid-template-columns: 1fr 1.5fr;
+  grid-template-columns: minmax(200px, 1fr) minmax(400px, 2fr) minmax(280px, 1fr);
   gap: 1rem;
+}
+
+.chat-panel {
+  background: rgba(212, 165, 116, 0.05);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  min-height: 400px;
+  max-height: calc(100vh - 250px);
+}
+
+.chat-panel .character-chat {
+  height: 100%;
+  border: none;
+  background: transparent;
 }
 
 .reference-panel {

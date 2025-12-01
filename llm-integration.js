@@ -356,7 +356,7 @@ class LLMIntegration {
 
   updateModelSelect() {
     if (!this.isBrowserEnvironment()) return;
-    
+
     const select = document.getElementById('model-select');
     select.innerHTML = '<option value="">Select a model...</option>';
 
@@ -370,7 +370,52 @@ class LLMIntegration {
     // Restore previously selected model if available
     if (this.selectedModel && this.models.includes(this.selectedModel)) {
       select.value = this.selectedModel;
+    } else if (this.models.length > 0 && !this.selectedModel) {
+      // Auto-select a good default model
+      const defaultModel = this.selectBestDefaultModel(this.models);
+      if (defaultModel) {
+        select.value = defaultModel;
+        this.selectedModel = defaultModel;
+        this.saveModelPreferences();
+        this.updateModelInfo();
+        this.updateQueryButtonStates();
+        console.log(`Auto-selected model: ${defaultModel}`);
+      }
     }
+  }
+
+  /**
+   * Select the best default model from available models
+   * Prefers smaller/faster models suitable for hints and chat
+   */
+  selectBestDefaultModel(models) {
+    // Preferred models in order of preference (good for hints/chat, fast)
+    const preferredModels = [
+      'llama3.2:3b', 'llama3.2:1b', 'llama3.2',
+      'llama3.1:8b', 'llama3.1',
+      'llama3:8b', 'llama3',
+      'mistral:7b', 'mistral',
+      'gemma2:9b', 'gemma2:2b', 'gemma2',
+      'phi3:mini', 'phi3',
+      'qwen2.5:7b', 'qwen2.5:3b', 'qwen2.5',
+      'codellama:7b', 'codellama',
+      'deepseek-coder:6.7b', 'deepseek-coder'
+    ];
+
+    // Check for preferred models first
+    for (const preferred of preferredModels) {
+      const found = models.find(m => m.toLowerCase().includes(preferred.toLowerCase()));
+      if (found) return found;
+    }
+
+    // If no preferred model found, suggest installing one
+    if (models.length > 0) {
+      console.log('No preferred model found. Consider installing: ollama pull llama3.2:3b');
+      // Fall back to first available model
+      return models[0];
+    }
+
+    return null;
   }
 
   updateQueryButtonStates() {
