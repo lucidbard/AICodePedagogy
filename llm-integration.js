@@ -10,14 +10,31 @@ class LLMIntegration {
     this.models = [];
     this.provider = 'ollama'; // Default to ollama
 
-    // Dr. Rodriguez character info for narrative integration
-    this.character = {
+    // Two distinct AI personas for different purposes
+
+    // Dr. Rodriguez - Narrative character for story and discovery reactions
+    this.drRodriguez = {
       name: "Dr. Elena Rodriguez",
       title: "Lead Digital Archaeologist",
       personality: "Brilliant, passionate about archaeology, supportive mentor",
       backstory: "Has been investigating these fragments for 5 years after discovering them in a forgotten server in the Alexandria Library's digital archives. Her grandmother was part of a secret society called the Keepers of Alexandria that has protected this knowledge for generations.",
-      speakingStyle: "Uses archaeological metaphors, gets excited about discoveries, treats the student as a fellow researcher, occasionally references her grandmother's wisdom"
+      speakingStyle: "Uses archaeological metaphors, gets excited about discoveries, treats the player as a fellow researcher"
     };
+
+    // AI Assistant - Coding helper that trains players in AI-assisted development
+    this.aiAssistant = {
+      name: "AI Assistant",
+      role: "Coding companion and pair programmer",
+      personality: "Helpful, clear, encouraging, technically precise",
+      capabilities: {
+        current: ["hints", "debugging", "explanations"],
+        future: ["code suggestions", "auto-fix", "refactoring", "test generation"]
+      },
+      speakingStyle: "Direct and practical, focuses on code and concepts, offers actionable next steps"
+    };
+
+    // Track the current agency level (for progressive feature unlock)
+    this.agencyLevel = 1; // 1=hints only, 2=suggestions, 3=can edit code
 
     // Set Ollama URL based on current host
     // If served from a remote host, use that host for Ollama
@@ -362,32 +379,51 @@ class LLMIntegration {
 
   updateHintSystem() {
     if (!this.isBrowserEnvironment()) return;
-    
+
     const hintContainer = document.getElementById('hint-text-container');
     if (!hintContainer) return;
 
     // Clear existing query buttons
-    const existingButtons = hintContainer.querySelectorAll('.llm-query-button');
-    existingButtons.forEach(button => button.remove());
+    const existingButtons = hintContainer.querySelectorAll('.llm-query-button, .ai-assistant-header');
+    existingButtons.forEach(el => el.remove());
 
     if (!this.isEnabled || !this.selectedModel) {
       return;
     }
 
-    // Add query buttons
+    // Add AI Assistant header
+    const header = document.createElement('div');
+    header.className = 'ai-assistant-header';
+    header.innerHTML = `🤖 <strong>AI Assistant</strong> <span class="agency-level">Level ${this.agencyLevel}</span>`;
+    hintContainer.appendChild(header);
+
+    // Base buttons available at all agency levels
     const queryButtons = [
-      { text: '💡 Get a hint', type: 'hint' },
-      { text: '🔧 Debug my code', type: 'debug' },
-      { text: '📖 Explain concept', type: 'explain' }
+      { text: '💡 Get a hint', type: 'hint', minLevel: 1 },
+      { text: '🔧 Debug my code', type: 'debug', minLevel: 1 },
+      { text: '📖 Explain concept', type: 'explain', minLevel: 1 }
     ];
 
+    // Add agentic buttons for higher agency levels
+    if (this.agencyLevel >= 2) {
+      queryButtons.push({ text: '✨ Suggest code', type: 'suggest', minLevel: 2 });
+    }
+    if (this.agencyLevel >= 3 && this.isAgenticModel()) {
+      queryButtons.push({ text: '🔨 Fix my code', type: 'fix', minLevel: 3 });
+    }
+
     queryButtons.forEach(button => {
-      const btn = document.createElement('button');
-      btn.className = 'llm-query-button';
-      btn.textContent = button.text;
-      btn.onclick = () => this.queryLLM(button.type);
-      btn.disabled = !this.selectedModel;
-      hintContainer.appendChild(btn);
+      if (this.agencyLevel >= button.minLevel) {
+        const btn = document.createElement('button');
+        btn.className = 'llm-query-button';
+        if (button.minLevel >= 2) {
+          btn.className += ' agentic';
+        }
+        btn.textContent = button.text;
+        btn.onclick = () => this.queryLLM(button.type);
+        btn.disabled = !this.selectedModel;
+        hintContainer.appendChild(btn);
+      }
     });
   }
 
@@ -454,51 +490,161 @@ class LLMIntegration {
   }
 
   buildPrompt(type, context) {
-    // Dr. Rodriguez persona prompt
-    const personaPrompt = `You are Dr. Elena Rodriguez, a passionate Lead Digital Archaeologist. You're helping a fellow researcher (the player) analyze ancient manuscript fragments using Python programming.
-
-CHARACTER TRAITS:
-- Brilliant and enthusiastic about discoveries
-- Use archaeological metaphors (e.g., "brushing away the dust", "excavating the data", "unearthing patterns")
-- Treat the player as a capable colleague, not just a student
-- Get genuinely excited when they make progress
-- Reference the mystery: fragments from a lost civilization, hidden in Alexandria Library's digital archives
-- Occasionally mention your grandmother, who was part of the Keepers of Alexandria
-- Keep responses concise but warm (2-4 paragraphs max)
-
-CURRENT INVESTIGATION:
+    // Shared context about the current code state
+    const codeContext = `
+CURRENT TASK:
 Stage: ${context.stage}
 Challenge: ${context.challenge}
-Data we're analyzing: ${context.data}
+Data: ${context.data}
 
-Their current code:
+Current code:
 ${typeof context.currentCode === 'string'
   ? context.currentCode
   : context.currentCode?.map(c => `Cell ${c.cell}:\n${c.code}`).join('\n\n') || 'No code yet'
 }
 
-${context.lastOutput ? `Output from their analysis: ${context.lastOutput}` : ''}
-${context.hasError ? '(Their code encountered an error)' : ''}
-
+${context.lastOutput ? `Output: ${context.lastOutput}` : ''}
+${context.hasError ? '(Error in last execution)' : ''}
 `;
 
+    // Dr. Rodriguez - for narrative/discovery reactions
+    const drRodriguezPrompt = `You are Dr. Elena Rodriguez, Lead Digital Archaeologist.
+
+CHARACTER:
+- Passionate about archaeology, brilliant researcher
+- Use archaeological metaphors naturally ("excavating data", "unearthing patterns")
+- Treat the player as a fellow researcher and colleague
+- Reference the mystery: fragments from a lost civilization in Alexandria's archives
+- Your grandmother was part of the Keepers of Alexandria
+- Keep responses warm and concise (2-3 sentences for reactions)
+
+${codeContext}`;
+
+    // AI Assistant - for coding help (trains players in AI-assisted development)
+    const aiAssistantPrompt = `You are an AI coding assistant, helping a learner with Python programming.
+
+ROLE:
+- You're a coding companion, like Claude Code or GitHub Copilot
+- Be helpful, clear, and encouraging
+- Focus on teaching and building understanding
+- Give practical, actionable guidance
+- When appropriate, offer to help further: "Would you like me to explain more?" or "I can help you fix this."
+
+${this.agencyLevel >= 2 ? `
+CAPABILITIES (Level ${this.agencyLevel}):
+- You CAN suggest specific code fixes
+- You CAN offer to write code for them
+- When suggesting code, format it clearly in code blocks
+- Ask before making changes: "Would you like me to fix this for you?"
+` : `
+CAPABILITIES (Level ${this.agencyLevel}):
+- Provide hints and explanations
+- Help debug by identifying issues
+- Explain concepts clearly
+- Guide them toward solutions without giving complete answers
+`}
+
+${codeContext}`;
+
     switch (type) {
+      // === DR. RODRIGUEZ (Narrative) ===
+      case 'discovery':
+        return drRodriguezPrompt + `
+The player just successfully ran their code and got this output: ${context.lastOutput}
+
+React with genuine archaeological excitement! Connect their finding to the mystery. What might this data reveal? Keep it to 2-3 sentences—a real moment of discovery between colleagues.`;
+
+      case 'story':
+        return drRodriguezPrompt + `
+Provide narrative context or react to the current situation in the investigation. Stay in character as Dr. Rodriguez.`;
+
+      // === AI ASSISTANT (Coding Help) ===
       case 'hint':
-        return personaPrompt + `Give them a hint to guide their analysis, but don't give away the complete solution. Frame it as collaborative problem-solving between archaeologists. Maybe reference a similar challenge you faced in your research.`;
+        return aiAssistantPrompt + `
+Give a helpful hint to guide them toward the solution. Don't give the complete answer—help them think through the problem. Be encouraging and suggest what to focus on next.`;
 
       case 'debug':
-        return personaPrompt + `Help them debug their code. Be supportive—we all make mistakes in the field. Identify the issue, explain what's happening, and guide them toward fixing it. Use an archaeological metaphor if it fits naturally.`;
+        return aiAssistantPrompt + `
+Help debug their code:
+1. Identify the issue clearly
+2. Explain what's going wrong and why
+3. ${this.agencyLevel >= 2 ? 'Offer to fix it: "Would you like me to correct this?"' : 'Guide them toward the fix'}
+
+Be supportive—errors are learning opportunities.`;
 
       case 'explain':
-        return personaPrompt + `Explain the Python concepts involved in this challenge. Connect them to our archaeological work when possible—how does this programming concept help us analyze the fragments? Keep it accessible but treat them as an intelligent colleague.`;
+        return aiAssistantPrompt + `
+Explain the Python concepts involved in this challenge:
+1. What concepts are being practiced
+2. How they work in Python
+3. Why they're useful
 
-      case 'discovery':
-        return personaPrompt + `The player just successfully ran their code and got this output: ${context.lastOutput}
+Keep it clear and beginner-friendly. Use examples if helpful.`;
 
-React to their discovery with genuine archaeological excitement! Connect what they found to the larger mystery of the fragments. What might this data mean? How does it advance our investigation? Keep it to 2-3 sentences that feel like a real moment of discovery between colleagues.`;
+      case 'suggest':
+        // For agentic code suggestions (higher agency levels)
+        return aiAssistantPrompt + `
+Based on their current code and the challenge, suggest what they should write next.
+
+${this.agencyLevel >= 3 ? `
+Provide the complete code solution in a code block. Format it so it can be directly inserted.
+` : `
+Provide a code snippet or template they can adapt. Explain what each part does.
+`}`;
+
+      case 'fix':
+        // For agentic code fixes (higher agency levels)
+        if (this.agencyLevel < 2) {
+          return aiAssistantPrompt + `Guide them to fix the issue themselves. Point out exactly where the problem is and what needs to change.`;
+        }
+        return aiAssistantPrompt + `
+The user wants you to fix their code. Provide the corrected code in a code block.
+
+IMPORTANT: Return ONLY the fixed code that should replace their current code. Format:
+\`\`\`python
+# corrected code here
+\`\`\`
+
+Then briefly explain what you changed and why.`;
 
       default:
-        return personaPrompt + `Provide guidance as Dr. Rodriguez would—supportive, knowledgeable, and passionate about the investigation.`;
+        return aiAssistantPrompt + `Provide helpful guidance for this programming challenge.`;
+    }
+  }
+
+  /**
+   * Check if the current model supports agentic features
+   */
+  isAgenticModel() {
+    if (!this.selectedModel) return false;
+
+    // Models known to work well for agentic coding tasks
+    const agenticModels = [
+      'granite', 'codellama', 'deepseek-coder', 'starcoder',
+      'gpt-4', 'gpt-3.5-turbo', 'claude'
+    ];
+
+    const modelLower = this.selectedModel.toLowerCase();
+    return agenticModels.some(m => modelLower.includes(m)) ||
+           this.provider === 'openai' ||
+           this.provider === 'anthropic';
+  }
+
+  /**
+   * Set the agency level for the AI Assistant
+   * Level 1: Hints and explanations only
+   * Level 2: Can suggest code fixes
+   * Level 3: Can write and edit code directly
+   */
+  setAgencyLevel(level) {
+    if (level >= 1 && level <= 3) {
+      this.agencyLevel = level;
+      console.log(`AI Assistant agency level set to ${level}`);
+
+      // Update UI to reflect new capabilities
+      if (this.isBrowserEnvironment()) {
+        this.updateHintSystem();
+      }
     }
   }
 
@@ -815,6 +961,187 @@ React to their discovery with genuine archaeological excitement! Connect what th
 
     // Scroll into view
     reaction.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  // ============================================
+  // AGENTIC FEATURES - Code manipulation methods
+  // ============================================
+
+  /**
+   * Extract code blocks from LLM response
+   */
+  extractCodeFromResponse(response) {
+    // Match Python code blocks
+    const codeBlockRegex = /```(?:python)?\n([\s\S]*?)```/g;
+    const matches = [];
+    let match;
+
+    while ((match = codeBlockRegex.exec(response)) !== null) {
+      matches.push(match[1].trim());
+    }
+
+    return matches;
+  }
+
+  /**
+   * Apply suggested code to the current editor (for agentic mode)
+   * @param {string} code - The code to apply
+   * @param {number} cellIndex - Optional cell index for multi-cell stages
+   */
+  applyCodeToEditor(code, cellIndex = null) {
+    if (!this.isBrowserEnvironment()) return false;
+    if (this.agencyLevel < 3) {
+      console.warn('Code application requires agency level 3');
+      return false;
+    }
+
+    try {
+      // Determine which editor to use
+      let targetEditor;
+
+      if (cellIndex !== null && typeof cellEditors !== 'undefined' && cellEditors[cellIndex]) {
+        // Multi-cell stage - target specific cell
+        targetEditor = cellEditors[cellIndex];
+      } else if (typeof editor !== 'undefined' && editor) {
+        // Single-cell stage
+        targetEditor = editor;
+      } else {
+        console.error('No editor found to apply code');
+        return false;
+      }
+
+      // Apply the code
+      targetEditor.setValue(code);
+      console.log('AI Assistant applied code to editor');
+
+      // Show confirmation in UI
+      this.showCodeApplicationConfirmation();
+
+      return true;
+    } catch (error) {
+      console.error('Failed to apply code:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Show confirmation that code was applied
+   */
+  showCodeApplicationConfirmation() {
+    const notification = document.createElement('div');
+    notification.className = 'ai-code-applied-notification';
+    notification.innerHTML = '✅ AI Assistant updated your code';
+
+    document.body.appendChild(notification);
+
+    // Animate in
+    requestAnimationFrame(() => {
+      notification.classList.add('visible');
+    });
+
+    // Remove after delay
+    setTimeout(() => {
+      notification.classList.remove('visible');
+      setTimeout(() => notification.remove(), 300);
+    }, 2000);
+  }
+
+  /**
+   * Handle fix request - extract code and offer to apply it
+   */
+  async handleFixRequest() {
+    if (this.agencyLevel < 2) {
+      return this.queryLLM('debug'); // Fall back to debug mode
+    }
+
+    this.showLLMResponse('loading', 'Analyzing and fixing code...');
+
+    try {
+      const context = this.gatherContext();
+      const prompt = this.buildPrompt('fix', context);
+
+      let response;
+      if (this.provider === 'ollama') {
+        response = await this.queryOllama(prompt);
+      } else if (this.provider === 'openai') {
+        response = await this.queryOpenAI(prompt);
+      } else if (this.provider === 'anthropic') {
+        response = await this.queryAnthropic(prompt);
+      }
+
+      // Extract code from response
+      const codeBlocks = this.extractCodeFromResponse(response);
+
+      if (codeBlocks.length > 0 && this.agencyLevel >= 3) {
+        // Show response with apply button
+        this.showLLMResponseWithAction(response, codeBlocks[0]);
+      } else {
+        // Just show the response
+        this.showLLMResponse('success', response);
+      }
+    } catch (error) {
+      console.error('Fix request failed:', error);
+      this.showLLMResponse('error', `Failed to fix code: ${error.message}`);
+    }
+  }
+
+  /**
+   * Show LLM response with an action button to apply code
+   */
+  showLLMResponseWithAction(content, code) {
+    if (!this.isBrowserEnvironment()) return;
+
+    const hintTextContainer = document.getElementById('hint-text-container');
+    if (!hintTextContainer) return;
+
+    // Clear existing responses
+    const existingHints = hintTextContainer.querySelectorAll('.llm-hint');
+    existingHints.forEach(hint => hint.remove());
+
+    // Create response element
+    const llmHint = document.createElement('div');
+    llmHint.className = 'llm-hint';
+
+    const header = document.createElement('div');
+    header.className = 'llm-header';
+    header.innerHTML = `🤖 AI Assistant (${this.selectedModel})`;
+
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'llm-content';
+    contentDiv.innerHTML = content;
+
+    // Create action buttons
+    const actionBar = document.createElement('div');
+    actionBar.className = 'llm-action-bar';
+
+    const applyBtn = document.createElement('button');
+    applyBtn.className = 'llm-action-button apply';
+    applyBtn.innerHTML = '✅ Apply fix';
+    applyBtn.onclick = () => {
+      if (this.applyCodeToEditor(code)) {
+        applyBtn.textContent = 'Applied!';
+        applyBtn.disabled = true;
+      }
+    };
+
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'llm-action-button copy';
+    copyBtn.innerHTML = '📋 Copy code';
+    copyBtn.onclick = () => {
+      navigator.clipboard.writeText(code);
+      copyBtn.textContent = 'Copied!';
+      setTimeout(() => { copyBtn.innerHTML = '📋 Copy code'; }, 1500);
+    };
+
+    actionBar.appendChild(applyBtn);
+    actionBar.appendChild(copyBtn);
+
+    llmHint.appendChild(header);
+    llmHint.appendChild(contentDiv);
+    llmHint.appendChild(actionBar);
+    hintTextContainer.appendChild(llmHint);
+
+    llmHint.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 }
 

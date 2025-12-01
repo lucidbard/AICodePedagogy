@@ -2372,3 +2372,104 @@ body {
 .llm-content li {
   margin: 0.25rem 0;
 }
+
+/* ============================================
+   AI Assistant Header & Agency Levels
+   ============================================ */
+
+.ai-assistant-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(212, 165, 116, 0.2);
+  color: #d4af37;
+  font-size: 0.9rem;
+}
+
+.agency-level {
+  background: rgba(212, 165, 116, 0.2);
+  padding: 0.15rem 0.5rem;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #d4a574;
+}
+
+/* Agentic action buttons */
+.llm-query-button.agentic {
+  background: linear-gradient(135deg, #4a7c59, #3d6b4a);
+  border: 1px solid #5a9c69;
+}
+
+.llm-query-button.agentic:hover {
+  background: linear-gradient(135deg, #5a9c69, #4a7c59);
+}
+
+/* LLM Action Bar (for apply/copy buttons) */
+.llm-action-bar {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(212, 165, 116, 0.2);
+}
+
+.llm-action-button {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.llm-action-button.apply {
+  background: linear-gradient(135deg, #4a7c59, #3d6b4a);
+  color: white;
+}
+
+.llm-action-button.apply:hover {
+  background: linear-gradient(135deg, #5a9c69, #4a7c59);
+  transform: translateY(-1px);
+}
+
+.llm-action-button.apply:disabled {
+  background: #555;
+  cursor: default;
+  transform: none;
+}
+
+.llm-action-button.copy {
+  background: rgba(212, 165, 116, 0.2);
+  color: #f4f1e8;
+  border: 1px solid rgba(212, 165, 116, 0.3);
+}
+
+.llm-action-button.copy:hover {
+  background: rgba(212, 165, 116, 0.3);
+}
+
+/* Code Applied Notification */
+.ai-code-applied-notification {
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: linear-gradient(135deg, #4a7c59, #3d6b4a);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  transition: all 0.3s ease;
+  z-index: 1000;
+  font-weight: 500;
+}
+
+.ai-code-applied-notification.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
