@@ -2625,7 +2625,17 @@ class EnhancedLLMIntegration extends LLMIntegration {
     
     Keep response under 100 words. Be conversational.`;
     
-    const response = await this.query(prompt);
+    // Use the appropriate provider's query method
+    let response;
+    if (this.provider === 'ollama') {
+      response = await this.queryOllama(prompt);
+    } else if (this.provider === 'openai') {
+      response = await this.queryOpenAI(prompt);
+    } else if (this.provider === 'anthropic') {
+      response = await this.queryAnthropic(prompt);
+    } else {
+      throw new Error('No LLM provider configured');
+    }
     
     // Track interaction for relationship building
     playerTracker.characterRelationship += 0.1;
