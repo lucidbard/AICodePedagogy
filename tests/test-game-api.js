@@ -6,7 +6,7 @@
 const { chromium } = require('playwright');
 
 const CONFIG = {
-  gameUrl: 'http://localhost:8000',
+  gameUrl: process.env.GAME_URL || 'http://localhost:8001',
   headless: process.argv.includes('--headless'),
   timeout: 30000
 };

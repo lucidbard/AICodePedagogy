@@ -3074,14 +3074,16 @@ window.gameAPI = {
    */
   getState: function() {
     const stage = gameContent?.stages?.find(s => s.id === currentStage);
+    const isMultiCell = !!(stage?.cells && stage.cells.length > 0);
     return {
       currentStage: currentStage,
       totalStages: gameContent?.gameInfo?.totalStages || 0,
       stageTitle: stage?.title || '',
-      stageType: stage?.type || 'single-cell',
+      stageType: isMultiCell ? 'multi-cell' : 'single-cell',
       challenge: stage?.challenge || '',
       data: stage?.data || '',
       hints: stage?.hints || [],
+      cells: isMultiCell ? stage.cells : null,
       completedStages: completedStages,
       isStageComplete: completedStages.includes(currentStage),
       llmEnabled: window.llmIntegration?.isEnabled || false,
@@ -3094,7 +3096,8 @@ window.gameAPI = {
    */
   getCode: function() {
     const stage = gameContent?.stages?.find(s => s.id === currentStage);
-    if (stage?.type === 'multi-cell' && cellEditors.length > 0) {
+    const isMultiCell = !!(stage?.cells && stage.cells.length > 0);
+    if (isMultiCell && cellEditors.length > 0) {
       return cellEditors.map((ed, i) => ({
         cell: i,
         code: ed.getValue()
@@ -3112,7 +3115,8 @@ window.gameAPI = {
    */
   setCode: function(code, cellIndex = null) {
     const stage = gameContent?.stages?.find(s => s.id === currentStage);
-    if (stage?.type === 'multi-cell' && cellIndex !== null && cellEditors[cellIndex]) {
+    const isMultiCell = !!(stage?.cells && stage.cells.length > 0);
+    if (isMultiCell && cellIndex !== null && cellEditors[cellIndex]) {
       cellEditors[cellIndex].setValue(code);
       return true;
     } else if (editor) {
@@ -3130,21 +3134,29 @@ window.gameAPI = {
   runCode: async function(cellIndex = null) {
     return new Promise((resolve) => {
       const stage = gameContent?.stages?.find(s => s.id === currentStage);
+      const isMultiCell = !!(stage?.cells && stage.cells.length > 0);
 
       // Set up observer to detect when execution completes
       const checkComplete = () => {
         setTimeout(() => {
           const output = this.getOutput(cellIndex);
           const state = this.getState();
+          const cellStatus = this.getCellStatus(cellIndex || 0);
+          const allCellsInfo = this.checkAllCellsCompleted();
+
           resolve({
             output: output,
             isComplete: state.isStageComplete,
-            hasError: output.includes('Error:') || output.includes('error')
+            hasError: output.includes('Error:') || output.includes('error'),
+            cellStatus: cellStatus,
+            cellCompleted: cellStatus === 'completed',
+            allCellsCompleted: allCellsInfo.allCompleted,
+            cellStatuses: allCellsInfo.statuses
           });
-        }, 1500); // Give time for execution and validation to complete
+        }, 2000); // Give time for execution and validation to complete
       };
 
-      if (stage?.type === 'multi-cell' && cellIndex !== null) {
+      if (isMultiCell && cellIndex !== null) {
         // Click the cell number to run (it has the onclick handler)
         const cellNumber = document.getElementById(`cell-number-${cellIndex}`);
         if (cellNumber) {
@@ -3172,7 +3184,8 @@ window.gameAPI = {
    */
   getOutput: function(cellIndex = null) {
     const stage = gameContent?.stages?.find(s => s.id === currentStage);
-    if (stage?.type === 'multi-cell' && cellIndex !== null) {
+    const isMultiCell = !!(stage?.cells && stage.cells.length > 0);
+    if (isMultiCell && cellIndex !== null) {
       const outputArea = document.getElementById(`output-area-${cellIndex}`);
       return outputArea?.textContent || '';
     } else {
@@ -3186,13 +3199,75 @@ window.gameAPI = {
    */
   getAllOutputs: function() {
     const stage = gameContent?.stages?.find(s => s.id === currentStage);
-    if (stage?.type === 'multi-cell') {
+    const isMultiCell = !!(stage?.cells && stage.cells.length > 0);
+    if (isMultiCell) {
       return cellEditors.map((_, i) => ({
         cell: i,
         output: this.getOutput(i)
       }));
     }
     return [{ cell: 0, output: this.getOutput() }];
+  },
+
+  /**
+   * Get the status of a specific cell
+   * @param {number} cellIndex - Cell index (0-based)
+   * @returns {string} Status: 'pending', 'completed', 'error', or 'unknown'
+   */
+  getCellStatus: function(cellIndex) {
+    const stage = gameContent?.stages?.find(s => s.id === currentStage);
+    const isMultiCell = !!(stage?.cells && stage.cells.length > 0);
+
+    if (isMultiCell) {
+      const statusEl = document.getElementById(`cell-status-${cellIndex}`);
+      if (statusEl) {
+        if (statusEl.classList.contains('completed')) return 'completed';
+        if (statusEl.classList.contains('error')) return 'error';
+        if (statusEl.classList.contains('pending')) return 'pending';
+        return statusEl.textContent.toLowerCase();
+      }
+    } else {
+      const statusEl = document.getElementById('single-cell-status');
+      if (statusEl) {
+        if (statusEl.classList.contains('completed')) return 'completed';
+        if (statusEl.classList.contains('error')) return 'error';
+        if (statusEl.classList.contains('pending')) return 'pending';
+        return statusEl.textContent.toLowerCase();
+      }
+    }
+    return 'unknown';
+  },
+
+  /**
+   * Get status of all cells in current stage
+   * @returns {Array<object>} Array of {cell, status} objects
+   */
+  getAllCellStatuses: function() {
+    const stage = gameContent?.stages?.find(s => s.id === currentStage);
+    const isMultiCell = !!(stage?.cells && stage.cells.length > 0);
+
+    if (isMultiCell) {
+      return stage.cells.map((_, i) => ({
+        cell: i,
+        status: this.getCellStatus(i)
+      }));
+    }
+    return [{ cell: 0, status: this.getCellStatus(0) }];
+  },
+
+  /**
+   * Check if all cells in current stage are completed
+   * @returns {object} {allCompleted, completedCount, totalCells, statuses}
+   */
+  checkAllCellsCompleted: function() {
+    const statuses = this.getAllCellStatuses();
+    const completedCount = statuses.filter(s => s.status === 'completed').length;
+    return {
+      allCompleted: completedCount === statuses.length,
+      completedCount,
+      totalCells: statuses.length,
+      statuses
+    };
   },
 
   /**

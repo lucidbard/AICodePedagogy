@@ -6,7 +6,7 @@
   "scripts": {
     "test": "node test-runner-node.js",
     "test:browser": "echo 'Open test-runner.html in your browser to run tests'",
-    "test:serve": "python3 -m http.server 8000",
+    "test:serve": "python3 -m http.server 8001",
     "test:api": "node tests/test-game-api.js",
     "agent": "node tests/agent-player.js",
     "agent:headless": "node tests/agent-player.js --headless",
