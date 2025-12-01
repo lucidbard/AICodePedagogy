@@ -6,54 +6,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Digging into AI: An Archaelogical Python Adventure</title>
 
-  <!-- Google Fonts for Colab-style appearance -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&display=swap"
-    rel="stylesheet">
+  <!-- Local fonts for offline development -->
+  <link rel="stylesheet" href="vendor/fonts/fonts.css">
 
-  <script>
-    // Fallback function to load Skulpt from alternative CDN
-    function loadSkulptFallback() {
-      console.log('Trying fallback CDN for Skulpt...');
-      const script1 = document.createElement('script');
-      script1.src = 'https://cdnjs.cloudflare.com/ajax/libs/skulpt/0.11.1/skulpt.min.js';
-      script1.onload = function () {
-        console.log('Skulpt core loaded from fallback');
-        if (window.onSkulptLoaded) window.onSkulptLoaded();
-      };
-      script1.onerror = function () {
-        console.error('All Skulpt CDN sources failed');
-      };
-      document.head.appendChild(script1);
+  <!-- Skulpt - Python in the browser (local) -->
+  <script src="vendor/skulpt/skulpt.min.js"
+    onload="if(window.onSkulptLoaded) window.onSkulptLoaded(); console.log('Skulpt core loaded')"></script>
+  <script src="vendor/skulpt/skulpt-stdlib.js" onload="console.log('Skulpt stdlib loaded')"></script>
 
-      const script2 = document.createElement('script');
-      script2.src = 'https://cdnjs.cloudflare.com/ajax/libs/skulpt/0.11.1/skulpt-stdlib.js';
-      script2.onload = function () {
-        console.log('Skulpt stdlib loaded from fallback');
-      };
-      document.head.appendChild(script2);
-    }
-  </script>
-
-
-  <script src="https://unpkg.com/skulpt@0.11.1/dist/skulpt.min.js"
-    onload="if(window.onSkulptLoaded) window.onSkulptLoaded(); console.log('Skulpt core loaded')"
-    onerror="loadSkulptFallback()"></script>
-  <script src="https://unpkg.com/skulpt@0.11.1/dist/skulpt-stdlib.js" onload="console.log('Skulpt stdlib loaded')"
-    onerror="console.error('Failed to load Skulpt stdlib')"></script>
-
-  <!-- CodeMirror for syntax highlighting -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material-darker.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/python-hint.min.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.css">
+  <!-- CodeMirror for syntax highlighting (local) -->
+  <link rel="stylesheet" href="vendor/codemirror/codemirror.min.css">
+  <link rel="stylesheet" href="vendor/codemirror/theme/material-darker.min.css">
+  <script src="vendor/codemirror/codemirror.min.js"></script>
+  <script src="vendor/codemirror/mode/python/python.min.js"></script>
+  <script src="vendor/codemirror/addon/edit/closebrackets.min.js"></script>
+  <script src="vendor/codemirror/addon/edit/matchbrackets.min.js"></script>
+  <script src="vendor/codemirror/addon/hint/show-hint.min.js"></script>
+  <script src="vendor/codemirror/addon/hint/python-hint.min.js"></script>
+  <link rel="stylesheet" href="vendor/codemirror/addon/hint/show-hint.min.css">
 
   <link rel="stylesheet" href="style.css" />
 </head>
