@@ -1669,6 +1669,19 @@ function checkAllCellsCompleted (totalCells) {
     console.log(
       `Stage ${currentStage} completed! All ${totalCells} cells done.`
     )
+
+    // Trigger Dr. Rodriguez's discovery reaction for the complete stage
+    if (window.llmIntegration && window.llmIntegration.isEnabled) {
+      // Gather all cell outputs for context
+      const allOutputs = []
+      for (let i = 0; i < totalCells; i++) {
+        const outputArea = document.getElementById(`output-area-${i}`)
+        if (outputArea) {
+          allOutputs.push(`Task ${i + 1}: ${outputArea.textContent}`)
+        }
+      }
+      window.llmIntegration.triggerDiscoveryReaction(allOutputs.join('\n'))
+    }
   }
 }
 
@@ -1869,6 +1882,11 @@ async function checkCompletion (code, solution, actualOutput) {
         completedStages.push(currentStage)
         updateDevNav()
         saveGameState()
+      }
+
+      // Trigger Dr. Rodriguez's discovery reaction if LLM is enabled
+      if (window.llmIntegration && window.llmIntegration.isEnabled) {
+        window.llmIntegration.triggerDiscoveryReaction(actualOutput)
       }
     } else {
       // Solution is incorrect - provide specific feedback

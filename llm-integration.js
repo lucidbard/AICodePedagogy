@@ -10,6 +10,15 @@ class LLMIntegration {
     this.models = [];
     this.provider = 'ollama'; // Default to ollama
 
+    // Dr. Rodriguez character info for narrative integration
+    this.character = {
+      name: "Dr. Elena Rodriguez",
+      title: "Lead Digital Archaeologist",
+      personality: "Brilliant, passionate about archaeology, supportive mentor",
+      backstory: "Has been investigating these fragments for 5 years after discovering them in a forgotten server in the Alexandria Library's digital archives. Her grandmother was part of a secret society called the Keepers of Alexandria that has protected this knowledge for generations.",
+      speakingStyle: "Uses archaeological metaphors, gets excited about discoveries, treats the student as a fellow researcher, occasionally references her grandmother's wisdom"
+    };
+
     // Set Ollama URL based on current host
     // If served from a remote host, use that host for Ollama
     // Otherwise default to localhost
@@ -445,43 +454,51 @@ class LLMIntegration {
   }
 
   buildPrompt(type, context) {
-    let basePrompt = `You are an AI coding tutor helping a student learn Python programming.
+    // Dr. Rodriguez persona prompt
+    const personaPrompt = `You are Dr. Elena Rodriguez, a passionate Lead Digital Archaeologist. You're helping a fellow researcher (the player) analyze ancient manuscript fragments using Python programming.
 
-Current challenge: ${context.challenge}
+CHARACTER TRAITS:
+- Brilliant and enthusiastic about discoveries
+- Use archaeological metaphors (e.g., "brushing away the dust", "excavating the data", "unearthing patterns")
+- Treat the player as a capable colleague, not just a student
+- Get genuinely excited when they make progress
+- Reference the mystery: fragments from a lost civilization, hidden in Alexandria Library's digital archives
+- Occasionally mention your grandmother, who was part of the Keepers of Alexandria
+- Keep responses concise but warm (2-4 paragraphs max)
+
+CURRENT INVESTIGATION:
 Stage: ${context.stage}
-Available data: ${context.data}
+Challenge: ${context.challenge}
+Data we're analyzing: ${context.data}
 
-Student's current code:
-${typeof context.currentCode === 'string' 
-  ? context.currentCode 
+Their current code:
+${typeof context.currentCode === 'string'
+  ? context.currentCode
   : context.currentCode?.map(c => `Cell ${c.cell}:\n${c.code}`).join('\n\n') || 'No code yet'
 }
 
-${context.lastOutput ? `Last output: ${context.lastOutput}` : ''}
-${context.hasError ? '(There was an error in the last execution)' : ''}
+${context.lastOutput ? `Output from their analysis: ${context.lastOutput}` : ''}
+${context.hasError ? '(Their code encountered an error)' : ''}
 
 `;
 
     switch (type) {
       case 'hint':
-        return basePrompt + `Please provide a helpful hint to guide the student toward the solution. Don't give away the complete answer, but help them understand what they need to think about or try next. Keep it encouraging and educational.`;
-      
+        return personaPrompt + `Give them a hint to guide their analysis, but don't give away the complete solution. Frame it as collaborative problem-solving between archaeologists. Maybe reference a similar challenge you faced in your research.`;
+
       case 'debug':
-        return basePrompt + `The student is having trouble with their code. Please help them debug by:
-1. Identifying potential issues in their current code
-2. Explaining what might be going wrong
-3. Suggesting specific steps to fix the problem
-Be specific and educational in your explanation.`;
-      
+        return personaPrompt + `Help them debug their code. Be supportive—we all make mistakes in the field. Identify the issue, explain what's happening, and guide them toward fixing it. Use an archaeological metaphor if it fits naturally.`;
+
       case 'explain':
-        return basePrompt + `Please explain the key programming concepts involved in this challenge. Help the student understand:
-1. What programming concepts are being practiced
-2. How these concepts work in Python
-3. Why these concepts are useful
-Keep the explanation clear and beginner-friendly.`;
-      
+        return personaPrompt + `Explain the Python concepts involved in this challenge. Connect them to our archaeological work when possible—how does this programming concept help us analyze the fragments? Keep it accessible but treat them as an intelligent colleague.`;
+
+      case 'discovery':
+        return personaPrompt + `The player just successfully ran their code and got this output: ${context.lastOutput}
+
+React to their discovery with genuine archaeological excitement! Connect what they found to the larger mystery of the fragments. What might this data mean? How does it advance our investigation? Keep it to 2-3 sentences that feel like a real moment of discovery between colleagues.`;
+
       default:
-        return basePrompt + `Please provide helpful guidance for this programming challenge.`;
+        return personaPrompt + `Provide guidance as Dr. Rodriguez would—supportive, knowledgeable, and passionate about the investigation.`;
     }
   }
 
@@ -707,6 +724,97 @@ Keep the explanation clear and beginner-friendly.`;
 
     // Scroll to the response
     llmHint.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  /**
+   * Trigger a discovery reaction from Dr. Rodriguez when code executes successfully
+   * @param {string} output - The output from the successful code execution
+   */
+  async triggerDiscoveryReaction(output) {
+    if (!this.isBrowserEnvironment()) return;
+    if (!this.isEnabled || !this.selectedModel) return;
+
+    // Don't trigger for empty or trivial output
+    if (!output || output.trim().length < 5) return;
+
+    try {
+      const context = this.gatherContext();
+      context.lastOutput = output;
+      const prompt = this.buildPrompt('discovery', context);
+
+      let response;
+      if (this.provider === 'ollama') {
+        response = await this.queryOllama(prompt);
+      } else if (this.provider === 'openai') {
+        response = await this.queryOpenAI(prompt);
+      } else if (this.provider === 'anthropic') {
+        response = await this.queryAnthropic(prompt);
+      }
+
+      this.showDiscoveryReaction(response);
+    } catch (error) {
+      console.error('Discovery reaction failed:', error);
+      // Silently fail - don't interrupt the user's flow
+    }
+  }
+
+  /**
+   * Display Dr. Rodriguez's reaction to a discovery
+   */
+  showDiscoveryReaction(content) {
+    if (!this.isBrowserEnvironment()) return;
+
+    // Find or create the reaction area
+    let reactionArea = document.getElementById('rodriguez-reaction-area');
+    if (!reactionArea) {
+      // Create reaction area after the output
+      const codePanel = document.querySelector('.code-panel');
+      if (!codePanel) return;
+
+      reactionArea = document.createElement('div');
+      reactionArea.id = 'rodriguez-reaction-area';
+      reactionArea.className = 'rodriguez-reaction-container';
+
+      // Insert after the cells container or single cell container
+      const cellsContainer = document.getElementById('cells-container');
+      const singleCellContainer = document.getElementById('single-cell-container');
+      const insertAfter = cellsContainer?.children.length > 0 ? cellsContainer : singleCellContainer;
+
+      if (insertAfter && insertAfter.nextSibling) {
+        codePanel.insertBefore(reactionArea, insertAfter.nextSibling);
+      } else {
+        codePanel.appendChild(reactionArea);
+      }
+    }
+
+    // Create the reaction element
+    const reaction = document.createElement('div');
+    reaction.className = 'rodriguez-reaction';
+    reaction.innerHTML = `
+      <div class="character-response">
+        <div class="character-avatar">👩‍🔬</div>
+        <div class="character-bubble">
+          <div class="character-name">Dr. Rodriguez</div>
+          <div class="character-text">${content}</div>
+        </div>
+      </div>
+    `;
+
+    // Clear previous reactions and add new one with animation
+    reactionArea.innerHTML = '';
+    reactionArea.appendChild(reaction);
+
+    // Animate in
+    reaction.style.opacity = '0';
+    reaction.style.transform = 'translateY(10px)';
+    requestAnimationFrame(() => {
+      reaction.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+      reaction.style.opacity = '1';
+      reaction.style.transform = 'translateY(0)';
+    });
+
+    // Scroll into view
+    reaction.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 }
 

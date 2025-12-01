@@ -15,6 +15,7 @@
     {
       "id": 1,
       "title": "The Mysterious Manuscript",
+      "narrativeIntro": "Dr. Elena Rodriguez has discovered fragments of an ancient manuscript hidden deep within the Alexandria Library's digital archives. The fragments contain cryptic references to a lost civilization—but they're scattered and encoded. She's called you in to help piece together this mystery using computational analysis.",
       "story": "Dr. Elena Rodriguez has discovered fragments of an ancient manuscript in the digital archives of the Alexandria Library. The fragments contain references to a lost civilization, but they're scattered and encoded.\n\nYou've been called in as a digital archaeologist to help piece together this mystery using computational analysis.\n\n<strong>🔍 Python Concepts: Variables and Print Statements</strong>\n\nIn Python, we store information in <em>variables</em>. Think of variables as labeled boxes that hold data:\n• Text (strings) must be in quotes: <code>name = \"Alexandria\"</code>\n• Numbers don't need quotes: <code>count = 23</code>\n• Use <code>print()</code> to display information\n\nPractice using variables and print statements with the manuscript data provided below.",
       "challenge": "Your task: Complete the code to store the fragment count as a variable, then display both pieces of information using print statements.",
       "data": "Manuscript ID: \"MS-ALEX-2847\"\nFragment Count: 23",
