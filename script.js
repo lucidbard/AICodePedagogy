@@ -10,13 +10,6 @@ let skulptEnvironment = null // Persistent Skulpt environment for multi-cell sta
 let successfulCellExecutions = {} // Track which cells have executed successfully by stage
 let savedCellContent = {} // Track cell content across all stages
 
-// Toggle reference panel collapse
-function toggleReferencePanel() {
-  const panel = document.getElementById('reference-panel');
-  if (panel) {
-    panel.classList.toggle('collapsed');
-  }
-}
 
 // Offline storage utility functions
 function saveGameState () {
@@ -2654,15 +2647,15 @@ class EnhancedLLMIntegration extends LLMIntegration {
   updateHintSystem() {
     // Use dedicated chat panel instead of hints container
     const chatPanel = document.getElementById('chat-panel');
-    const workspace = document.querySelector('.workspace');
+    const gameArea = document.querySelector('.game-area');
     if (!chatPanel) return;
 
     chatPanel.innerHTML = '';
 
     // Activate chat panel and update grid layout
     chatPanel.classList.add('active');
-    if (workspace) {
-      workspace.classList.add('has-chat');
+    if (gameArea) {
+      gameArea.classList.add('has-chat');
     }
 
     // Create character chat interface

@@ -39,7 +39,7 @@
     </div>
 
     <div class="game-area">
-      <!-- Narrative Strip at Top -->
+      <!-- Narrative Strip at Top (spans all columns) -->
       <div class="narrative-strip">
         <div class="story-progress" id="story-progress">
           📜 Dr. Rodriguez: "These fragment lengths hide a pattern..."
@@ -49,72 +49,68 @@
         </div>
       </div>
 
-      <!-- Workspace: Code (left) | Chat + Reference (right) -->
-      <div class="workspace">
-        <!-- Left: Primary Code Panel (50%) -->
-        <div class="code-panel">
-          <h2>Your Code</h2>
-          <div id="cells-container">
-            <!-- For multi-cell stages -->
-          </div>
-          <div id="single-cell-container">
-            <!-- For single-cell stages - will be dynamically populated -->
-          </div>
-          <div class="hint-section">
-            <div id="hints-container">
-              <!-- Hint buttons will be generated here -->
-            </div>
-            <div id="hint-text-container">
-              <!-- Hint text will appear here -->
-            </div>
-          </div>
-          <div class="runtime-controls">
-            <button class="restart-runtime-button" id="restart-runtime-button"
-              title="Clear all cell outputs and reset runtime (similar to restarting a Jupyter kernel)">🔄 Restart
-              Runtime</button>
-            <button class="clear-progress-button" id="clear-progress-button"
-              title="Clear all saved progress and start from the beginning">🗑️ Clear Progress</button>
-          </div>
-          <button class="next-button" id="next-button">Continue to Next Stage →</button>
+      <!-- Left Column: Reference Panel -->
+      <div class="reference-panel" id="reference-panel">
+        <div class="reference-panel-header">
+          <h3>📚 Reference & Data</h3>
         </div>
+        <div class="reference-panel-content">
+          <div class="data-card">
+            <h3>📊 Fragment Data</h3>
+            <code>[45, 23, 67, 12, 89, 34, 56, 78, 21, 43]</code>
+            <p>Categories: &lt;30, 30-60, &gt;60 chars</p>
+          </div>
 
-        <!-- Right: Dr. Rodriguez Chat Panel -->
-        <div class="chat-panel" id="chat-panel">
-          <!-- Chat interface will be dynamically populated -->
+          <details class="concept-reference" open>
+            <summary>🔍 Python References</summary>
+            <div class="concept-content">
+              <ul>
+                <li><code>len(list)</code> — count items</li>
+                <li><code>sum(list)</code> — total value</li>
+                <li><code>[x for x in list if ...]</code> — filter</li>
+              </ul>
+            </div>
+          </details>
+
+          <div class="investigation-log">
+            <h3>🔎 Your Findings</h3>
+            <div id="live-discoveries">
+              <!-- Updates as they complete tasks -->
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  </div>
 
-  <!-- Fixed Bottom: Collapsible Reference Panel -->
-  <div class="reference-panel collapsed" id="reference-panel">
-    <div class="reference-panel-header" onclick="toggleReferencePanel()">
-      <h3>📚 Reference & Data</h3>
-      <button class="reference-panel-toggle">▼</button>
-    </div>
-    <div class="reference-panel-content">
-      <div class="data-card">
-        <h3>📊 Fragment Data</h3>
-        <code>[45, 23, 67, 12, 89, 34, 56, 78, 21, 43]</code>
-        <p>Categories: &lt;30, 30-60, &gt;60 chars</p>
+      <!-- Center Column: Code Panel -->
+      <div class="code-panel">
+        <h2>Your Code</h2>
+        <div id="cells-container">
+          <!-- For multi-cell stages -->
+        </div>
+        <div id="single-cell-container">
+          <!-- For single-cell stages - will be dynamically populated -->
+        </div>
+        <div class="hint-section">
+          <div id="hints-container">
+            <!-- Hint buttons will be generated here -->
+          </div>
+          <div id="hint-text-container">
+            <!-- Hint text will appear here -->
+          </div>
+        </div>
+        <div class="runtime-controls">
+          <button class="restart-runtime-button" id="restart-runtime-button"
+            title="Clear all cell outputs and reset runtime (similar to restarting a Jupyter kernel)">🔄 Restart
+            Runtime</button>
+          <button class="clear-progress-button" id="clear-progress-button"
+            title="Clear all saved progress and start from the beginning">🗑️ Clear Progress</button>
+        </div>
+        <button class="next-button" id="next-button">Continue to Next Stage →</button>
       </div>
 
-      <details class="concept-reference" open>
-        <summary>🔍 Python References</summary>
-        <div class="concept-content">
-          <ul>
-            <li><code>len(list)</code> — count items</li>
-            <li><code>sum(list)</code> — total value</li>
-            <li><code>[x for x in list if ...]</code> — filter</li>
-          </ul>
-        </div>
-      </details>
-
-      <div class="investigation-log">
-        <h3>🔎 Your Findings</h3>
-        <div id="live-discoveries">
-          <!-- Updates as they complete tasks -->
-        </div>
+      <!-- Right Column: Dr. Rodriguez Chat Panel (hidden by default) -->
+      <div class="chat-panel" id="chat-panel">
+        <!-- Chat interface will be dynamically populated -->
       </div>
     </div>
   </div>

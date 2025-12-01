@@ -99,9 +99,20 @@ h1 {
 
 .game-area {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: 1fr 2fr;
+  grid-template-rows: auto 1fr;
   gap: 16px;
   margin-bottom: 20px;
+}
+
+/* Narrative strip spans all columns */
+.game-area .narrative-strip {
+  grid-column: 1 / -1;
+}
+
+/* When chat is active, add third column */
+.game-area.has-chat {
+  grid-template-columns: 1fr 2fr 1fr;
 }
 
 .story-panel,
@@ -2131,22 +2142,6 @@ body {
   border: 2px solid #d4a574;
 }
 
-.workspace {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem;
-  min-height: calc(100vh - 280px);
-  padding-bottom: 60px; /* Space for reference panel */
-}
-
-/* When chat is active, split 50/50 */
-.workspace.has-chat {
-  grid-template-columns: 1fr 1fr;
-  justify-content: stretch;
-  max-width: 1600px;
-  margin: 0 auto;
-}
-
 /* Chat panel - hidden by default */
 .chat-panel {
   display: none;
@@ -2168,33 +2163,23 @@ body {
   background: transparent;
 }
 
-/* Reference panel as fixed bottom drawer */
+/* Reference panel as left column */
 .reference-panel {
-  position: fixed;
-  bottom: 50px; /* Above the LLM footer */
-  left: 0;
-  right: 0;
   background: rgba(44, 24, 16, 0.98);
-  border-top: 2px solid #8b7355;
-  max-height: 220px;
-  overflow: hidden;
-  transition: max-height 0.3s ease, transform 0.3s ease;
-  z-index: 90;
+  border: 2px solid #8b7355;
+  border-radius: 8px;
+  overflow-y: auto;
   box-sizing: border-box;
-}
-
-.reference-panel.collapsed {
-  max-height: 42px;
+  align-self: start;
 }
 
 .reference-panel-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 20px;
+  padding: 10px 15px;
   background: rgba(139, 115, 85, 0.3);
-  cursor: pointer;
-  user-select: none;
+  border-bottom: 1px solid #8b7355;
 }
 
 .reference-panel-header h3 {
@@ -2203,34 +2188,17 @@ body {
   color: #e6d19a;
 }
 
-.reference-panel-toggle {
-  background: none;
-  border: none;
-  color: #c9b037;
-  font-size: 16px;
-  cursor: pointer;
-  transition: transform 0.3s ease;
-}
-
-.reference-panel.collapsed .reference-panel-toggle {
-  transform: rotate(180deg);
-}
-
 .reference-panel-content {
-  padding: 12px 20px;
+  padding: 12px 15px;
   overflow-y: auto;
   overflow-x: hidden;
-  max-height: 160px;
-  display: flex;
-  gap: 20px;
   box-sizing: border-box;
 }
 
 .reference-panel-content .data-card,
 .reference-panel-content .concept-reference,
 .reference-panel-content .investigation-log {
-  flex: 1;
-  min-width: 200px;
+  margin-bottom: 12px;
 }
 
 .reference-panel .data-card,
