@@ -2133,15 +2133,19 @@ body {
 
 .workspace {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 900px);
+  justify-content: center;
   gap: 1rem;
   min-height: calc(100vh - 280px);
-  padding-bottom: 10px;
+  padding-bottom: 60px; /* Space for reference panel */
 }
 
 /* When chat is active, split 50/50 */
 .workspace.has-chat {
   grid-template-columns: 1fr 1fr;
+  justify-content: stretch;
+  max-width: 1600px;
+  margin: 0 auto;
 }
 
 /* Chat panel - hidden by default */
@@ -2173,10 +2177,11 @@ body {
   right: 0;
   background: rgba(44, 24, 16, 0.98);
   border-top: 2px solid #8b7355;
-  max-height: 200px;
+  max-height: 220px;
   overflow: hidden;
   transition: max-height 0.3s ease, transform 0.3s ease;
   z-index: 90;
+  box-sizing: border-box;
 }
 
 .reference-panel.collapsed {
@@ -2215,9 +2220,11 @@ body {
 .reference-panel-content {
   padding: 12px 20px;
   overflow-y: auto;
-  max-height: 150px;
+  overflow-x: hidden;
+  max-height: 160px;
   display: flex;
   gap: 20px;
+  box-sizing: border-box;
 }
 
 .reference-panel-content .data-card,

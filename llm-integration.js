@@ -173,13 +173,14 @@ class LLMIntegration {
 
   loadModelPreferences() {
     if (!this.isBrowserEnvironment()) return;
-    
+
     try {
       const prefs = localStorage.getItem('aicodepedagogy_model_prefs');
       if (prefs) {
-        const { provider, model } = JSON.parse(prefs);
+        const { provider, model, enabled } = JSON.parse(prefs);
         if (provider) this.provider = provider;
         if (model) this.selectedModel = model;
+        if (enabled !== undefined) this.isEnabled = enabled;
       }
     } catch (error) {
       console.error('Failed to load model preferences:', error);
@@ -188,13 +189,14 @@ class LLMIntegration {
 
   saveModelPreferences() {
     if (!this.isBrowserEnvironment()) return;
-    
+
     try {
       localStorage.setItem(
         'aicodepedagogy_model_prefs',
         JSON.stringify({
           provider: this.provider,
-          model: this.selectedModel
+          model: this.selectedModel,
+          enabled: this.isEnabled
         })
       );
     } catch (error) {
@@ -204,7 +206,13 @@ class LLMIntegration {
 
   restoreUIFromPreferences() {
     if (!this.isBrowserEnvironment()) return;
-    
+
+    // Restore toggle state
+    const toggle = document.getElementById('llm-enabled');
+    if (toggle && this.isEnabled) {
+      toggle.checked = true;
+    }
+
     // Restore provider dropdown
     const providerSelect = document.getElementById('provider-select');
     if (providerSelect && this.provider) {
@@ -276,6 +284,7 @@ class LLMIntegration {
     }
 
     this.isEnabled = enabled;
+    this.saveModelPreferences(); // Persist toggle state
     this.updateQueryButtonStates();
   }
 
