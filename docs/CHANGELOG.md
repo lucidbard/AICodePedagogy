@@ -4,10 +4,34 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased] - 2025-12-01
 
-### Session: UI/UX Improvements & Deployment
+### Session 2: Layout Refinements & Persistence
+
+#### Dynamic Chat Panel Layout
+- **Conditional chat panel**: Chat panel is hidden by default (`display: none`)
+- **Full-width code editor**: When chat is inactive, code panel takes full width
+- **50/50 split on chat activation**: When AI chat starts, workspace splits into two equal columns
+- **Fixed game-area grid**: Changed from 3-column (`1fr 2fr 1fr`) to single column to prevent layout issues
+
+#### Reference Panel Improvements
+- **Fixed as bottom drawer**: Reference panel is now `position: fixed` at bottom
+- **Collapsible**: Click header to expand/collapse
+- **Overflow fixes**: Added `box-sizing: border-box` and proper max-heights
+
+#### localStorage Persistence
+- **LLM toggle state**: AI Assistant enabled/disabled now persists across page reloads
+- **Provider selection**: Ollama/OpenAI/Anthropic choice is saved
+- **Model selection**: Selected model persists across sessions
+
+### Files Modified
+- `style.css` - Dynamic grid layout, reference panel fixes, removed 3-column game-area
+- `script.js` - Added `.active` and `.has-chat` class toggling for chat panel
+- `llm-integration.js` - Added `enabled` to saved preferences, restore toggle state on load
+
+---
+
+### Session 1: UI/UX Improvements & Deployment
 
 #### UI Layout Changes
-- **3-column workspace layout**: Changed from 2-column to 3-column grid (reference panel | code editor | Dr. Rodriguez chat)
 - **Dedicated chat panel**: Dr. Rodriguez chat now has its own column with more room for conversations
 - **Horizontal footer settings**: AI assistant settings (provider, API key, model) now display in a single horizontal row
 - **Compact chat buttons**: Shortened button labels ("🔍 Hint", "❌ Error", "📖 Story") for better fit
@@ -32,9 +56,9 @@ All notable changes to this project will be documented in this file.
 #### Deployment
 - Deployed to jtm.io/codepedagogy
 
-### Files Modified
+### Files Modified (Session 1)
 - `index.html` - Added chat-panel column
-- `style.css` - 3-column layout, horizontal footer, chat panel styles
+- `style.css` - Horizontal footer, chat panel styles
 - `script.js` - Fixed narrative display, moved chat to dedicated panel
 - `llm-integration.js` - Auto-select model, fixed Ollama URL, scroll fixes
 - `vendor/` - Fixed corrupted files
