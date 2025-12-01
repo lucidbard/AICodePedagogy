@@ -2,7 +2,46 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased] - 2025-11-30
+## [Unreleased] - 2025-12-01
+
+### Session: UI/UX Improvements & Deployment
+
+#### UI Layout Changes
+- **3-column workspace layout**: Changed from 2-column to 3-column grid (reference panel | code editor | Dr. Rodriguez chat)
+- **Dedicated chat panel**: Dr. Rodriguez chat now has its own column with more room for conversations
+- **Horizontal footer settings**: AI assistant settings (provider, API key, model) now display in a single horizontal row
+- **Compact chat buttons**: Shortened button labels ("🔍 Hint", "❌ Error", "📖 Story") for better fit
+
+#### Narrative Display Fix
+- **Fixed prose vs dialogue display**: Narrative prose now displays without quote marks (`📜 Text...`), while character dialogue uses proper attribution (`💬 **Dr. Rodriguez:** "Quote..."`)
+
+#### LLM Integration Improvements
+- **Auto-select default model**: When connecting to Ollama, automatically selects the best available model
+  - Prefers smaller/faster models suitable for hints (llama3.2:3b, mistral, gemma2, etc.)
+  - Falls back to first available if no preferred model found
+- **Fixed queryCharacterHint**: Now correctly calls provider-specific methods (queryOllama, queryOpenAI, queryAnthropic)
+- **Fixed Ollama URL for remote sites**: Sites like jtm.io now correctly try http://localhost:11434 (browser's localhost)
+- **Fixed chat auto-scroll**: Changed scrollIntoView from `block: 'nearest'` to `block: 'end'` for proper scrolling
+
+#### Bug Fixes
+- **Fixed corrupted vendor files**: Replaced 404 HTML files with proper content
+  - `python-hint.min.js` - Created working Python hint addon
+  - Font files (roboto-*.woff2) - Re-downloaded correct files
+- **Fixed SVG viewBox**: Corrected stop-icon viewBox from "0 24 24" to "0 0 24 24"
+
+#### Deployment
+- Deployed to jtm.io/codepedagogy
+
+### Files Modified
+- `index.html` - Added chat-panel column
+- `style.css` - 3-column layout, horizontal footer, chat panel styles
+- `script.js` - Fixed narrative display, moved chat to dedicated panel
+- `llm-integration.js` - Auto-select model, fixed Ollama URL, scroll fixes
+- `vendor/` - Fixed corrupted files
+
+---
+
+## [Previous] - 2025-11-30
 
 ### Session: Narrative & Exercise Improvements
 
