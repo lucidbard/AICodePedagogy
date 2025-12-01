@@ -2133,8 +2133,7 @@ body {
 
 .workspace {
   display: grid;
-  grid-template-columns: minmax(0, 900px);
-  justify-content: center;
+  grid-template-columns: 1fr;
   gap: 1rem;
   min-height: calc(100vh - 280px);
   padding-bottom: 60px; /* Space for reference panel */
