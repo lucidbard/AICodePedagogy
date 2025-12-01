@@ -2133,20 +2133,30 @@ body {
 
 .workspace {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 1rem;
   min-height: calc(100vh - 280px);
   padding-bottom: 10px;
 }
 
-/* Chat panel on right */
+/* When chat is active, split 50/50 */
+.workspace.has-chat {
+  grid-template-columns: 1fr 1fr;
+}
+
+/* Chat panel - hidden by default */
 .chat-panel {
+  display: none;
   background: rgba(212, 165, 116, 0.05);
   border-radius: 8px;
-  display: flex;
   flex-direction: column;
   min-height: 300px;
   overflow: hidden;
+}
+
+/* Show chat panel when it has content */
+.chat-panel.active {
+  display: flex;
 }
 
 .chat-panel .character-chat {

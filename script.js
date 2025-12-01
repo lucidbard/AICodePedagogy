@@ -2654,9 +2654,16 @@ class EnhancedLLMIntegration extends LLMIntegration {
   updateHintSystem() {
     // Use dedicated chat panel instead of hints container
     const chatPanel = document.getElementById('chat-panel');
+    const workspace = document.querySelector('.workspace');
     if (!chatPanel) return;
 
     chatPanel.innerHTML = '';
+
+    // Activate chat panel and update grid layout
+    chatPanel.classList.add('active');
+    if (workspace) {
+      workspace.classList.add('has-chat');
+    }
 
     // Create character chat interface
     const chatInterface = document.createElement('div');
