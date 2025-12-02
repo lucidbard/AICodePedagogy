@@ -139,6 +139,7 @@
           <label for="provider-select">Provider:</label>
           <select id="provider-select">
             <option value="ollama">Ollama (Local)</option>
+            <option value="webgpu">In-Browser (Granite)</option>
             <option value="openai">OpenAI</option>
             <option value="anthropic">Anthropic</option>
           </select>
@@ -159,6 +160,105 @@
       <div class="llm-status" id="llm-status"></div>
     </div>
   </footer>
+
+  <!-- WebGPU Model Download Modal -->
+  <div class="modal-overlay" id="webgpu-download-modal" style="display: none;">
+    <div class="modal-content webgpu-modal">
+      <div class="modal-header">
+        <h3>🧠 In-Browser AI Model</h3>
+        <button class="modal-close" id="close-webgpu-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="webgpu-info" id="webgpu-info">
+          <p>The in-browser AI assistant uses <strong>IBM Granite 4.0 Nano</strong>, a compact language model that runs entirely in your browser using WebGPU.</p>
+
+          <div class="webgpu-requirements">
+            <h4>Requirements</h4>
+            <ul>
+              <li id="webgpu-check-browser">✓ Modern browser (Chrome 113+, Edge 113+, Firefox 121+)</li>
+              <li id="webgpu-check-gpu">Checking WebGPU support...</li>
+            </ul>
+          </div>
+
+          <div class="webgpu-warning">
+            <strong>⚠️ Note:</strong> This will download approximately <strong>200-400MB</strong> of model data. The model will be cached in your browser for future use.
+          </div>
+
+          <div class="webgpu-actions">
+            <button class="btn-primary" id="webgpu-download-btn">Download & Enable AI</button>
+            <button class="btn-secondary" id="webgpu-cancel-btn">Cancel</button>
+          </div>
+        </div>
+
+        <div class="webgpu-progress" id="webgpu-progress" style="display: none;">
+          <h4>Downloading Model...</h4>
+          <div class="progress-container">
+            <div class="progress-bar-webgpu">
+              <div class="progress-fill-webgpu" id="webgpu-progress-fill"></div>
+            </div>
+            <span class="progress-text" id="webgpu-progress-text">0%</span>
+          </div>
+          <p class="progress-status" id="webgpu-status">Initializing...</p>
+          <p class="progress-hint">This may take a few minutes depending on your connection.</p>
+        </div>
+
+        <div class="webgpu-ready" id="webgpu-ready" style="display: none;">
+          <h4>✅ Model Ready!</h4>
+          <p>The AI assistant is now available. You can use it for hints, debugging, and code explanations.</p>
+          <button class="btn-primary" id="webgpu-done-btn">Start Using AI</button>
+        </div>
+
+        <div class="webgpu-error" id="webgpu-error" style="display: none;">
+          <h4>❌ Setup Failed</h4>
+          <p id="webgpu-error-message">An error occurred while setting up the model.</p>
+          <button class="btn-secondary" id="webgpu-retry-btn">Try Again</button>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <div class="cache-management" id="cache-management" style="display: none;">
+          <span class="cache-size" id="cache-size">Cached: ~0 MB</span>
+          <button class="btn-small btn-danger" id="clear-model-cache">Clear Cache</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ollama Fallback Prompt Modal -->
+  <div class="modal-overlay" id="ollama-fallback-modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>🤖 AI Assistant Setup</h3>
+        <button class="modal-close" id="close-fallback-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Ollama doesn't appear to be running. Would you like to:</p>
+
+        <div class="fallback-options">
+          <div class="fallback-option" id="fallback-webgpu">
+            <h4>🧠 Use In-Browser AI</h4>
+            <p>Run IBM Granite 4.0 Nano directly in your browser. No installation required!</p>
+            <ul>
+              <li>~200-400MB download (cached for future use)</li>
+              <li>Runs entirely on your device</li>
+              <li>Requires WebGPU-capable browser</li>
+            </ul>
+            <button class="btn-primary" id="choose-webgpu">Use In-Browser AI</button>
+          </div>
+
+          <div class="fallback-option" id="fallback-ollama">
+            <h4>💻 Setup Ollama</h4>
+            <p>Install Ollama for faster responses and more model options.</p>
+            <button class="btn-secondary" id="choose-ollama-setup">Setup Ollama</button>
+          </div>
+        </div>
+
+        <div class="fallback-skip">
+          <button class="btn-text" id="skip-ai-setup">Skip for now (disable AI features)</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Ollama Help Modal -->
   <div class="modal-overlay" id="ollama-help-modal" style="display: none;">

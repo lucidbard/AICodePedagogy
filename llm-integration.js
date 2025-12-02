@@ -10,6 +10,20 @@ class LLMIntegration {
     this.models = [];
     this.provider = 'ollama'; // Default to ollama
 
+    // WebGPU/Transformers.js state
+    this.webgpuPipeline = null;
+    this.webgpuReady = false;
+    this.webgpuLoading = false;
+    this.transformersModule = null;
+
+    // WebGPU model configuration
+    this.webgpuConfig = {
+      modelId: 'onnx-community/granite-4.0-tiny-ONNX-web',
+      modelName: 'Granite 4.0 Tiny (In-Browser)',
+      device: 'webgpu',
+      dtype: 'q4'
+    };
+
     // Two distinct AI personas for different purposes
 
     // Dr. Rodriguez - Narrative character for story and discovery reactions
@@ -80,6 +94,434 @@ class LLMIntegration {
    */
   isBrowserEnvironment() {
     return typeof window !== 'undefined' && typeof document !== 'undefined';
+  }
+
+  // ============================================
+  // WebGPU / In-Browser Model Support
+  // ============================================
+
+  /**
+   * Check if WebGPU is supported in this browser
+   */
+  async checkWebGPUSupport() {
+    if (!this.isBrowserEnvironment()) return { supported: false, reason: 'Not in browser' };
+
+    if (!navigator.gpu) {
+      return { supported: false, reason: 'WebGPU not available in this browser' };
+    }
+
+    try {
+      const adapter = await navigator.gpu.requestAdapter();
+      if (!adapter) {
+        return { supported: false, reason: 'No WebGPU adapter found' };
+      }
+
+      const device = await adapter.requestDevice();
+      if (!device) {
+        return { supported: false, reason: 'Could not get WebGPU device' };
+      }
+
+      return { supported: true, adapter, device };
+    } catch (error) {
+      return { supported: false, reason: error.message };
+    }
+  }
+
+  /**
+   * Load Transformers.js dynamically
+   */
+  async loadTransformersJS() {
+    if (this.transformersModule) {
+      return this.transformersModule;
+    }
+
+    try {
+      // Dynamic import of Transformers.js from CDN
+      this.transformersModule = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3');
+      console.log('Transformers.js loaded successfully');
+      return this.transformersModule;
+    } catch (error) {
+      console.error('Failed to load Transformers.js:', error);
+      throw new Error('Failed to load Transformers.js: ' + error.message);
+    }
+  }
+
+  /**
+   * Initialize WebGPU model with progress tracking
+   */
+  async initializeWebGPUModel(progressCallback = null) {
+    if (this.webgpuReady) {
+      return true;
+    }
+
+    if (this.webgpuLoading) {
+      throw new Error('Model is already loading');
+    }
+
+    this.webgpuLoading = true;
+
+    try {
+      // Check WebGPU support first
+      const webgpuCheck = await this.checkWebGPUSupport();
+      if (!webgpuCheck.supported) {
+        throw new Error('WebGPU not supported: ' + webgpuCheck.reason);
+      }
+
+      if (progressCallback) progressCallback({ status: 'Loading Transformers.js...', progress: 5 });
+
+      // Load Transformers.js
+      const transformers = await this.loadTransformersJS();
+
+      if (progressCallback) progressCallback({ status: 'Initializing model...', progress: 10 });
+
+      // Configure environment for caching
+      transformers.env.useBrowserCache = true;
+      transformers.env.allowLocalModels = false;
+
+      // Create progress callback wrapper
+      let lastProgress = 10;
+      const modelProgressCallback = (progress) => {
+        if (progress.status === 'progress' && progress.progress) {
+          // Scale progress from 10% to 90%
+          const scaledProgress = 10 + (progress.progress * 0.8);
+          lastProgress = scaledProgress;
+          if (progressCallback) {
+            progressCallback({
+              status: `Downloading: ${progress.file || 'model files'}`,
+              progress: Math.round(scaledProgress)
+            });
+          }
+        } else if (progress.status === 'done') {
+          if (progressCallback) {
+            progressCallback({ status: 'File downloaded', progress: lastProgress });
+          }
+        }
+      };
+
+      // Create text generation pipeline
+      this.webgpuPipeline = await transformers.pipeline(
+        'text-generation',
+        this.webgpuConfig.modelId,
+        {
+          device: this.webgpuConfig.device,
+          dtype: this.webgpuConfig.dtype,
+          progress_callback: modelProgressCallback
+        }
+      );
+
+      if (progressCallback) progressCallback({ status: 'Model ready!', progress: 100 });
+
+      this.webgpuReady = true;
+      this.webgpuLoading = false;
+      console.log('WebGPU model initialized successfully');
+
+      return true;
+    } catch (error) {
+      this.webgpuLoading = false;
+      console.error('Failed to initialize WebGPU model:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Query the WebGPU model
+   */
+  async queryWebGPU(prompt) {
+    if (!this.webgpuReady || !this.webgpuPipeline) {
+      throw new Error('WebGPU model not initialized');
+    }
+
+    const messages = [
+      { role: 'user', content: prompt }
+    ];
+
+    try {
+      const output = await this.webgpuPipeline(messages, {
+        max_new_tokens: 300,
+        do_sample: true,
+        temperature: 0.7,
+        top_p: 0.9
+      });
+
+      // Extract the generated text
+      const generatedText = output[0]?.generated_text;
+      if (Array.isArray(generatedText)) {
+        // Chat format - get the last message (assistant response)
+        const lastMessage = generatedText[generatedText.length - 1];
+        return this.formatResponse(lastMessage?.content || '');
+      }
+
+      return this.formatResponse(generatedText || '');
+    } catch (error) {
+      console.error('WebGPU query failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Check if Ollama is available
+   */
+  async checkOllamaAvailable() {
+    try {
+      const response = await fetch(`${this.ollamaBaseUrl}/api/tags`, {
+        method: 'GET',
+        signal: AbortSignal.timeout(3000) // 3 second timeout
+      });
+      return response.ok;
+    } catch (error) {
+      console.log('Ollama not available:', error.message);
+      return false;
+    }
+  }
+
+  /**
+   * Show the fallback modal when Ollama isn't available
+   */
+  showFallbackModal() {
+    if (!this.isBrowserEnvironment()) return;
+
+    const modal = document.getElementById('ollama-fallback-modal');
+    if (modal) {
+      modal.style.display = 'flex';
+      this.setupFallbackModalEvents();
+    }
+  }
+
+  /**
+   * Setup event listeners for the fallback modal
+   */
+  setupFallbackModalEvents() {
+    const modal = document.getElementById('ollama-fallback-modal');
+    const closeBtn = document.getElementById('close-fallback-modal');
+    const chooseWebGPU = document.getElementById('choose-webgpu');
+    const chooseOllamaSetup = document.getElementById('choose-ollama-setup');
+    const skipSetup = document.getElementById('skip-ai-setup');
+
+    if (closeBtn) {
+      closeBtn.onclick = () => { modal.style.display = 'none'; };
+    }
+
+    if (chooseWebGPU) {
+      chooseWebGPU.onclick = () => {
+        modal.style.display = 'none';
+        this.showWebGPUDownloadModal();
+      };
+    }
+
+    if (chooseOllamaSetup) {
+      chooseOllamaSetup.onclick = () => {
+        modal.style.display = 'none';
+        document.getElementById('ollama-help-modal').style.display = 'flex';
+      };
+    }
+
+    if (skipSetup) {
+      skipSetup.onclick = () => {
+        modal.style.display = 'none';
+        const toggle = document.getElementById('llm-enabled');
+        if (toggle) toggle.checked = false;
+        this.toggleLLM(false);
+      };
+    }
+  }
+
+  /**
+   * Show the WebGPU download modal
+   */
+  async showWebGPUDownloadModal() {
+    if (!this.isBrowserEnvironment()) return;
+
+    const modal = document.getElementById('webgpu-download-modal');
+    if (!modal) return;
+
+    // Reset to initial state
+    document.getElementById('webgpu-info').style.display = 'block';
+    document.getElementById('webgpu-progress').style.display = 'none';
+    document.getElementById('webgpu-ready').style.display = 'none';
+    document.getElementById('webgpu-error').style.display = 'none';
+
+    // Check WebGPU support
+    const webgpuCheck = await this.checkWebGPUSupport();
+    const gpuCheckEl = document.getElementById('webgpu-check-gpu');
+    if (webgpuCheck.supported) {
+      gpuCheckEl.textContent = '✓ WebGPU is supported';
+      gpuCheckEl.className = 'success';
+    } else {
+      gpuCheckEl.textContent = '✗ ' + webgpuCheck.reason;
+      gpuCheckEl.className = 'error';
+      document.getElementById('webgpu-download-btn').disabled = true;
+    }
+
+    // Check cache status
+    await this.updateCacheStatus();
+
+    modal.style.display = 'flex';
+    this.setupWebGPUModalEvents();
+  }
+
+  /**
+   * Setup event listeners for WebGPU modal
+   */
+  setupWebGPUModalEvents() {
+    const modal = document.getElementById('webgpu-download-modal');
+    const closeBtn = document.getElementById('close-webgpu-modal');
+    const downloadBtn = document.getElementById('webgpu-download-btn');
+    const cancelBtn = document.getElementById('webgpu-cancel-btn');
+    const doneBtn = document.getElementById('webgpu-done-btn');
+    const retryBtn = document.getElementById('webgpu-retry-btn');
+    const clearCacheBtn = document.getElementById('clear-model-cache');
+
+    if (closeBtn) {
+      closeBtn.onclick = () => { modal.style.display = 'none'; };
+    }
+
+    if (cancelBtn) {
+      cancelBtn.onclick = () => { modal.style.display = 'none'; };
+    }
+
+    if (downloadBtn) {
+      downloadBtn.onclick = () => this.startWebGPUDownload();
+    }
+
+    if (doneBtn) {
+      doneBtn.onclick = () => {
+        modal.style.display = 'none';
+        // Switch to webgpu provider
+        this.provider = 'webgpu';
+        this.selectedModel = this.webgpuConfig.modelName;
+        const providerSelect = document.getElementById('provider-select');
+        if (providerSelect) providerSelect.value = 'webgpu';
+        this.saveModelPreferences();
+        this.updateModelInfo();
+        this.updateStatus('connected', `Connected to ${this.selectedModel}`);
+        this.updateHintSystem();
+      };
+    }
+
+    if (retryBtn) {
+      retryBtn.onclick = () => {
+        document.getElementById('webgpu-info').style.display = 'block';
+        document.getElementById('webgpu-error').style.display = 'none';
+      };
+    }
+
+    if (clearCacheBtn) {
+      clearCacheBtn.onclick = () => this.clearModelCache();
+    }
+  }
+
+  /**
+   * Start WebGPU model download with progress tracking
+   */
+  async startWebGPUDownload() {
+    const infoSection = document.getElementById('webgpu-info');
+    const progressSection = document.getElementById('webgpu-progress');
+    const readySection = document.getElementById('webgpu-ready');
+    const errorSection = document.getElementById('webgpu-error');
+    const progressFill = document.getElementById('webgpu-progress-fill');
+    const progressText = document.getElementById('webgpu-progress-text');
+    const statusText = document.getElementById('webgpu-status');
+
+    // Show progress
+    infoSection.style.display = 'none';
+    progressSection.style.display = 'block';
+
+    try {
+      await this.initializeWebGPUModel((progress) => {
+        progressFill.style.width = progress.progress + '%';
+        progressText.textContent = progress.progress + '%';
+        statusText.textContent = progress.status;
+      });
+
+      // Success!
+      progressSection.style.display = 'none';
+      readySection.style.display = 'block';
+      document.getElementById('cache-management').style.display = 'flex';
+      await this.updateCacheStatus();
+
+    } catch (error) {
+      progressSection.style.display = 'none';
+      errorSection.style.display = 'block';
+      document.getElementById('webgpu-error-message').textContent = error.message;
+    }
+  }
+
+  /**
+   * Update cache status display
+   */
+  async updateCacheStatus() {
+    const cacheManagement = document.getElementById('cache-management');
+    const cacheSizeEl = document.getElementById('cache-size');
+
+    if (!cacheManagement || !cacheSizeEl) return;
+
+    try {
+      // Check if model is cached using Cache API
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        const transformersCache = cacheNames.find(name => name.includes('transformers'));
+
+        if (transformersCache) {
+          const cache = await caches.open(transformersCache);
+          const keys = await cache.keys();
+
+          if (keys.length > 0) {
+            // Estimate size (rough approximation)
+            const estimatedSize = keys.length * 50; // ~50MB per file average
+            cacheSizeEl.textContent = `Cached: ~${Math.min(estimatedSize, 400)} MB`;
+            cacheManagement.style.display = 'flex';
+            return;
+          }
+        }
+      }
+
+      cacheSizeEl.textContent = 'Not cached';
+    } catch (error) {
+      console.error('Failed to check cache:', error);
+      cacheSizeEl.textContent = 'Cache status unknown';
+    }
+  }
+
+  /**
+   * Clear the model cache
+   */
+  async clearModelCache() {
+    try {
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        for (const name of cacheNames) {
+          if (name.includes('transformers') || name.includes('huggingface')) {
+            await caches.delete(name);
+            console.log('Deleted cache:', name);
+          }
+        }
+      }
+
+      // Also clear IndexedDB if used
+      if ('indexedDB' in window) {
+        const databases = await indexedDB.databases?.() || [];
+        for (const db of databases) {
+          if (db.name?.includes('transformers') || db.name?.includes('huggingface')) {
+            indexedDB.deleteDatabase(db.name);
+            console.log('Deleted IndexedDB:', db.name);
+          }
+        }
+      }
+
+      // Reset state
+      this.webgpuPipeline = null;
+      this.webgpuReady = false;
+
+      // Update UI
+      await this.updateCacheStatus();
+      this.updateStatus('info', 'Model cache cleared');
+
+      alert('Model cache cleared. You will need to download the model again to use in-browser AI.');
+
+    } catch (error) {
+      console.error('Failed to clear cache:', error);
+      alert('Failed to clear cache: ' + error.message);
+    }
   }
 
   init() {
@@ -326,19 +768,41 @@ class LLMIntegration {
 
   async loadModels() {
     if (!this.isBrowserEnvironment()) return;
-    
+
     this.updateStatus('loading', 'Loading models...');
 
     try {
       let models = [];
 
       if (this.provider === 'ollama') {
+        // Check if Ollama is available first
+        const ollamaAvailable = await this.checkOllamaAvailable();
+        if (!ollamaAvailable) {
+          // Show fallback modal if this is the first time
+          const hasSeenFallback = localStorage.getItem('aicodepedagogy_seen_fallback');
+          if (!hasSeenFallback) {
+            localStorage.setItem('aicodepedagogy_seen_fallback', 'true');
+            this.showFallbackModal();
+          }
+          throw new Error('Ollama not running');
+        }
+
         const response = await fetch(`${this.ollamaBaseUrl}/api/tags`);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
         models = data.models.map(model => model.name);
+      } else if (this.provider === 'webgpu') {
+        // WebGPU uses a single built-in model
+        if (this.webgpuReady) {
+          models = [this.webgpuConfig.modelName];
+          this.selectedModel = this.webgpuConfig.modelName;
+        } else {
+          // Model not loaded yet - show download modal
+          this.showWebGPUDownloadModal();
+          models = [];
+        }
       } else if (this.provider === 'openai') {
         // OpenAI models are predefined since we can't query them without API call
         models = ['gpt-4o', 'gpt-4', 'gpt-3.5-turbo'];
@@ -352,6 +816,8 @@ class LLMIntegration {
 
       if (models.length > 0) {
         this.updateStatus('success', `Found ${models.length} models`);
+      } else if (this.provider === 'webgpu' && !this.webgpuReady) {
+        this.updateStatus('info', 'Setup required for in-browser AI');
       } else {
         this.updateStatus('warning', 'No models found');
       }
@@ -503,6 +969,11 @@ class LLMIntegration {
       let response;
       if (this.provider === 'ollama') {
         response = await this.queryOllama(prompt);
+      } else if (this.provider === 'webgpu') {
+        if (!this.webgpuReady) {
+          throw new Error('In-browser model not loaded. Please set it up first.');
+        }
+        response = await this.queryWebGPU(prompt);
       } else if (this.provider === 'openai') {
         response = await this.queryOpenAI(prompt);
       } else if (this.provider === 'anthropic') {
@@ -686,7 +1157,8 @@ Then briefly explain what you changed and why.`;
     const modelLower = this.selectedModel.toLowerCase();
     return agenticModels.some(m => modelLower.includes(m)) ||
            this.provider === 'openai' ||
-           this.provider === 'anthropic';
+           this.provider === 'anthropic' ||
+           this.provider === 'webgpu'; // Granite 4.0 supports tool calling
   }
 
   /**
@@ -950,6 +1422,9 @@ Then briefly explain what you changed and why.`;
       let response;
       if (this.provider === 'ollama') {
         response = await this.queryOllama(prompt);
+      } else if (this.provider === 'webgpu') {
+        if (!this.webgpuReady) return; // Silently skip if not ready
+        response = await this.queryWebGPU(prompt);
       } else if (this.provider === 'openai') {
         response = await this.queryOpenAI(prompt);
       } else if (this.provider === 'anthropic') {
@@ -1122,6 +1597,11 @@ Then briefly explain what you changed and why.`;
       let response;
       if (this.provider === 'ollama') {
         response = await this.queryOllama(prompt);
+      } else if (this.provider === 'webgpu') {
+        if (!this.webgpuReady) {
+          throw new Error('In-browser model not loaded');
+        }
+        response = await this.queryWebGPU(prompt);
       } else if (this.provider === 'openai') {
         response = await this.queryOpenAI(prompt);
       } else if (this.provider === 'anthropic') {
