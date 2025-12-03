@@ -17,11 +17,12 @@ class LLMIntegration {
     this.transformersModule = null;
 
     // WebGPU model configuration
+    // Using 350m model with q4f16 quantization (~350MB download)
     this.webgpuConfig = {
-      modelId: 'onnx-community/granite-4.0-micro-ONNX-web',
-      modelName: 'Granite 4.0 Micro (In-Browser)',
+      modelId: 'onnx-community/granite-4.0-350m-ONNX-web',
+      modelName: 'Granite 4.0 350M (In-Browser)',
       device: 'webgpu',
-      dtype: 'q4'
+      dtype: 'q4f16'
     };
 
     // Two distinct AI personas for different purposes
