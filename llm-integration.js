@@ -17,12 +17,13 @@ class LLMIntegration {
     this.transformersModule = null;
 
     // WebGPU model configuration
-    // Using 350m model with q4f16 quantization (~350MB download)
+    // Using Qwen2.5-Coder-1.5B with q4f16 quantization (~1.3GB download)
+    // Coding-focused model that performed best in our evaluation
     // Falls back to Hugging Face if not on jtm.io
     this.webgpuConfig = {
-      modelId: 'onnx-community/granite-4.0-350m-ONNX-web',
-      localModelUrl: 'https://jtm.io/codepedagogy/models/granite-4.0-350m',
-      modelName: 'Granite 4.0 350M (In-Browser)',
+      modelId: 'onnx-community/Qwen2.5-Coder-1.5B-Instruct',
+      localModelUrl: 'https://jtm.io/codepedagogy/models/qwen2.5-coder-1.5b',
+      modelName: 'Qwen 2.5 Coder 1.5B (In-Browser)',
       device: 'webgpu',
       dtype: 'q4f16'
     };
