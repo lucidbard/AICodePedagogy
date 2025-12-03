@@ -1104,16 +1104,34 @@ Provide narrative context or react to the current situation in the investigation
       // === AI ASSISTANT (Coding Help) ===
       case 'hint':
         return aiAssistantPrompt + `
-Give a helpful hint to guide them toward the solution. Don't give the complete answer—help them think through the problem. Be encouraging and suggest what to focus on next.`;
+Give a helpful hint to guide them toward the solution.
+
+IMPORTANT RULES:
+- Do NOT give the complete code solution
+- Do NOT write out the exact line they should type
+- Instead: Ask guiding questions, point to concepts, suggest what to think about
+- Keep it to 2-3 sentences maximum
+
+Be encouraging and help them discover the answer themselves.`;
 
       case 'debug':
         return aiAssistantPrompt + `
-Help debug their code:
-1. Identify the issue clearly
-2. Explain what's going wrong and why
-3. ${this.agencyLevel >= 2 ? 'Offer to fix it: "Would you like me to correct this?"' : 'Guide them toward the fix'}
+Help debug their code. Look carefully at the error message and the code.
 
-Be supportive—errors are learning opportunities.`;
+DEBUGGING STEPS:
+1. Read the error message carefully - what does it say?
+2. Look at the EXACT line where the error occurs
+3. Identify the SPECIFIC problem (missing quote, wrong indentation, typo, etc.)
+4. Explain clearly what's wrong and how to fix it
+
+Common Python errors:
+- "EOL while scanning string literal" = missing closing quote
+- "IndentationError" = wrong spacing/tabs
+- "NameError" = variable not defined or typo
+
+${this.agencyLevel >= 2 ? 'Offer: "Would you like me to show you the fix?"' : 'Guide them to fix it themselves.'}
+
+Be supportive—errors are learning opportunities!`;
 
       case 'explain':
         return aiAssistantPrompt + `
