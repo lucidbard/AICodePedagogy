@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digging into AI: An Archaeological Python Adventure</title>
+
+  <!-- Local fonts for offline development -->
+  <link rel="stylesheet" href="vendor/fonts/fonts.css">
+
+  <!-- Skulpt - Python in the browser (local) -->
+  <script src="vendor/skulpt/skulpt.min.js"
+    onload="if(window.onSkulptLoaded) window.onSkulptLoaded(); console.log('Skulpt core loaded')"></script>
+  <script src="vendor/skulpt/skulpt-stdlib.js" onload="console.log('Skulpt stdlib loaded')"></script>
+
+  <!-- CodeMirror for syntax highlighting (local) -->
+  <link rel="stylesheet" href="vendor/codemirror/codemirror.min.css">
+  <link rel="stylesheet" href="vendor/codemirror/theme/material-darker.min.css">
+  <script src="vendor/codemirror/codemirror.min.js"></script>
+  <script src="vendor/codemirror/mode/python/python.min.js"></script>
+  <script src="vendor/codemirror/addon/edit/closebrackets.min.js"></script>
+  <script src="vendor/codemirror/addon/edit/matchbrackets.min.js"></script>
+  <script src="vendor/codemirror/addon/hint/show-hint.min.js"></script>
+  <script src="vendor/codemirror/addon/hint/python-hint.min.js"></script>
+  <link rel="stylesheet" href="vendor/codemirror/addon/hint/show-hint.min.css">
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <a href="index.html" class="back-link" title="Back to project page">← Project</a>
+      <h1 id="game-title">Digging into AI</h1>
+      <p class="subtitle" id="game-subtitle">An Archaeological Python Adventure</p>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-bar"></div>
+      </div>
+    </div>
+
+    <div class="game-area">
+      <!-- Narrative Strip at Top (spans all columns) -->
+      <div class="narrative-strip">
+        <div class="story-progress" id="story-progress">
+          📜 Dr. Rodriguez: "These fragment lengths hide a pattern..."
+        </div>
+        <div class="current-objective" id="current-objective">
+          🎯 Analyze the distribution to reveal the hidden message
+        </div>
+      </div>
+
+      <!-- Left Column: Reference Panel -->
+      <div class="reference-panel" id="reference-panel">
+        <div class="reference-panel-header">
+          <h3>📚 Reference & Data</h3>
+        </div>
+        <div class="reference-panel-content">
+          <div class="data-card">
+            <h3>📊 Fragment Data</h3>
+            <code>[45, 23, 67, 12, 89, 34, 56, 78, 21, 43]</code>
+            <p>Categories: &lt;30, 30-60, &gt;60 chars</p>
+          </div>
+
+          <details class="concept-reference" open>
+            <summary>🔍 Python References</summary>
+            <div class="concept-content">
+              <ul>
+                <li><code>len(list)</code> — count items</li>
+                <li><code>sum(list)</code> — total value</li>
+                <li><code>[x for x in list if ...]</code> — filter</li>
+              </ul>
+            </div>
+          </details>
+
+          <div class="investigation-log">
+            <h3>🔎 Your Findings</h3>
+            <div id="live-discoveries">
+              <!-- Updates as they complete tasks -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Center Column: Code Panel -->
+      <div class="code-panel">
+        <h2>Your Code</h2>
+        <div id="cells-container">
+          <!-- For multi-cell stages -->
+        </div>
+        <div id="single-cell-container">
+          <!-- For single-cell stages - will be dynamically populated -->
+        </div>
+        <div class="hint-section">
+          <div id="hints-container">
+            <!-- Hint buttons will be generated here -->
+          </div>
+          <div id="hint-text-container">
+            <!-- Hint text will appear here -->
+          </div>
+        </div>
+        <div class="runtime-controls">
+          <button class="restart-runtime-button" id="restart-runtime-button"
+            title="Clear all cell outputs and reset runtime (similar to restarting a Jupyter kernel)">🔄 Restart
+            Runtime</button>
+          <button class="clear-progress-button" id="clear-progress-button"
+            title="Clear all saved progress and start from the beginning">🗑️ Clear Progress</button>
+        </div>
+        <button class="next-button" id="next-button">Continue to Next Stage →</button>
+      </div>
+
+      <!-- Right Column: Dr. Rodriguez Chat Panel (hidden by default) -->
+      <div class="chat-panel" id="chat-panel">
+        <!-- Chat interface will be dynamically populated -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Developer navigation for testing -->
+  <button class="dev-nav-toggle" id="dev-nav-toggle">⚙</button>
+  <div class="dev-nav" id="dev-nav">
+    <!-- Stage navigation buttons will be generated here -->
+  </div>
+  <!-- Celebration effect container -->
+  <div class="celebration" id="celebration"></div>
+  <!-- LLM Assistant Footer -->
+  <footer class="llm-footer">
+    <div class="llm-footer-content">
+      <div class="llm-toggle-container">
+        <label class="llm-toggle">
+          <input type="checkbox" id="llm-enabled" />
+          <span class="llm-slider"></span>
+          <span class="llm-label">🤖 AI Assistant
+          </span>
+        </label>
+      </div>
+      <button id="ollama-help-btn" class="help-btn" title="How to setup Ollama">❓</button>
+      <div class="llm-settings" id="llm-settings" style="display: none;">
+        <div class="provider-selection">
+          <label for="provider-select">Provider:</label>
+          <select id="provider-select">
+            <option value="ollama">Ollama (Local)</option>
+            <option value="webgpu">In-Browser (Qwen)</option>
+            <option value="openai">OpenAI</option>
+            <option value="anthropic">Anthropic</option>
+          </select>
+        </div>
+        <div class="api-key-container" id="api-key-container" style="display: none;">
+          <input type="password" id="api-key-input" placeholder="Enter API key">
+          <button id="save-api-key" class="save-key-btn">Save</button>
+        </div>
+        <span class="llm-model-info" id="llm-model-info">No model selected</span>
+        <button id="change-model" class="change-model-btn" title="Change AI model">Change Model</button>
+        <div class="model-selection" id="model-selection" style="display: none;">
+          <select id="model-select">
+            <option value="">Select a model...</option>
+          </select>
+          <button id="refresh-models" class="refresh-btn" title="Refresh available models">🔄</button>
+        </div>
+      </div>
+      <div class="llm-status" id="llm-status"></div>
+    </div>
+  </footer>
+
+  <!-- WebGPU Model Download Modal -->
+  <div class="modal-overlay" id="webgpu-download-modal" style="display: none;">
+    <div class="modal-content webgpu-modal">
+      <div class="modal-header">
+        <h3>🧠 In-Browser AI Model</h3>
+        <button class="modal-close" id="close-webgpu-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="webgpu-info" id="webgpu-info">
+          <p>The in-browser AI assistant uses <strong>Qwen 2.5 Coder (1.5B)</strong>, a coding-focused language model that runs entirely in your browser using WebGPU.</p>
+
+          <div class="webgpu-requirements">
+            <h4>Requirements</h4>
+            <ul>
+              <li id="webgpu-check-browser">✓ Modern browser (Chrome 113+, Edge 113+, Firefox 121+)</li>
+              <li id="webgpu-check-gpu">Checking WebGPU support...</li>
+            </ul>
+          </div>
+
+          <div class="webgpu-warning">
+            <strong>⚠️ Note:</strong> This will download approximately <strong>~1.3GB</strong> of model data. The model will be cached in your browser for future use.
+          </div>
+
+          <div class="webgpu-actions">
+            <button class="btn-primary" id="webgpu-download-btn">Download & Enable AI</button>
+            <button class="btn-secondary" id="webgpu-cancel-btn">Cancel</button>
+          </div>
+        </div>
+
+        <div class="webgpu-progress" id="webgpu-progress" style="display: none;">
+          <h4>Downloading Model...</h4>
+          <div class="progress-container">
+            <div class="progress-bar-webgpu">
+              <div class="progress-fill-webgpu" id="webgpu-progress-fill"></div>
+            </div>
+            <span class="progress-text" id="webgpu-progress-text">0%</span>
+          </div>
+          <p class="progress-status" id="webgpu-status">Initializing...</p>
+          <p class="progress-hint">This may take a few minutes depending on your connection.</p>
+        </div>
+
+        <div class="webgpu-ready" id="webgpu-ready" style="display: none;">
+          <h4>✅ Model Ready!</h4>
+          <p>The AI assistant is now available. You can use it for hints, debugging, and code explanations.</p>
+          <button class="btn-primary" id="webgpu-done-btn">Start Using AI</button>
+        </div>
+
+        <div class="webgpu-error" id="webgpu-error" style="display: none;">
+          <h4>❌ Setup Failed</h4>
+          <p id="webgpu-error-message">An error occurred while setting up the model.</p>
+          <button class="btn-secondary" id="webgpu-retry-btn">Try Again</button>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <div class="cache-management" id="cache-management" style="display: none;">
+          <span class="cache-size" id="cache-size">Cached: ~0 MB</span>
+          <button class="btn-small btn-danger" id="clear-model-cache">Clear Cache</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ollama Fallback Prompt Modal -->
+  <div class="modal-overlay" id="ollama-fallback-modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>🤖 AI Assistant Setup</h3>
+        <button class="modal-close" id="close-fallback-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Ollama doesn't appear to be running. Would you like to:</p>
+
+        <div class="fallback-options">
+          <div class="fallback-option" id="fallback-webgpu">
+            <h4>🧠 Use In-Browser AI</h4>
+            <p>Run Qwen 2.5 Coder directly in your browser. No installation required!</p>
+            <ul>
+              <li>~1.3GB download (cached for future use)</li>
+              <li>Runs entirely on your device</li>
+              <li>Requires WebGPU-capable browser</li>
+            </ul>
+            <button class="btn-primary" id="choose-webgpu">Use In-Browser AI</button>
+          </div>
+
+          <div class="fallback-option" id="fallback-ollama">
+            <h4>💻 Setup Ollama</h4>
+            <p>Install Ollama for faster responses and more model options.</p>
+            <button class="btn-secondary" id="choose-ollama-setup">Setup Ollama</button>
+          </div>
+        </div>
+
+        <div class="fallback-skip">
+          <button class="btn-text" id="skip-ai-setup">Skip for now (disable AI features)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ollama Help Modal -->
+  <div class="modal-overlay" id="ollama-help-modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>🤖 Setting up Ollama for AI Assistant</h3>
+        <button class="modal-close" id="close-ollama-help">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="help-section">
+          <h4>📦 Step 1: Install Ollama</h4>
+          <p>Download and install Ollama from <a href="https://ollama.ai" target="_blank">https://ollama.ai</a></p>
+
+          <div class="platform-tabs">
+            <button class="tab-btn-install active" data-platform="windows">Windows</button>
+            <button class="tab-btn-install" data-platform="mac">macOS/Linux</button>
+          </div>
+
+          <div class="platform-content-install" data-platform="windows">
+            <div class="code-block">
+              <strong>Windows:</strong><br>
+              Download the installer from the website
+            </div>
+          </div>
+
+          <div class="platform-content-install" data-platform="mac" style="display: none;">
+            <div class="code-block">
+              <strong>macOS/Linux:</strong><br>
+              <code>curl -fsSL https://ollama.ai/install.sh | sh</code>
+            </div>
+          </div>
+        </div>
+
+        <div class="help-section" id="cors-section">
+          <h4>🔧 Step 2: Configure CORS for Web Access</h4>
+          <p id="cors-description">To allow this website (<strong>https://jtm.io/codepedagogy/</strong>) to connect to
+            your local Ollama
+            server, you need to set environment variables:</p>
+
+          <div class="platform-tabs">
+            <button class="tab-btn active" data-platform="windows">Windows</button>
+            <button class="tab-btn" data-platform="mac">macOS/Linux</button>
+          </div>
+
+          <div class="platform-content" data-platform="windows">
+            <h5>Windows Setup:</h5>
+            <div class="code-block">
+              <strong>Option 1 - Command Prompt:</strong><br>
+              <code>set OLLAMA_ORIGINS=https://jtm.io/codepedagogy/,http://localhost:*</code><br>
+              <code>ollama serve</code>
+            </div>
+            <div class="code-block">
+              <strong>Option 2 - PowerShell:</strong><br>
+              <code>$env:OLLAMA_ORIGINS="https://jtm.io/codepedagogy/,http://localhost:*"</code><br>
+              <code>ollama serve</code>
+            </div>
+            <div class="code-block">
+              <strong>Option 3 - Permanent (System Environment Variables):</strong><br>
+              1. Press <code>Win + R</code>, type <code>sysdm.cpl</code><br>
+              2. Click "Environment Variables"<br>
+              3. Add new system variable:<br>
+              &nbsp;&nbsp;Name: <code>OLLAMA_ORIGINS</code><br>
+              &nbsp;&nbsp;Value: <code>https://jtm.io/codepedagogy/,http://localhost:*</code><br>
+              4. Restart command prompt and run <code>ollama serve</code>
+            </div>
+          </div>
+
+          <div class="platform-content" data-platform="mac" style="display: none;">
+            <h5>macOS/Linux Setup:</h5>
+            <div class="code-block">
+              <strong>Terminal (temporary):</strong><br>
+              <code>export OLLAMA_ORIGINS="https://jtm.io/codepedagogy/,http://localhost:*"</code><br>
+              <code>ollama serve</code>
+            </div>
+            <div class="code-block">
+              <strong>Permanent (add to ~/.bashrc, ~/.zshrc, or ~/.profile):</strong><br>
+              <code>echo 'export OLLAMA_ORIGINS="https://jtm.io/codepedagogy/,http://localhost:*"' >> ~/.bashrc</code><br>
+              <code>source ~/.bashrc</code><br>
+              <code>ollama serve</code>
+            </div>
+            <div class="code-block">
+              <strong>Using launchctl (macOS service):</strong><br>
+              <code>launchctl setenv OLLAMA_ORIGINS "https://jtm.io/codepedagogy/,http://localhost:*"</code><br>
+              <code>ollama serve</code>
+            </div>
+          </div>
+        </div>
+
+        <div class="help-section" id="install-model-section">
+          <h4 id="install-model-heading">🚀 Step 3: Install a Model</h4>
+          <p>Download a model suitable for coding assistance:</p>
+          <div class="code-block">
+            <strong>Recommended models:</strong><br>
+            <code>ollama pull codellama:7b</code> (good for coding, 4GB)<br>
+            <code>ollama pull llama3.1:8b</code> (general purpose, 5GB)<br>
+            <code>ollama pull qwen2.5-coder:7b</code> (excellent for coding, 4GB)
+          </div>
+        </div>
+
+        <div class="help-section" id="test-connection-section">
+          <h4 id="test-connection-heading">✅ Step 4: Test Connection</h4>
+          <p id="test-connection-description">Once Ollama is running with CORS configured:</p>
+          <ol>
+            <li>Enable the "🤖 AI Assistant" toggle above</li>
+            <li>Select your model from the dropdown</li>
+            <li>Look for "Connected" status</li>
+          </ol>
+        </div>
+
+        <div class="help-section warning">
+          <h4>⚠️ Important Security Notes</h4>
+          <ul>
+            <li>This configuration allows the specific website to access your local Ollama instance</li>
+            <li>Only use this setup on trusted networks</li>
+            <li>Stop Ollama when not needed: <code>Ctrl+C</code> in the terminal</li>
+            <li>Your models and conversations stay completely private on your machine</li>
+          </ul>
+        </div>
+
+        <div class="help-section">
+          <h4>🔍 Troubleshooting</h4>
+          <ul>
+            <li><strong>Connection failed:</strong> Ensure Ollama is running and CORS is configured</li>
+            <li><strong>Model not found:</strong> Make sure you've pulled the model with
+              <code>ollama pull model-name</code>
+            </li>
+            <li><strong>Slow responses:</strong> Try a smaller model or check your system resources</li>
+            <li><strong>Windows issues:</strong> Try running Command Prompt as Administrator</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="llm-integration.js"></script>
+  <script src="script.js"></script>
+</body>
+
+</html>

@@ -129,7 +129,8 @@ We systematically evaluated models for pedagogical appropriateness. See [`docs/L
 ## Project Structure
 
 ```
-├── index.html              # Main application
+├── index.html              # Project landing page
+├── app.html                # Main game application
 ├── script.js               # Game logic (3000+ lines)
 ├── style.css               # All styling
 ├── game-content.json       # Curriculum content (editable)

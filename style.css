@@ -65,6 +65,23 @@ body {
   background: rgba(0, 0, 0, 0.3);
   border-radius: 15px;
   border: 2px solid var(--color-border-brown);
+  position: relative;
+}
+
+.back-link {
+  position: absolute;
+  left: var(--spacing-lg);
+  top: var(--spacing-lg);
+  color: var(--color-border-tan);
+  text-decoration: none;
+  font-size: 0.9rem;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.back-link:hover {
+  opacity: 1;
+  text-decoration: underline;
 }
 
 h1 {

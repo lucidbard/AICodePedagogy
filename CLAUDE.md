@@ -21,7 +21,8 @@ npm run test:browser
 npm run test:serve   # or: python3 -m http.server 8000
 
 # Access points after starting server:
-# Main app: http://localhost:8000/index.html
+# Landing page: http://localhost:8000/index.html
+# Main app: http://localhost:8000/app.html
 # Test runner: http://localhost:8000/test-runner.html
 ```
 
@@ -39,11 +40,12 @@ No build step required - changes are immediately live in the browser.
 
 | File | Purpose |
 |------|---------|
+| `index.html` | Project landing page (GitHub Pages) |
+| `app.html` | Main game UI structure |
 | `script.js` | Core game logic (3,000+ lines) - stage loading, code execution, validation |
 | `game-content.json` | Educational curriculum - stages, challenges, validation rules, narrative |
-| `llm-integration.js` | Multi-provider AI integration (Ollama, OpenAI, Anthropic) |
+| `llm-integration.js` | Multi-provider AI integration (Ollama, OpenAI, Anthropic, WebGPU) |
 | `style.css` | All styling |
-| `index.html` | UI structure |
 
 ### Multi-Cell Execution Model
 

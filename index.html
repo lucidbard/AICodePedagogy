@@ -1,400 +1,450 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Digging into AI: An Archaeological Python Adventure</title>
+  <title>Digging into AI - An Archaeological Python Adventure</title>
+  <meta name="description" content="Learn Python programming through an archaeological narrative. AI-assisted coding education for Digital Humanities.">
+  <meta name="author" content="John T. Murray">
 
-  <!-- Local fonts for offline development -->
-  <link rel="stylesheet" href="vendor/fonts/fonts.css">
+  <!-- Open Graph -->
+  <meta property="og:title" content="Digging into AI - An Archaeological Python Adventure">
+  <meta property="og:description" content="Learn Python programming through an archaeological narrative with AI assistance.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://lucidbard.github.io/AICodePedagogy/">
 
-  <!-- Skulpt - Python in the browser (local) -->
-  <script src="vendor/skulpt/skulpt.min.js"
-    onload="if(window.onSkulptLoaded) window.onSkulptLoaded(); console.log('Skulpt core loaded')"></script>
-  <script src="vendor/skulpt/skulpt-stdlib.js" onload="console.log('Skulpt stdlib loaded')"></script>
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Source+Code+Pro:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
-  <!-- CodeMirror for syntax highlighting (local) -->
-  <link rel="stylesheet" href="vendor/codemirror/codemirror.min.css">
-  <link rel="stylesheet" href="vendor/codemirror/theme/material-darker.min.css">
-  <script src="vendor/codemirror/codemirror.min.js"></script>
-  <script src="vendor/codemirror/mode/python/python.min.js"></script>
-  <script src="vendor/codemirror/addon/edit/closebrackets.min.js"></script>
-  <script src="vendor/codemirror/addon/edit/matchbrackets.min.js"></script>
-  <script src="vendor/codemirror/addon/hint/show-hint.min.js"></script>
-  <script src="vendor/codemirror/addon/hint/python-hint.min.js"></script>
-  <link rel="stylesheet" href="vendor/codemirror/addon/hint/show-hint.min.css">
+  <style>
+    :root {
+      --color-sand: #d4a574;
+      --color-sand-light: #f5e6d3;
+      --color-earth: #8b7355;
+      --color-earth-dark: #5c4a3a;
+      --color-papyrus: #faf8f0;
+      --color-ink: #2c1810;
+      --color-accent: #c9a227;
+      --color-success: #4a7c59;
+    }
 
-  <link rel="stylesheet" href="style.css" />
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, var(--color-earth-dark) 0%, var(--color-ink) 100%);
+      color: var(--color-papyrus);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    /* Hero Section */
+    .hero {
+      text-align: center;
+      padding: 4rem 2rem;
+      background: radial-gradient(ellipse at center, rgba(201, 162, 39, 0.1) 0%, transparent 70%);
+    }
+
+    .hero h1 {
+      font-family: 'Crimson Text', Georgia, serif;
+      font-size: clamp(2.5rem, 6vw, 4rem);
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: var(--color-sand);
+    }
+
+    .hero .subtitle {
+      font-family: 'Crimson Text', Georgia, serif;
+      font-size: clamp(1.2rem, 3vw, 1.5rem);
+      font-style: italic;
+      color: var(--color-sand-light);
+      margin-bottom: 1.5rem;
+    }
+
+    .hero .tagline {
+      font-size: 1.1rem;
+      color: rgba(250, 248, 240, 0.8);
+      max-width: 600px;
+      margin: 0 auto 2rem;
+    }
+
+    .badges {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+    }
+
+    .badges img {
+      height: 20px;
+    }
+
+    .cta-buttons {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 1rem 2rem;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: var(--color-accent);
+      color: var(--color-ink);
+    }
+
+    .btn-primary:hover {
+      background: #dab82f;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(201, 162, 39, 0.3);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--color-sand);
+      border: 2px solid var(--color-sand);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(212, 165, 116, 0.1);
+      transform: translateY(-2px);
+    }
+
+    /* Features Section */
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2rem;
+      padding: 3rem 0;
+    }
+
+    .feature-card {
+      background: rgba(250, 248, 240, 0.05);
+      border: 1px solid rgba(212, 165, 116, 0.2);
+      border-radius: 12px;
+      padding: 2rem;
+      transition: all 0.2s ease;
+    }
+
+    .feature-card:hover {
+      background: rgba(250, 248, 240, 0.08);
+      border-color: rgba(212, 165, 116, 0.4);
+      transform: translateY(-4px);
+    }
+
+    .feature-card .icon {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .feature-card h3 {
+      font-family: 'Crimson Text', Georgia, serif;
+      font-size: 1.4rem;
+      color: var(--color-sand);
+      margin-bottom: 0.75rem;
+    }
+
+    .feature-card p {
+      color: rgba(250, 248, 240, 0.75);
+      font-size: 0.95rem;
+    }
+
+    /* Curriculum Section */
+    .curriculum {
+      background: rgba(250, 248, 240, 0.03);
+      border-radius: 16px;
+      padding: 3rem;
+      margin: 2rem 0;
+    }
+
+    .curriculum h2 {
+      font-family: 'Crimson Text', Georgia, serif;
+      font-size: 2rem;
+      color: var(--color-sand);
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .stages {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1rem;
+    }
+
+    .stage {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      padding: 1rem;
+      text-align: center;
+      border: 1px solid rgba(212, 165, 116, 0.15);
+    }
+
+    .stage-number {
+      display: inline-block;
+      width: 32px;
+      height: 32px;
+      line-height: 32px;
+      background: var(--color-accent);
+      color: var(--color-ink);
+      border-radius: 50%;
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .stage-title {
+      font-size: 0.85rem;
+      color: rgba(250, 248, 240, 0.8);
+    }
+
+    /* Citation Section */
+    .citation {
+      background: rgba(74, 124, 89, 0.15);
+      border: 1px solid rgba(74, 124, 89, 0.3);
+      border-radius: 12px;
+      padding: 2rem;
+      margin: 3rem 0;
+    }
+
+    .citation h2 {
+      font-family: 'Crimson Text', Georgia, serif;
+      font-size: 1.5rem;
+      color: var(--color-sand);
+      margin-bottom: 1rem;
+    }
+
+    .citation-box {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      padding: 1rem;
+      font-family: 'Source Code Pro', monospace;
+      font-size: 0.85rem;
+      overflow-x: auto;
+      color: rgba(250, 248, 240, 0.9);
+    }
+
+    .citation-link {
+      margin-top: 1rem;
+    }
+
+    .citation-link a {
+      color: var(--color-accent);
+      text-decoration: none;
+    }
+
+    .citation-link a:hover {
+      text-decoration: underline;
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 3rem 2rem;
+      border-top: 1px solid rgba(212, 165, 116, 0.2);
+      margin-top: 3rem;
+    }
+
+    footer p {
+      color: rgba(250, 248, 240, 0.6);
+      font-size: 0.9rem;
+    }
+
+    footer a {
+      color: var(--color-sand);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 2rem;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      .container {
+        padding: 1rem;
+      }
+
+      .hero {
+        padding: 2rem 1rem;
+      }
+
+      .curriculum {
+        padding: 1.5rem;
+      }
+
+      .cta-buttons {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
 </head>
-
 <body>
   <div class="container">
-    <div class="header">
-      <h1 id="game-title">Digging into AI</h1>
-      <p class="subtitle" id="game-subtitle">An Archaeological Python Adventure</p>
-      <div class="progress-bar">
-        <div class="progress-fill" id="progress-bar"></div>
-      </div>
-    </div>
+    <!-- Hero -->
+    <section class="hero">
+      <h1>Digging into AI</h1>
+      <p class="subtitle">An Archaeological Python Adventure</p>
+      <p class="tagline">
+        Learn Python programming by helping Dr. Rodriguez decode ancient data fragments
+        from the Library of Alexandria's lost digital archives.
+      </p>
 
-    <div class="game-area">
-      <!-- Narrative Strip at Top (spans all columns) -->
-      <div class="narrative-strip">
-        <div class="story-progress" id="story-progress">
-          📜 Dr. Rodriguez: "These fragment lengths hide a pattern..."
-        </div>
-        <div class="current-objective" id="current-objective">
-          🎯 Analyze the distribution to reveal the hidden message
-        </div>
+      <div class="badges">
+        <a href="https://link.springer.com/chapter/10.1007/978-3-032-12408-1_15">
+          <img src="https://img.shields.io/badge/paper-Springer-orange" alt="Paper">
+        </a>
+        <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="MIT License">
+        <img src="https://img.shields.io/badge/DHSI-2025-blue" alt="DHSI 2025">
       </div>
 
-      <!-- Left Column: Reference Panel -->
-      <div class="reference-panel" id="reference-panel">
-        <div class="reference-panel-header">
-          <h3>📚 Reference & Data</h3>
-        </div>
-        <div class="reference-panel-content">
-          <div class="data-card">
-            <h3>📊 Fragment Data</h3>
-            <code>[45, 23, 67, 12, 89, 34, 56, 78, 21, 43]</code>
-            <p>Categories: &lt;30, 30-60, &gt;60 chars</p>
-          </div>
+      <div class="cta-buttons">
+        <a href="app.html" class="btn btn-primary">
+          <span>Play the Demo</span>
+        </a>
+        <a href="https://github.com/lucidbard/AICodePedagogy" class="btn btn-secondary">
+          <span>View on GitHub</span>
+        </a>
+      </div>
+    </section>
 
-          <details class="concept-reference" open>
-            <summary>🔍 Python References</summary>
-            <div class="concept-content">
-              <ul>
-                <li><code>len(list)</code> — count items</li>
-                <li><code>sum(list)</code> — total value</li>
-                <li><code>[x for x in list if ...]</code> — filter</li>
-              </ul>
-            </div>
-          </details>
-
-          <div class="investigation-log">
-            <h3>🔎 Your Findings</h3>
-            <div id="live-discoveries">
-              <!-- Updates as they complete tasks -->
-            </div>
-          </div>
-        </div>
+    <!-- Features -->
+    <section class="features">
+      <div class="feature-card">
+        <div class="icon">🏛️</div>
+        <h3>Narrative-Driven Learning</h3>
+        <p>An archaeological mystery provides authentic context for coding challenges. Dr. Rodriguez reacts to your discoveries in real-time.</p>
       </div>
 
-      <!-- Center Column: Code Panel -->
-      <div class="code-panel">
-        <h2>Your Code</h2>
-        <div id="cells-container">
-          <!-- For multi-cell stages -->
-        </div>
-        <div id="single-cell-container">
-          <!-- For single-cell stages - will be dynamically populated -->
-        </div>
-        <div class="hint-section">
-          <div id="hints-container">
-            <!-- Hint buttons will be generated here -->
-          </div>
-          <div id="hint-text-container">
-            <!-- Hint text will appear here -->
-          </div>
-        </div>
-        <div class="runtime-controls">
-          <button class="restart-runtime-button" id="restart-runtime-button"
-            title="Clear all cell outputs and reset runtime (similar to restarting a Jupyter kernel)">🔄 Restart
-            Runtime</button>
-          <button class="clear-progress-button" id="clear-progress-button"
-            title="Clear all saved progress and start from the beginning">🗑️ Clear Progress</button>
-        </div>
-        <button class="next-button" id="next-button">Continue to Next Stage →</button>
+      <div class="feature-card">
+        <div class="icon">🤖</div>
+        <h3>AI Coding Assistant</h3>
+        <p>Get hints without answers. The AI teaches you to solve problems yourself, modeling modern AI-assisted development practices.</p>
       </div>
 
-      <!-- Right Column: Dr. Rodriguez Chat Panel (hidden by default) -->
-      <div class="chat-panel" id="chat-panel">
-        <!-- Chat interface will be dynamically populated -->
+      <div class="feature-card">
+        <div class="icon">📓</div>
+        <h3>Jupyter-Style Interface</h3>
+        <p>Multi-cell editor with persistent variables. The "excavation layers" metaphor makes complex tasks feel like discoveries.</p>
       </div>
-    </div>
+
+      <div class="feature-card">
+        <div class="icon">🎓</div>
+        <h3>Built for Educators</h3>
+        <p>Customizable curriculum in JSON. Flexible validation accepts multiple solutions. Progressive scaffolding fades as skills grow.</p>
+      </div>
+    </section>
+
+    <!-- Curriculum -->
+    <section class="curriculum">
+      <h2>9 Stages of Discovery</h2>
+      <div class="stages">
+        <div class="stage">
+          <div class="stage-number">1</div>
+          <div class="stage-title">Print & Variables</div>
+        </div>
+        <div class="stage">
+          <div class="stage-number">2</div>
+          <div class="stage-title">Data Types</div>
+        </div>
+        <div class="stage">
+          <div class="stage-number">3</div>
+          <div class="stage-title">Conditionals</div>
+        </div>
+        <div class="stage">
+          <div class="stage-number">4</div>
+          <div class="stage-title">Min/Max</div>
+        </div>
+        <div class="stage">
+          <div class="stage-number">5</div>
+          <div class="stage-title">Loops</div>
+        </div>
+        <div class="stage">
+          <div class="stage-number">6</div>
+          <div class="stage-title">String Methods</div>
+        </div>
+        <div class="stage">
+          <div class="stage-number">7</div>
+          <div class="stage-title">Functions</div>
+        </div>
+        <div class="stage">
+          <div class="stage-number">8</div>
+          <div class="stage-title">String Manipulation</div>
+        </div>
+        <div class="stage">
+          <div class="stage-number">9</div>
+          <div class="stage-title">Final Report</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Citation -->
+    <section class="citation">
+      <h2>Cite This Work</h2>
+      <div class="citation-box">
+@inproceedings{murray2025digging,
+  title={Digging into AI: An Archaeological Python Adventure},
+  author={Murray, John T.},
+  booktitle={Digital Humanities and Programming Pedagogy},
+  year={2025},
+  publisher={Springer},
+  doi={10.1007/978-3-032-12408-1_15}
+}
+      </div>
+      <p class="citation-link">
+        <a href="https://link.springer.com/chapter/10.1007/978-3-032-12408-1_15">Read the paper on Springer →</a>
+      </p>
+    </section>
   </div>
 
-  <!-- Developer navigation for testing -->
-  <button class="dev-nav-toggle" id="dev-nav-toggle">⚙</button>
-  <div class="dev-nav" id="dev-nav">
-    <!-- Stage navigation buttons will be generated here -->
-  </div>
-  <!-- Celebration effect container -->
-  <div class="celebration" id="celebration"></div>
-  <!-- LLM Assistant Footer -->
-  <footer class="llm-footer">
-    <div class="llm-footer-content">
-      <div class="llm-toggle-container">
-        <label class="llm-toggle">
-          <input type="checkbox" id="llm-enabled" />
-          <span class="llm-slider"></span>
-          <span class="llm-label">🤖 AI Assistant
-          </span>
-        </label>
-      </div>
-      <button id="ollama-help-btn" class="help-btn" title="How to setup Ollama">❓</button>
-      <div class="llm-settings" id="llm-settings" style="display: none;">
-        <div class="provider-selection">
-          <label for="provider-select">Provider:</label>
-          <select id="provider-select">
-            <option value="ollama">Ollama (Local)</option>
-            <option value="webgpu">In-Browser (Qwen)</option>
-            <option value="openai">OpenAI</option>
-            <option value="anthropic">Anthropic</option>
-          </select>
-        </div>
-        <div class="api-key-container" id="api-key-container" style="display: none;">
-          <input type="password" id="api-key-input" placeholder="Enter API key">
-          <button id="save-api-key" class="save-key-btn">Save</button>
-        </div>
-        <span class="llm-model-info" id="llm-model-info">No model selected</span>
-        <button id="change-model" class="change-model-btn" title="Change AI model">Change Model</button>
-        <div class="model-selection" id="model-selection" style="display: none;">
-          <select id="model-select">
-            <option value="">Select a model...</option>
-          </select>
-          <button id="refresh-models" class="refresh-btn" title="Refresh available models">🔄</button>
-        </div>
-      </div>
-      <div class="llm-status" id="llm-status"></div>
+  <footer>
+    <div class="footer-links">
+      <a href="app.html">Play Demo</a>
+      <a href="https://github.com/lucidbard/AICodePedagogy">GitHub</a>
+      <a href="https://github.com/lucidbard/AICodePedagogy/blob/main/docs/AI_TUTOR_DESIGN.md">Documentation</a>
+      <a href="https://link.springer.com/chapter/10.1007/978-3-032-12408-1_15">Paper</a>
     </div>
+    <p>
+      Created for <strong>DHSI 2025</strong>: Digital Humanities Programming Pedagogy in the Age of AI
+    </p>
+    <p style="margin-top: 0.5rem;">
+      By <a href="https://github.com/lucidbard">John T. Murray</a> · MIT License
+    </p>
   </footer>
-
-  <!-- WebGPU Model Download Modal -->
-  <div class="modal-overlay" id="webgpu-download-modal" style="display: none;">
-    <div class="modal-content webgpu-modal">
-      <div class="modal-header">
-        <h3>🧠 In-Browser AI Model</h3>
-        <button class="modal-close" id="close-webgpu-modal">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div class="webgpu-info" id="webgpu-info">
-          <p>The in-browser AI assistant uses <strong>Qwen 2.5 Coder (1.5B)</strong>, a coding-focused language model that runs entirely in your browser using WebGPU.</p>
-
-          <div class="webgpu-requirements">
-            <h4>Requirements</h4>
-            <ul>
-              <li id="webgpu-check-browser">✓ Modern browser (Chrome 113+, Edge 113+, Firefox 121+)</li>
-              <li id="webgpu-check-gpu">Checking WebGPU support...</li>
-            </ul>
-          </div>
-
-          <div class="webgpu-warning">
-            <strong>⚠️ Note:</strong> This will download approximately <strong>~1.3GB</strong> of model data. The model will be cached in your browser for future use.
-          </div>
-
-          <div class="webgpu-actions">
-            <button class="btn-primary" id="webgpu-download-btn">Download & Enable AI</button>
-            <button class="btn-secondary" id="webgpu-cancel-btn">Cancel</button>
-          </div>
-        </div>
-
-        <div class="webgpu-progress" id="webgpu-progress" style="display: none;">
-          <h4>Downloading Model...</h4>
-          <div class="progress-container">
-            <div class="progress-bar-webgpu">
-              <div class="progress-fill-webgpu" id="webgpu-progress-fill"></div>
-            </div>
-            <span class="progress-text" id="webgpu-progress-text">0%</span>
-          </div>
-          <p class="progress-status" id="webgpu-status">Initializing...</p>
-          <p class="progress-hint">This may take a few minutes depending on your connection.</p>
-        </div>
-
-        <div class="webgpu-ready" id="webgpu-ready" style="display: none;">
-          <h4>✅ Model Ready!</h4>
-          <p>The AI assistant is now available. You can use it for hints, debugging, and code explanations.</p>
-          <button class="btn-primary" id="webgpu-done-btn">Start Using AI</button>
-        </div>
-
-        <div class="webgpu-error" id="webgpu-error" style="display: none;">
-          <h4>❌ Setup Failed</h4>
-          <p id="webgpu-error-message">An error occurred while setting up the model.</p>
-          <button class="btn-secondary" id="webgpu-retry-btn">Try Again</button>
-        </div>
-      </div>
-
-      <div class="modal-footer">
-        <div class="cache-management" id="cache-management" style="display: none;">
-          <span class="cache-size" id="cache-size">Cached: ~0 MB</span>
-          <button class="btn-small btn-danger" id="clear-model-cache">Clear Cache</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Ollama Fallback Prompt Modal -->
-  <div class="modal-overlay" id="ollama-fallback-modal" style="display: none;">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>🤖 AI Assistant Setup</h3>
-        <button class="modal-close" id="close-fallback-modal">&times;</button>
-      </div>
-      <div class="modal-body">
-        <p>Ollama doesn't appear to be running. Would you like to:</p>
-
-        <div class="fallback-options">
-          <div class="fallback-option" id="fallback-webgpu">
-            <h4>🧠 Use In-Browser AI</h4>
-            <p>Run Qwen 2.5 Coder directly in your browser. No installation required!</p>
-            <ul>
-              <li>~1.3GB download (cached for future use)</li>
-              <li>Runs entirely on your device</li>
-              <li>Requires WebGPU-capable browser</li>
-            </ul>
-            <button class="btn-primary" id="choose-webgpu">Use In-Browser AI</button>
-          </div>
-
-          <div class="fallback-option" id="fallback-ollama">
-            <h4>💻 Setup Ollama</h4>
-            <p>Install Ollama for faster responses and more model options.</p>
-            <button class="btn-secondary" id="choose-ollama-setup">Setup Ollama</button>
-          </div>
-        </div>
-
-        <div class="fallback-skip">
-          <button class="btn-text" id="skip-ai-setup">Skip for now (disable AI features)</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Ollama Help Modal -->
-  <div class="modal-overlay" id="ollama-help-modal" style="display: none;">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>🤖 Setting up Ollama for AI Assistant</h3>
-        <button class="modal-close" id="close-ollama-help">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div class="help-section">
-          <h4>📦 Step 1: Install Ollama</h4>
-          <p>Download and install Ollama from <a href="https://ollama.ai" target="_blank">https://ollama.ai</a></p>
-
-          <div class="platform-tabs">
-            <button class="tab-btn-install active" data-platform="windows">Windows</button>
-            <button class="tab-btn-install" data-platform="mac">macOS/Linux</button>
-          </div>
-
-          <div class="platform-content-install" data-platform="windows">
-            <div class="code-block">
-              <strong>Windows:</strong><br>
-              Download the installer from the website
-            </div>
-          </div>
-
-          <div class="platform-content-install" data-platform="mac" style="display: none;">
-            <div class="code-block">
-              <strong>macOS/Linux:</strong><br>
-              <code>curl -fsSL https://ollama.ai/install.sh | sh</code>
-            </div>
-          </div>
-        </div>
-
-        <div class="help-section" id="cors-section">
-          <h4>🔧 Step 2: Configure CORS for Web Access</h4>
-          <p id="cors-description">To allow this website (<strong>https://jtm.io/codepedagogy/</strong>) to connect to
-            your local Ollama
-            server, you need to set environment variables:</p>
-
-          <div class="platform-tabs">
-            <button class="tab-btn active" data-platform="windows">Windows</button>
-            <button class="tab-btn" data-platform="mac">macOS/Linux</button>
-          </div>
-
-          <div class="platform-content" data-platform="windows">
-            <h5>Windows Setup:</h5>
-            <div class="code-block">
-              <strong>Option 1 - Command Prompt:</strong><br>
-              <code>set OLLAMA_ORIGINS=https://jtm.io/codepedagogy/,http://localhost:*</code><br>
-              <code>ollama serve</code>
-            </div>
-            <div class="code-block">
-              <strong>Option 2 - PowerShell:</strong><br>
-              <code>$env:OLLAMA_ORIGINS="https://jtm.io/codepedagogy/,http://localhost:*"</code><br>
-              <code>ollama serve</code>
-            </div>
-            <div class="code-block">
-              <strong>Option 3 - Permanent (System Environment Variables):</strong><br>
-              1. Press <code>Win + R</code>, type <code>sysdm.cpl</code><br>
-              2. Click "Environment Variables"<br>
-              3. Add new system variable:<br>
-              &nbsp;&nbsp;Name: <code>OLLAMA_ORIGINS</code><br>
-              &nbsp;&nbsp;Value: <code>https://jtm.io/codepedagogy/,http://localhost:*</code><br>
-              4. Restart command prompt and run <code>ollama serve</code>
-            </div>
-          </div>
-
-          <div class="platform-content" data-platform="mac" style="display: none;">
-            <h5>macOS/Linux Setup:</h5>
-            <div class="code-block">
-              <strong>Terminal (temporary):</strong><br>
-              <code>export OLLAMA_ORIGINS="https://jtm.io/codepedagogy/,http://localhost:*"</code><br>
-              <code>ollama serve</code>
-            </div>
-            <div class="code-block">
-              <strong>Permanent (add to ~/.bashrc, ~/.zshrc, or ~/.profile):</strong><br>
-              <code>echo 'export OLLAMA_ORIGINS="https://jtm.io/codepedagogy/,http://localhost:*"' >> ~/.bashrc</code><br>
-              <code>source ~/.bashrc</code><br>
-              <code>ollama serve</code>
-            </div>
-            <div class="code-block">
-              <strong>Using launchctl (macOS service):</strong><br>
-              <code>launchctl setenv OLLAMA_ORIGINS "https://jtm.io/codepedagogy/,http://localhost:*"</code><br>
-              <code>ollama serve</code>
-            </div>
-          </div>
-        </div>
-
-        <div class="help-section" id="install-model-section">
-          <h4 id="install-model-heading">🚀 Step 3: Install a Model</h4>
-          <p>Download a model suitable for coding assistance:</p>
-          <div class="code-block">
-            <strong>Recommended models:</strong><br>
-            <code>ollama pull codellama:7b</code> (good for coding, 4GB)<br>
-            <code>ollama pull llama3.1:8b</code> (general purpose, 5GB)<br>
-            <code>ollama pull qwen2.5-coder:7b</code> (excellent for coding, 4GB)
-          </div>
-        </div>
-
-        <div class="help-section" id="test-connection-section">
-          <h4 id="test-connection-heading">✅ Step 4: Test Connection</h4>
-          <p id="test-connection-description">Once Ollama is running with CORS configured:</p>
-          <ol>
-            <li>Enable the "🤖 AI Assistant" toggle above</li>
-            <li>Select your model from the dropdown</li>
-            <li>Look for "Connected" status</li>
-          </ol>
-        </div>
-
-        <div class="help-section warning">
-          <h4>⚠️ Important Security Notes</h4>
-          <ul>
-            <li>This configuration allows the specific website to access your local Ollama instance</li>
-            <li>Only use this setup on trusted networks</li>
-            <li>Stop Ollama when not needed: <code>Ctrl+C</code> in the terminal</li>
-            <li>Your models and conversations stay completely private on your machine</li>
-          </ul>
-        </div>
-
-        <div class="help-section">
-          <h4>🔍 Troubleshooting</h4>
-          <ul>
-            <li><strong>Connection failed:</strong> Ensure Ollama is running and CORS is configured</li>
-            <li><strong>Model not found:</strong> Make sure you've pulled the model with
-              <code>ollama pull model-name</code>
-            </li>
-            <li><strong>Slow responses:</strong> Try a smaller model or check your system resources</li>
-            <li><strong>Windows issues:</strong> Try running Command Prompt as Administrator</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script src="llm-integration.js"></script>
-  <script src="script.js"></script>
 </body>
-
 </html>
