@@ -18,8 +18,8 @@ class LLMIntegration {
 
     // WebGPU model configuration
     this.webgpuConfig = {
-      modelId: 'onnx-community/granite-4.0-tiny-ONNX-web',
-      modelName: 'Granite 4.0 Tiny (In-Browser)',
+      modelId: 'onnx-community/granite-4.0-micro-ONNX-web',
+      modelName: 'Granite 4.0 Micro (In-Browser)',
       device: 'webgpu',
       dtype: 'q4'
     };
