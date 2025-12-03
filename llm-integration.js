@@ -239,7 +239,7 @@ class LLMIntegration {
   /**
    * Query the WebGPU model
    */
-  async queryWebGPU(prompt) {
+  async queryWebGPU(prompt, type = null) {
     if (!this.webgpuReady || !this.webgpuPipeline) {
       throw new Error('WebGPU model not initialized');
     }
@@ -261,10 +261,10 @@ class LLMIntegration {
       if (Array.isArray(generatedText)) {
         // Chat format - get the last message (assistant response)
         const lastMessage = generatedText[generatedText.length - 1];
-        return this.formatResponse(lastMessage?.content || '');
+        return this.formatResponse(lastMessage?.content || '', type);
       }
 
-      return this.formatResponse(generatedText || '');
+      return this.formatResponse(generatedText || '', type);
     } catch (error) {
       console.error('WebGPU query failed:', error);
       throw error;
@@ -981,16 +981,16 @@ class LLMIntegration {
 
       let response;
       if (this.provider === 'ollama') {
-        response = await this.queryOllama(prompt);
+        response = await this.queryOllama(prompt, type);
       } else if (this.provider === 'webgpu') {
         if (!this.webgpuReady) {
           throw new Error('In-browser model not loaded. Please set it up first.');
         }
-        response = await this.queryWebGPU(prompt);
+        response = await this.queryWebGPU(prompt, type);
       } else if (this.provider === 'openai') {
-        response = await this.queryOpenAI(prompt);
+        response = await this.queryOpenAI(prompt, type);
       } else if (this.provider === 'anthropic') {
-        response = await this.queryAnthropic(prompt);
+        response = await this.queryAnthropic(prompt, type);
       }
 
       this.showLLMResponse('success', response);
@@ -1210,7 +1210,7 @@ Then briefly explain what you changed and why.`;
     }
   }
 
-  async queryOllama(prompt) {
+  async queryOllama(prompt, type = null) {
     if (!this.isBrowserEnvironment()) throw new Error('Browser environment required');
 
     const response = await fetch(`${this.ollamaBaseUrl}/api/generate`, {
@@ -1234,12 +1234,12 @@ Then briefly explain what you changed and why.`;
     }
 
     const data = await response.json();
-    return this.formatResponse(data.response);
+    return this.formatResponse(data.response, type);
   }
 
-  async queryOpenAI(prompt) {
+  async queryOpenAI(prompt, type = null) {
     if (!this.isBrowserEnvironment()) throw new Error('Browser environment required');
-    
+
     if (!this.apiKeys.openai) {
       throw new Error('OpenAI API key not set');
     }
@@ -1263,12 +1263,12 @@ Then briefly explain what you changed and why.`;
     }
 
     const data = await response.json();
-    return this.formatResponse(data.choices[0].message.content);
+    return this.formatResponse(data.choices[0].message.content, type);
   }
 
-  async queryAnthropic(prompt) {
+  async queryAnthropic(prompt, type = null) {
     if (!this.isBrowserEnvironment()) throw new Error('Browser environment required');
-    
+
     if (!this.apiKeys.anthropic) {
       throw new Error('Anthropic API key not set');
     }
@@ -1292,18 +1292,71 @@ Then briefly explain what you changed and why.`;
     }
 
     const data = await response.json();
-    return this.formatResponse(data.content[0].text);
+    return this.formatResponse(data.content[0].text, type);
   }
 
-  formatResponse(response) {
+  formatResponse(response, queryType = null) {
     // Clean up the response
     let cleanedResponse = response.trim();
-    
+
     // Remove any meta-commentary about being an AI
     cleanedResponse = cleanedResponse.replace(/^(As an AI.*?assistant,?\s*|I'm an AI.*?and\s*)/i, '');
-    
+
+    // For hints, filter out complete code solutions
+    if (queryType === 'hint') {
+      cleanedResponse = this.filterHintResponse(cleanedResponse);
+    }
+
     // Format as markdown and convert to HTML
     return this.markdownToHtml(cleanedResponse);
+  }
+
+  /**
+   * Filter hint responses to remove complete code solutions
+   * Keeps the pedagogical guidance, removes the answers
+   */
+  filterHintResponse(response) {
+    // Remove Python code blocks that look like complete solutions
+    // Keep code blocks that are just showing syntax or partial examples
+    let filtered = response;
+
+    // Remove code blocks that contain complete statements
+    // (have both function calls like print() AND variable assignments)
+    const codeBlockRegex = /```(?:python)?\n([\s\S]*?)```/g;
+
+    filtered = filtered.replace(codeBlockRegex, (match, code) => {
+      // Check if this looks like a complete solution
+      const hasCompleteStatement = (
+        // Has a print statement with parentheses
+        /print\s*\([^)]+\)/.test(code) ||
+        // Has a for loop with body
+        /for\s+\w+\s+in\s+.+:\s*\n\s+/.test(code) ||
+        // Has a function definition with body
+        /def\s+\w+\s*\([^)]*\):\s*\n\s+/.test(code)
+      );
+
+      if (hasCompleteStatement && code.trim().split('\n').length > 1) {
+        // Replace with encouragement instead of showing the answer
+        return '\n\n*Try writing the code yourself based on the hints above!*\n\n';
+      }
+
+      // Keep short examples or syntax hints
+      return match;
+    });
+
+    // Also filter out inline complete solutions like `print(message)`
+    // when preceded by phrases like "try this" or "run this"
+    filtered = filtered.replace(
+      /(?:try|run|type|write|use)\s+(?:this|it)?:?\s*`([^`]+)`/gi,
+      (match, code) => {
+        if (/print\s*\(|for\s+\w+\s+in|def\s+\w+/.test(code)) {
+          return 'try writing it yourself!';
+        }
+        return match;
+      }
+    );
+
+    return filtered;
   }
 
   /**

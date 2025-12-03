@@ -2,7 +2,54 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased] - 2025-12-01
+## [Unreleased] - 2025-12-02
+
+### Session 3: LLM Model Evaluation & Prompt Engineering
+
+#### Model Evaluation Methodology
+- **Systematic model comparison**: Tested 5 candidate models (qwen2.5:1.5b, llama3.2:1b, llama3.2:3b, deepcoder:1.5b, gemma3) against actual game use cases
+- **Test case design**: Created 6 test cases covering hints, debugging, and explanations for different stages
+- **Evaluation scripts**: Added `scripts/evaluate-models.js` for model comparison and `scripts/e2e-prompt-test.js` for end-to-end prompt validation
+
+#### Model Selection: Qwen 2.5 Coder 1.5B
+- **Upgraded from Granite 350M** to Qwen 2.5 Coder 1.5B for better response quality
+- **Best performance**: Correct error diagnosis, pedagogically appropriate hints, fast responses (~588ms avg)
+- **Deployment**: Model cached on jtm.io server with Hugging Face fallback
+- **Size**: ~1.3GB download with q4f16 quantization
+
+#### Prompt Engineering Improvements
+- **Debug prompt**: Added common Python error patterns to improve accuracy
+  - "EOL while scanning string literal" = missing closing quote
+  - "IndentationError" = wrong spacing/tabs
+  - "NameError" = variable not defined or typo
+- **Hint prompt**: Added explicit rules to prevent giving away answers
+  - "Do NOT give the complete code solution"
+  - "Do NOT write out the exact line they should type"
+  - "Ask guiding questions, point to concepts, suggest what to think about"
+
+#### Response Post-Processing
+- **Hint filtering**: Added `filterHintResponse()` to strip complete code solutions from hint responses
+- **Code block detection**: Removes multi-line code blocks containing complete print statements, for loops, or function definitions
+- **Inline code filtering**: Catches "try this: `print(x)`" patterns and replaces with encouragement to try themselves
+
+#### Technical Changes
+- Updated `queryOllama()`, `queryWebGPU()`, `queryOpenAI()`, `queryAnthropic()` to pass query type through to `formatResponse()`
+- Updated `formatResponse(response, queryType)` to apply hint filtering when type is 'hint'
+- Updated WebGPU config to use `onnx-community/Qwen2.5-Coder-1.5B-Instruct`
+- Updated modal text in index.html to reflect new model name and size
+
+### Files Modified
+- `llm-integration.js` - Model config, prompt improvements, response filtering
+- `index.html` - Updated AI modal text for new model
+- `scripts/evaluate-models.js` - New file for model comparison
+- `scripts/e2e-prompt-test.js` - New file for prompt validation
+
+### Documentation Created
+- `docs/LLM_MODEL_EVALUATION.md` - Methodology for model evaluation and selection
+
+---
+
+## [Previous] - 2025-12-01
 
 ### Session 2: Layout Refinements & Persistence
 

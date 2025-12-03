@@ -539,6 +539,17 @@ This uses the parallel lists pattern from Stage 7. Should I apply this?"
 | Agentic chat | Instruction-following | llama3-70b, mixtral |
 | Tool calling | Tool-capable | Claude 3, GPT-4 |
 
+### Current Model Selection
+
+Based on our evaluation methodology (see `docs/LLM_MODEL_EVALUATION.md`), we selected:
+
+**In-Browser (WebGPU):** Qwen 2.5 Coder 1.5B Instruct
+- Best balance of quality, size (~1.3GB), and speed
+- Coding-focused training improves hint and debug accuracy
+- Correct error diagnosis (e.g., properly identifies missing quote vs. other issues)
+
+**Fallback (Ollama):** qwen2.5:1.5b or any user-installed model
+
 ### Ollama Considerations
 - Most users will use Ollama (local)
 - Need fallbacks for smaller models
