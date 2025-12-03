@@ -18,8 +18,10 @@ class LLMIntegration {
 
     // WebGPU model configuration
     // Using 350m model with q4f16 quantization (~350MB download)
+    // Falls back to Hugging Face if not on jtm.io
     this.webgpuConfig = {
       modelId: 'onnx-community/granite-4.0-350m-ONNX-web',
+      localModelUrl: 'https://jtm.io/codepedagogy/models/granite-4.0-350m',
       modelName: 'Granite 4.0 350M (In-Browser)',
       device: 'webgpu',
       dtype: 'q4f16'
@@ -199,10 +201,19 @@ class LLMIntegration {
         }
       };
 
+      // Determine model source - use local cache on jtm.io, Hugging Face elsewhere
+      let modelSource = this.webgpuConfig.modelId;
+      if (this.isBrowserEnvironment() && window.location.hostname === 'jtm.io') {
+        modelSource = this.webgpuConfig.localModelUrl;
+        console.log('Using locally cached model from jtm.io server');
+      } else {
+        console.log('Using Hugging Face model (fallback)');
+      }
+
       // Create text generation pipeline
       this.webgpuPipeline = await transformers.pipeline(
         'text-generation',
-        this.webgpuConfig.modelId,
+        modelSource,
         {
           device: this.webgpuConfig.device,
           dtype: this.webgpuConfig.dtype,
