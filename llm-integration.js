@@ -1460,7 +1460,7 @@ Then briefly explain what you changed and why.`;
         stream: false,
         options: {
           temperature: 0.7,
-          max_tokens: 500
+          num_predict: 500  // Ollama uses num_predict, not max_tokens
         }
       }),
     });

@@ -168,7 +168,7 @@ async function queryOllama(model, prompt) {
         stream: false,
         options: {
           temperature: 0.7,
-          num_predict: 200  // Keep responses short
+          num_predict: 500  // Allow room for thinking models
         }
       })
     });
