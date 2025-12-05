@@ -1019,7 +1019,8 @@ async function runPythonCode (code, solution) {
         }
         return Sk.builtinFiles['files'][x]
       },
-      execLimit: 10000
+      execLimit: 10000,
+      __future__: Sk.python3
     })
 
     // Clear output area
@@ -1142,7 +1143,8 @@ async function runCellCode (code, expectedOutput, cellIndex, totalCells) {
         }
         return Sk.builtinFiles['files'][x]
       },
-      execLimit: 10000
+      execLimit: 10000,
+      __future__: Sk.python3
     }) // Clear output area for this cell
     outputArea.textContent = ''
     outputText = '' // Execute code in the persistent environment to maintain variables between cells
@@ -1972,7 +1974,8 @@ async function executeCodeAndCaptureOutput (code) {
         }
         return Sk.builtinFiles['files'][x]
       },
-      execLimit: 10000
+      execLimit: 10000,
+      __future__: Sk.python3
     })
 
     // Execute the code

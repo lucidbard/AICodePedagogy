@@ -319,6 +319,10 @@ class LLMIntegration {
       chooseOllamaSetup.onclick = () => {
         modal.style.display = 'none';
         document.getElementById('ollama-help-modal').style.display = 'flex';
+        // Update the origins in the help modal based on current domain
+        if (typeof updateOllamaHelpUrls === 'function') {
+          updateOllamaHelpUrls();
+        }
       };
     }
 

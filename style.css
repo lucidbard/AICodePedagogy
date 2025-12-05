@@ -1783,6 +1783,14 @@ body {
   overflow: hidden;
 }
 
+/* AI setup modals should appear above tutorial overlay */
+#ollama-fallback-modal,
+#ollama-help-modal,
+#webgpu-download-modal,
+#ai-settings-modal {
+  z-index: 10002;
+}
+
 .modal-content {
   background: linear-gradient(135deg, #2c1810, #4a3429);
   border: 2px solid #8b7355;
