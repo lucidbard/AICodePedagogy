@@ -335,6 +335,12 @@ function loadStage (stageId) {
     window.checkAndStartTutorial(stageId)
   }
 
+  // Update AI agency level based on stage progression
+  // Stages 1-3: hints only, Stages 4-6: code suggestions, Stages 7+: full agentic
+  if (window.gameAPI && window.llmIntegration) {
+    window.gameAPI.updateAgencyForStage(stageId)
+  }
+
   // Save state AFTER stage is fully set up (not before)
   if (gameContent && window.gameInitialized) {
     // Use setTimeout to ensure editor content is settled before saving
@@ -3777,6 +3783,37 @@ window.gameAPI = {
       return true;
     }
     return false;
+  },
+
+  /**
+   * Get the appropriate agency level for a given stage
+   * Based on aiAssistantInfo.capabilities in game-content.json:
+   * - Stages 1-3: Level 1 (hints only) - Dr. Rodriguez era
+   * - Stages 4-6: Level 2 (code suggestions) - ARIA unlocks
+   * - Stages 7-8: Level 3 (code modification) - Full agentic
+   * - Stage 9: Level 3 (full collaboration)
+   * @param {number} stageId - The current stage ID
+   * @returns {number} The agency level (1, 2, or 3)
+   */
+  getAgencyLevelForStage: function(stageId) {
+    if (stageId >= 7) {
+      return 3; // Full agentic - can modify code directly
+    } else if (stageId >= 4) {
+      return 2; // ARIA unlocked - can suggest code
+    } else {
+      return 1; // Hints only - Dr. Rodriguez era
+    }
+  },
+
+  /**
+   * Update agency level based on current stage
+   * Called when loading a new stage
+   */
+  updateAgencyForStage: function(stageId) {
+    const level = this.getAgencyLevelForStage(stageId);
+    this.setAgencyLevel(level);
+    console.log(`Stage ${stageId}: AI agency level set to ${level}`);
+    return level;
   },
 
   /**

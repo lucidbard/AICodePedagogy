@@ -1147,10 +1147,12 @@ class LLMIntegration {
       return;
     }
 
-    // Add AI Assistant header
+    // Add AI Assistant header with level-specific styling
     const header = document.createElement('div');
     header.className = 'ai-assistant-header';
-    header.innerHTML = `🤖 <strong>AI Assistant</strong> <span class="agency-level">Level ${this.agencyLevel}</span>`;
+    const levelLabel = this.agencyLevel >= 3 ? 'Agentic Mode' :
+                       this.agencyLevel >= 2 ? 'Code Suggestions' : 'Hints Only';
+    header.innerHTML = `🤖 <strong>AI Assistant</strong> <span class="agency-level level-${this.agencyLevel}">${levelLabel}</span>`;
     hintContainer.appendChild(header);
 
     // Base buttons available at all agency levels

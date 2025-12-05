@@ -2664,6 +2664,45 @@ body {
   color: #d4a574;
 }
 
+/* Agency level visual indicators */
+.agency-level.level-2 {
+  background: rgba(90, 140, 105, 0.3);
+  color: #7ab988;
+}
+
+.agency-level.level-3 {
+  background: rgba(212, 175, 55, 0.3);
+  color: #d4af37;
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 5px rgba(212, 175, 55, 0.3); }
+  50% { box-shadow: 0 0 10px rgba(212, 175, 55, 0.6); }
+}
+
+/* AI code application notification */
+.ai-code-applied-notification {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: linear-gradient(135deg, #4a7c59, #3d6b4a);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  transition: all 0.3s ease;
+  z-index: 1000;
+  font-weight: 500;
+}
+
+.ai-code-applied-notification.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
 /* Agentic action buttons */
 .llm-query-button.agentic {
   background: linear-gradient(135deg, #4a7c59, #3d6b4a);
