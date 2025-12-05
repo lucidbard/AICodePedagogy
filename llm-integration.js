@@ -1317,7 +1317,16 @@ React with genuine archaeological excitement! Connect their finding to the myste
 
       case 'story':
         return drRodriguezPrompt + `
-Provide narrative context or react to the current situation in the investigation. Stay in character as Dr. Rodriguez.`;
+Provide narrative context about the investigation and the mystery you're uncovering together.
+
+CRITICAL RULES:
+- Stay in character as Dr. Rodriguez the archaeologist
+- Talk about the STORY and MYSTERY, not the code
+- Do NOT give coding solutions, hints, or suggestions
+- Do NOT mention print(), str(), functions, or Python syntax
+- Focus on: the artifacts, the mystery, what the data means archaeologically
+
+Share your excitement about the investigation!`;
 
       // === AI ASSISTANT (Coding Help) ===
       case 'hint':
@@ -1520,8 +1529,10 @@ Then briefly explain what you changed and why.`;
     // Remove any meta-commentary about being an AI
     cleanedResponse = cleanedResponse.replace(/^(As an AI.*?assistant,?\s*|I'm an AI.*?and\s*)/i, '');
 
-    // For hints, filter out complete code solutions
-    if (queryType === 'hint') {
+    // Filter out complete code solutions for pedagogical responses
+    // Only 'fix' and 'suggest' should be allowed to give complete code
+    const pedagogicalTypes = ['hint', 'story', 'discovery', 'debug', 'explain'];
+    if (pedagogicalTypes.includes(queryType)) {
       cleanedResponse = this.filterHintResponse(cleanedResponse);
     }
 
@@ -1534,44 +1545,44 @@ Then briefly explain what you changed and why.`;
    * Keeps the pedagogical guidance, removes the answers
    */
   filterHintResponse(response) {
-    // Remove Python code blocks that look like complete solutions
-    // Keep code blocks that are just showing syntax or partial examples
     let filtered = response;
 
-    // Remove code blocks that contain complete statements
-    // (have both function calls like print() AND variable assignments)
+    // 1. Remove Python code blocks that look like complete solutions
     const codeBlockRegex = /```(?:python)?\n([\s\S]*?)```/g;
-
     filtered = filtered.replace(codeBlockRegex, (match, code) => {
-      // Check if this looks like a complete solution
       const hasCompleteStatement = (
-        // Has a print statement with parentheses
         /print\s*\([^)]+\)/.test(code) ||
-        // Has a for loop with body
         /for\s+\w+\s+in\s+.+:\s*\n\s+/.test(code) ||
-        // Has a function definition with body
         /def\s+\w+\s*\([^)]*\):\s*\n\s+/.test(code)
       );
-
-      if (hasCompleteStatement && code.trim().split('\n').length > 1) {
-        // Replace with encouragement instead of showing the answer
-        return '\n\n*Try writing the code yourself based on the hints above!*\n\n';
+      if (hasCompleteStatement) {
+        return '\n\n*Try writing the code yourself!*\n\n';
       }
-
-      // Keep short examples or syntax hints
       return match;
     });
 
-    // Also filter out inline complete solutions like `print(message)`
-    // when preceded by phrases like "try this" or "run this"
-    filtered = filtered.replace(
-      /(?:try|run|type|write|use)\s+(?:this|it)?:?\s*`([^`]+)`/gi,
-      (match, code) => {
-        if (/print\s*\(|for\s+\w+\s+in|def\s+\w+/.test(code)) {
-          return 'try writing it yourself!';
-        }
-        return match;
+    // 2. Remove inline backtick code that contains solutions
+    filtered = filtered.replace(/`([^`]+)`/g, (match, code) => {
+      // Remove if it contains a complete print statement or f-string
+      if (/print\s*\([^)]*\)/.test(code) || /^f["']/.test(code)) {
+        return '*[code removed - try it yourself!]*';
       }
+      return match;
+    });
+
+    // 3. Remove bare print statements (not in backticks)
+    // Match: print("..." + something) or print(f"...")
+    filtered = filtered.replace(/print\s*\([^)]*(?:str\s*\([^)]+\)|f["'][^"']*["']|\+[^)]+)\)/g,
+      '*[try writing the print statement yourself!]*');
+
+    // 4. Remove f-string examples: f"...{variable}..."
+    filtered = filtered.replace(/f["'][^"']*\{[^}]+\}[^"']*["']/g,
+      '*[try an f-string yourself!]*');
+
+    // 5. Remove "try this:" followed by code-like content
+    filtered = filtered.replace(
+      /(?:try|run|type|write|use)\s+(?:this|it)?:?\s*(?:`[^`]+`|print\s*\([^)]+\))/gi,
+      'try writing it yourself!'
     );
 
     return filtered;
