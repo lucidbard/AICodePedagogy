@@ -650,6 +650,8 @@ class LLMIntegration {
     if (modal) {
       modal.style.display = 'flex';
       this.updateSettingsModal();
+      // Load models to populate dropdown
+      this.loadModels();
     }
   }
 
