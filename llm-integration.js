@@ -1319,14 +1319,14 @@ React with genuine archaeological excitement! Connect their finding to the myste
         return drRodriguezPrompt + `
 Provide narrative context about the investigation and the mystery you're uncovering together.
 
-CRITICAL RULES:
+RULES:
 - Stay in character as Dr. Rodriguez the archaeologist
-- Talk about the STORY and MYSTERY, not the code
-- Do NOT give coding solutions, hints, or suggestions
-- Do NOT mention print(), str(), functions, or Python syntax
-- Focus on: the artifacts, the mystery, what the data means archaeologically
+- Focus on the STORY: the artifacts, the mystery, what discoveries mean
+- You may briefly mention what kind of analysis is needed, but do NOT give code solutions
+- Do NOT write out exact code they should type
+- Keep coding details vague - let them figure out the implementation
 
-Share your excitement about the investigation!`;
+Share your archaeological excitement about the investigation!`;
 
       // === AI ASSISTANT (Coding Help) ===
       case 'hint':
@@ -1334,9 +1334,10 @@ Share your excitement about the investigation!`;
 Give a helpful hint to guide them toward the solution.
 
 IMPORTANT RULES:
-- Do NOT give the complete code solution
-- Do NOT write out the exact line they should type
-- Instead: Ask guiding questions, point to concepts, suggest what to think about
+- Do NOT give the exact solution using their variable names
+- DO show examples using DIFFERENT variable names and values to demonstrate the pattern
+- For example: if they need str(fragment_count), show str(age) or str(42) instead
+- Ask guiding questions that lead them to apply the pattern themselves
 - Keep it to 2-3 sentences maximum
 
 Be encouraging and help them discover the answer themselves.`;
@@ -1541,51 +1542,66 @@ Then briefly explain what you changed and why.`;
   }
 
   /**
-   * Filter hint responses to remove complete code solutions
-   * Keeps the pedagogical guidance, removes the answers
+   * Filter hint responses to remove exact solutions while keeping educational examples
+   * Key principle: Examples with different variables are OK, exact solutions are not
    */
   filterHintResponse(response) {
     let filtered = response;
 
-    // 1. Remove Python code blocks that look like complete solutions
+    // Get challenge-specific variable names to detect exact solutions
+    const challengeVars = this.getChallengeVariables();
+
+    // 1. Remove multi-line code blocks that look like complete solutions
     const codeBlockRegex = /```(?:python)?\n([\s\S]*?)```/g;
     filtered = filtered.replace(codeBlockRegex, (match, code) => {
-      const hasCompleteStatement = (
-        /print\s*\([^)]+\)/.test(code) ||
-        /for\s+\w+\s+in\s+.+:\s*\n\s+/.test(code) ||
-        /def\s+\w+\s*\([^)]*\):\s*\n\s+/.test(code)
+      // Block if it contains challenge-specific variables AND is multi-line
+      const usesExactVars = challengeVars.some(v => new RegExp(`\\b${v}\\b`).test(code));
+      const isMultiLine = code.trim().split('\n').length > 2;
+
+      if (usesExactVars && isMultiLine) {
+        return '\n\n*Try writing the code yourself using the pattern shown!*\n\n';
+      }
+      return match;
+    });
+
+    // 2. Only filter inline code that uses exact challenge variables
+    // Allow: `str(age)`, `print("Total: " + str(count))`
+    // Block: `str(fragment_count)`, `print("Fragment Count: " + str(fragment_count))`
+    if (challengeVars.length > 0) {
+      const varPattern = challengeVars.join('|');
+      // Block inline code with exact variable names in solution context
+      filtered = filtered.replace(
+        new RegExp(`\`[^\`]*\\b(${varPattern})\\b[^\`]*\``, 'g'),
+        (match) => {
+          // If it's a simple function demo like `str(x)` keep it, but block full statements
+          if (/print\s*\(/.test(match) || /=/.test(match)) {
+            return '`[apply this pattern with your variables]`';
+          }
+          return match;
+        }
       );
-      if (hasCompleteStatement) {
-        return '\n\n*Try writing the code yourself!*\n\n';
-      }
-      return match;
-    });
-
-    // 2. Remove inline backtick code that contains solutions
-    filtered = filtered.replace(/`([^`]+)`/g, (match, code) => {
-      // Remove if it contains a complete print statement or f-string
-      if (/print\s*\([^)]*\)/.test(code) || /^f["']/.test(code)) {
-        return '*[code removed - try it yourself!]*';
-      }
-      return match;
-    });
-
-    // 3. Remove bare print statements (not in backticks)
-    // Match: print("..." + something) or print(f"...")
-    filtered = filtered.replace(/print\s*\([^)]*(?:str\s*\([^)]+\)|f["'][^"']*["']|\+[^)]+)\)/g,
-      '*[try writing the print statement yourself!]*');
-
-    // 4. Remove f-string examples: f"...{variable}..."
-    filtered = filtered.replace(/f["'][^"']*\{[^}]+\}[^"']*["']/g,
-      '*[try an f-string yourself!]*');
-
-    // 5. Remove "try this:" followed by code-like content
-    filtered = filtered.replace(
-      /(?:try|run|type|write|use)\s+(?:this|it)?:?\s*(?:`[^`]+`|print\s*\([^)]+\))/gi,
-      'try writing it yourself!'
-    );
+    }
 
     return filtered;
+  }
+
+  /**
+   * Get variable names from the current challenge to detect exact solutions
+   */
+  getChallengeVariables() {
+    try {
+      if (typeof gameContent !== 'undefined' && typeof currentStage !== 'undefined') {
+        const stage = gameContent.stages.find(s => s.id === currentStage);
+        if (stage && stage.solution) {
+          // Extract variable names from assignment statements in solution
+          const matches = stage.solution.match(/^(\w+)\s*=/gm) || [];
+          return matches.map(m => m.replace(/\s*=.*/, '').trim());
+        }
+      }
+    } catch (e) {
+      console.log('Could not get challenge variables:', e);
+    }
+    return [];
   }
 
   /**
