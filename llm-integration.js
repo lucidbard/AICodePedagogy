@@ -658,6 +658,14 @@ class LLMIntegration {
     if (modal) modal.style.display = 'none';
   }
 
+  showSetupHelp() {
+    // Show the Ollama help modal which contains setup instructions
+    const ollamaModal = document.getElementById('ollama-help-modal');
+    if (ollamaModal) {
+      ollamaModal.style.display = 'flex';
+    }
+  }
+
   updateSettingsModal() {
     // Update radio buttons to match current provider
     const radios = document.querySelectorAll('input[name="ai-provider"]');
@@ -691,6 +699,15 @@ class LLMIntegration {
       settingsBtn.addEventListener('click', (e) => {
         e.preventDefault();
         this.openSettingsModal();
+      });
+    }
+
+    // Help button opens setup instructions
+    const helpBtn = document.getElementById('ai-help-btn');
+    if (helpBtn) {
+      helpBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.showSetupHelp();
       });
     }
 
@@ -944,11 +961,28 @@ class LLMIntegration {
 
   updateModelInfo() {
     if (!this.isBrowserEnvironment()) return;
-    
+
+    // Update modal display
     const modelInfo = document.getElementById('current-model');
     if (modelInfo && this.selectedModel) {
       modelInfo.textContent = this.selectedModel;
       this.isConnected = true;
+    }
+
+    // Update footer display
+    const footerModelInfo = document.getElementById('llm-model-info');
+    if (footerModelInfo) {
+      if (this.selectedModel) {
+        footerModelInfo.textContent = this.selectedModel;
+      } else {
+        footerModelInfo.textContent = '';
+      }
+    }
+
+    // Update model select dropdown to reflect current selection
+    const modelSelect = document.getElementById('model-select');
+    if (modelSelect && this.selectedModel) {
+      modelSelect.value = this.selectedModel;
     }
   }
 
