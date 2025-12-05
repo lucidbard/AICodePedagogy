@@ -100,18 +100,29 @@
           </div>
         </div>
         <div class="runtime-controls">
-          <button class="restart-runtime-button" id="restart-runtime-button"
-            title="Clear all cell outputs and reset runtime (similar to restarting a Jupyter kernel)">🔄 Restart
-            Runtime</button>
-          <button class="clear-progress-button" id="clear-progress-button"
-            title="Clear all saved progress and start from the beginning">🗑️ Clear Progress</button>
+          <button class="restart-runtime-button" id="restart-runtime-button" title="Clear all outputs and reset variables">🔄 Restart Runtime</button>
+          <button class="clear-progress-button" id="clear-progress-button" title="Reset all progress and start over">🗑️ Clear Progress</button>
         </div>
         <button class="next-button" id="next-button">Continue to Next Stage →</button>
       </div>
 
-      <!-- Right Column: Dr. Rodriguez Chat Panel (hidden by default) -->
-      <div class="chat-panel" id="chat-panel">
-        <!-- Chat interface will be dynamically populated -->
+      <!-- Dr. Rodriguez Chat Panel (floating, hidden by default) -->
+      <div class="chat-panel floating" id="chat-panel" style="display: none;">
+        <div class="chat-panel-header">
+          <h4>👩‍🔬 Dr. Rodriguez</h4>
+          <button class="chat-panel-close" id="chat-panel-close">×</button>
+        </div>
+        <div class="chat-panel-body" id="chat-panel-body">
+          <div class="chat-welcome">
+            <p style="color: #b8b0a0; font-style: italic; text-align: center; margin: 20px 0;">
+              Ask me anything about Python, archaeology, or the investigation...
+            </p>
+          </div>
+        </div>
+        <div class="chat-panel-input">
+          <input type="text" id="chat-input" placeholder="Type a message..." />
+          <button id="chat-send">Send</button>
+        </div>
       </div>
     </div>
   </div>
@@ -121,46 +132,91 @@
   <div class="dev-nav" id="dev-nav">
     <!-- Stage navigation buttons will be generated here -->
   </div>
+  <!-- Chat Toggle Button (floating) -->
+  <button class="chat-toggle-btn" id="chat-toggle-btn" title="Chat with Dr. Rodriguez">
+    <span class="chat-toggle-icon">💬</span>
+    <span class="chat-toggle-badge" id="chat-badge" style="display: none;"></span>
+  </button>
+
   <!-- Celebration effect container -->
   <div class="celebration" id="celebration"></div>
   <!-- LLM Assistant Footer -->
   <footer class="llm-footer">
     <div class="llm-footer-content">
-      <div class="llm-toggle-container">
-        <label class="llm-toggle">
-          <input type="checkbox" id="llm-enabled" />
-          <span class="llm-slider"></span>
-          <span class="llm-label">🤖 AI Assistant
-          </span>
-        </label>
-      </div>
-      <button id="ollama-help-btn" class="help-btn" title="How to setup Ollama">❓</button>
-      <div class="llm-settings" id="llm-settings" style="display: none;">
-        <div class="provider-selection">
-          <label for="provider-select">Provider:</label>
-          <select id="provider-select">
-            <option value="ollama">Ollama (Local)</option>
-            <option value="webgpu">In-Browser (Qwen)</option>
-            <option value="openai">OpenAI</option>
-            <option value="anthropic">Anthropic</option>
-          </select>
-        </div>
-        <div class="api-key-container" id="api-key-container" style="display: none;">
-          <input type="password" id="api-key-input" placeholder="Enter API key">
-          <button id="save-api-key" class="save-key-btn">Save</button>
-        </div>
-        <span class="llm-model-info" id="llm-model-info">No model selected</span>
-        <button id="change-model" class="change-model-btn" title="Change AI model">Change Model</button>
-        <div class="model-selection" id="model-selection" style="display: none;">
-          <select id="model-select">
-            <option value="">Select a model...</option>
-          </select>
-          <button id="refresh-models" class="refresh-btn" title="Refresh available models">🔄</button>
-        </div>
-      </div>
-      <div class="llm-status" id="llm-status"></div>
+      <span class="llm-label">🤖 AI Assistant:</span>
+      <div class="llm-status" id="llm-status">Initializing...</div>
+      <span class="llm-model-info" id="llm-model-info"></span>
+      <button id="ai-settings-btn" class="settings-btn" title="AI Settings">⚙️</button>
     </div>
   </footer>
+
+  <!-- AI Settings Modal -->
+  <div class="modal-overlay" id="ai-settings-modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>🤖 AI Assistant Settings</h3>
+        <button class="modal-close" id="close-ai-settings">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="settings-section">
+          <h4>Provider</h4>
+          <div class="provider-options">
+            <label class="provider-option">
+              <input type="radio" name="ai-provider" value="webgpu">
+              <span class="provider-label">
+                <strong>🧠 In-Browser (Qwen 2.5 Coder)</strong>
+                <small>Runs locally in your browser via WebGPU. ~1.3GB download, cached for future use.</small>
+              </span>
+            </label>
+            <label class="provider-option">
+              <input type="radio" name="ai-provider" value="ollama">
+              <span class="provider-label">
+                <strong>💻 Ollama (Local)</strong>
+                <small>Fast local inference. Requires <a href="https://ollama.ai" target="_blank">Ollama</a> installed.</small>
+              </span>
+            </label>
+            <label class="provider-option">
+              <input type="radio" name="ai-provider" value="openai">
+              <span class="provider-label">
+                <strong>☁️ OpenAI</strong>
+                <small>Cloud API. Requires API key.</small>
+              </span>
+            </label>
+            <label class="provider-option">
+              <input type="radio" name="ai-provider" value="anthropic">
+              <span class="provider-label">
+                <strong>☁️ Anthropic</strong>
+                <small>Cloud API. Requires API key.</small>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-section" id="api-key-section" style="display: none;">
+          <h4>API Key</h4>
+          <div class="api-key-input-group">
+            <input type="password" id="api-key-input" placeholder="Enter API key">
+            <button id="save-api-key" class="btn-primary">Save</button>
+          </div>
+        </div>
+
+        <div class="settings-section" id="model-section">
+          <h4>Model</h4>
+          <div class="model-select-group">
+            <select id="model-select">
+              <option value="">Select a model...</option>
+            </select>
+            <button id="refresh-models" class="btn-secondary" title="Refresh models">🔄</button>
+          </div>
+        </div>
+
+        <div class="settings-section" id="ollama-setup-section" style="display: none;">
+          <h4>Ollama Setup</h4>
+          <p>Ollama doesn't appear to be running. <button id="show-ollama-help" class="btn-link">View setup instructions →</button></p>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- WebGPU Model Download Modal -->
   <div class="modal-overlay" id="webgpu-download-modal" style="display: none;">
@@ -295,7 +351,7 @@
 
         <div class="help-section" id="cors-section">
           <h4>🔧 Step 2: Configure CORS for Web Access</h4>
-          <p id="cors-description">To allow this website (<strong>https://jtm.io/codepedagogy/</strong>) to connect to
+          <p id="cors-description">To allow this website (<strong class="current-origin"></strong>) to connect to
             your local Ollama
             server, you need to set environment variables:</p>
 
@@ -308,12 +364,12 @@
             <h5>Windows Setup:</h5>
             <div class="code-block">
               <strong>Option 1 - Command Prompt:</strong><br>
-              <code>set OLLAMA_ORIGINS=https://jtm.io/codepedagogy/,http://localhost:*</code><br>
+              <code>set OLLAMA_ORIGINS=<span class="cors-origins"></span></code><br>
               <code>ollama serve</code>
             </div>
             <div class="code-block">
               <strong>Option 2 - PowerShell:</strong><br>
-              <code>$env:OLLAMA_ORIGINS="https://jtm.io/codepedagogy/,http://localhost:*"</code><br>
+              <code>$env:OLLAMA_ORIGINS="<span class="cors-origins"></span>"</code><br>
               <code>ollama serve</code>
             </div>
             <div class="code-block">
@@ -322,7 +378,7 @@
               2. Click "Environment Variables"<br>
               3. Add new system variable:<br>
               &nbsp;&nbsp;Name: <code>OLLAMA_ORIGINS</code><br>
-              &nbsp;&nbsp;Value: <code>https://jtm.io/codepedagogy/,http://localhost:*</code><br>
+              &nbsp;&nbsp;Value: <code class="cors-origins"></code><br>
               4. Restart command prompt and run <code>ollama serve</code>
             </div>
           </div>
@@ -331,18 +387,18 @@
             <h5>macOS/Linux Setup:</h5>
             <div class="code-block">
               <strong>Terminal (temporary):</strong><br>
-              <code>export OLLAMA_ORIGINS="https://jtm.io/codepedagogy/,http://localhost:*"</code><br>
+              <code>export OLLAMA_ORIGINS="<span class="cors-origins"></span>"</code><br>
               <code>ollama serve</code>
             </div>
             <div class="code-block">
               <strong>Permanent (add to ~/.bashrc, ~/.zshrc, or ~/.profile):</strong><br>
-              <code>echo 'export OLLAMA_ORIGINS="https://jtm.io/codepedagogy/,http://localhost:*"' >> ~/.bashrc</code><br>
+              <code>echo 'export OLLAMA_ORIGINS="<span class="cors-origins"></span>"' >> ~/.bashrc</code><br>
               <code>source ~/.bashrc</code><br>
               <code>ollama serve</code>
             </div>
             <div class="code-block">
               <strong>Using launchctl (macOS service):</strong><br>
-              <code>launchctl setenv OLLAMA_ORIGINS "https://jtm.io/codepedagogy/,http://localhost:*"</code><br>
+              <code>launchctl setenv OLLAMA_ORIGINS "<span class="cors-origins"></span>"</code><br>
               <code>ollama serve</code>
             </div>
           </div>
@@ -390,6 +446,53 @@
             <li><strong>Windows issues:</strong> Try running Command Prompt as Administrator</li>
           </ul>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tutorial Overlay -->
+  <div id="tutorial-overlay" class="tutorial-overlay" style="display: none;">
+    <div class="tutorial-backdrop"></div>
+    <div class="tutorial-tooltip" id="tutorial-tooltip">
+      <div class="tutorial-content">
+        <h4 id="tutorial-title">Welcome!</h4>
+        <p id="tutorial-text">Let's learn how to use the code editor.</p>
+      </div>
+      <div class="tutorial-footer">
+        <span class="tutorial-progress" id="tutorial-progress">1 / 4</span>
+        <div class="tutorial-buttons">
+          <button class="tutorial-skip" id="tutorial-skip">Skip Tutorial</button>
+          <button class="tutorial-next" id="tutorial-next">Next →</button>
+        </div>
+      </div>
+      <div class="tutorial-arrow" id="tutorial-arrow"></div>
+    </div>
+  </div>
+
+  <!-- Stage Transition Modal -->
+  <div id="stage-transition-modal" class="stage-transition-overlay" style="display: none;">
+    <div class="stage-transition-content">
+      <div class="stage-transition-header">
+        <span class="stage-badge" id="stage-badge">Stage Complete!</span>
+      </div>
+      <div class="stage-transition-body">
+        <div class="character-dialogue">
+          <div class="character-avatar" id="transition-avatar">👨‍🔬</div>
+          <div class="dialogue-bubble">
+            <div class="character-name" id="transition-character-name">Dr. Rodriguez</div>
+            <p class="dialogue-text" id="transition-dialogue">Excellent work!</p>
+          </div>
+        </div>
+        <div class="stage-summary" id="stage-summary">
+          <!-- Dynamic content -->
+        </div>
+      </div>
+      <div class="stage-transition-footer">
+        <div class="next-stage-preview" id="next-stage-preview">
+          <span class="preview-label">Next:</span>
+          <span class="preview-title" id="next-stage-title">The Mysterious Manuscript</span>
+        </div>
+        <button class="btn-continue" id="continue-to-next-stage">Continue →</button>
       </div>
     </div>
   </div>

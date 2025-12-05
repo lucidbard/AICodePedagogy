@@ -421,7 +421,10 @@ class SimpleTestSuite extends NodeTestRunner {
                 }),
                 addEventListener: () => {}
             };
-            global.window = { addEventListener: () => {} };
+            global.window = {
+                addEventListener: () => {},
+                location: { hostname: 'localhost', origin: 'http://localhost' }
+            };
             global.localStorage = { getItem: () => null, setItem: () => {}, removeItem: () => {} };
 
             // Load llm-integration.js to access LLMIntegration
@@ -456,6 +459,7 @@ class SimpleTestSuite extends NodeTestRunner {
                     appendChild: () => {},
                     querySelectorAll: () => []
                 }),
+                querySelectorAll: () => [],
                 createElement: () => ({
                     className: '',
                     innerHTML: '',
@@ -468,13 +472,16 @@ class SimpleTestSuite extends NodeTestRunner {
                 }),
                 addEventListener: () => {}
             };
-            global.window = { addEventListener: () => {} };
+            global.window = {
+                addEventListener: () => {},
+                location: { hostname: 'localhost', origin: 'http://localhost' }
+            };
             global.localStorage = { getItem: () => null, setItem: () => {}, removeItem: () => {} };
 
             // Load llm-integration.js to access LLMIntegration
             const { LLMIntegration } = require('./llm-integration.js');
             const llm = new LLMIntegration();
-            
+
             // Verify that browser-dependent methods don't throw errors in Node.js
             llm.init(); // Should not throw
             llm.setupEventListeners(); // Should not throw

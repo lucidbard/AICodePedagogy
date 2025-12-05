@@ -1,6 +1,6 @@
 // Game state variables
 let gameContent = null
-let currentStage = 1
+let currentStage = 0
 let editor = null
 let cellEditors = []
 let completedStages = []
@@ -72,7 +72,7 @@ function getCellContentForAllStages () {
 }
 
 function updateCurrentStageCellContent () {
-  if (!currentStage) return
+  if (currentStage === undefined || currentStage === null) return
 
   // Save single-cell content if editor exists
   if (
@@ -122,8 +122,9 @@ function restoreCellContent (gameState) {
 function clearGameProgress () {
   try {
     localStorage.removeItem('aicodepedagogy_progress')
+    localStorage.removeItem('aicodepedagogy_tutorials_seen')
     // Reset to initial state
-    currentStage = 1
+    currentStage = 0
     completedStages = []
     successfulCellExecutions = {}
     savedCellContent = {}
@@ -216,8 +217,8 @@ async function initializeGame () {
     // Try to load saved progress
     const savedState = loadGameState()
 
-    // Load the appropriate stage (saved or default)
-    loadStage(savedState ? currentStage : 1)
+    // Load the appropriate stage (saved or default to Stage 0 tutorial)
+    loadStage(savedState ? currentStage : 0)
 
     // Restore cell content if available
     if (savedState) {
@@ -241,6 +242,7 @@ async function initializeGame () {
     // Initialize LLM integration
     console.log('Initializing LLM integration...')
     ollamaLLM = new EnhancedLLMIntegration()
+    window.llmIntegration = ollamaLLM  // Global reference for other modules
     ollamaLLM.init()
     console.log('LLM integration initialized')
   } catch (error) {
@@ -268,18 +270,13 @@ function loadStage (stageId) {
     return
   }
 
-  currentStage = stageId
-
-  // Save current stage cell content before switching
-  if (window.gameInitialized) {
+  // Save current stage cell content BEFORE switching (use old currentStage value)
+  if (window.gameInitialized && currentStage !== stageId) {
     updateCurrentStageCellContent()
   }
 
-  // Save state when stage changes (but not during initial load)
-  if (gameContent && window.gameInitialized) {
-    saveGameState()
-  }
-  
+  currentStage = stageId
+
   // Update narrative strip (top of new layout)
   updateNarrativeStrip(
     stage.narrativeIntro || stage.story.substring(0, 100) + "...",
@@ -331,6 +328,17 @@ function loadStage (stageId) {
   // Restore cell content for this stage if available
   if (window.gameInitialized) {
     restoreCellContent()
+  }
+
+  // Check if we should show a tutorial for this stage
+  if (window.checkAndStartTutorial) {
+    window.checkAndStartTutorial(stageId)
+  }
+
+  // Save state AFTER stage is fully set up (not before)
+  if (gameContent && window.gameInitialized) {
+    // Use setTimeout to ensure editor content is settled before saving
+    setTimeout(() => saveGameState(), 200)
   }
 
   console.log(`Loaded stage ${stageId}: ${stage.title}`)
@@ -448,6 +456,9 @@ function setupSingleCellStage (stage) {
       'Ctrl-Enter': function () {
         runPythonCode(editor.getValue(), stage.solution)
       },
+      'Shift-Enter': function () {
+        runPythonCode(editor.getValue(), stage.solution)
+      },
       'Ctrl-Space': 'autocomplete', // Auto-completion trigger
       Tab: function (cm) {
         // Better tab handling for mobile - autocomplete if popup is open, otherwise indent
@@ -507,6 +518,30 @@ function setupSingleCellStage (stage) {
   outputHeader.onclick = function () {
     toggleSingleOutputCollapse()
   }
+
+  // Refresh editor to ensure proper layout calculation
+  setTimeout(() => {
+    editor.refresh()
+
+    // Auto-focus editor on desktop (not mobile - would trigger keyboard)
+    if (!isMobileDevice()) {
+      editor.focus()
+      // Position cursor at end of first TODO line or start of editor
+      const content = editor.getValue()
+      const todoMatch = content.match(/# TODO:.*/)
+      if (todoMatch) {
+        const todoIndex = content.indexOf(todoMatch[0])
+        const pos = editor.posFromIndex(todoIndex + todoMatch[0].length)
+        editor.setCursor(pos)
+      }
+    }
+  }, 50)
+}
+
+// Helper function to detect mobile devices
+function isMobileDevice () {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+    (window.innerWidth <= 768)
 }
 
 // Toggle single cell output collapse
@@ -564,6 +599,24 @@ function setupMultiCellStage (stage) {
   stage.cells.forEach((cell, index) => {
     createCodeCell(cell, index, stage.cells.length)
   })
+
+  // Refresh all cell editors to ensure proper layout calculation
+  setTimeout(() => {
+    cellEditors.forEach(ce => ce.refresh())
+
+    // Auto-focus first cell editor on desktop (not mobile - would trigger keyboard)
+    if (!isMobileDevice() && cellEditors.length > 0) {
+      cellEditors[0].focus()
+      // Position cursor at end of first TODO line or start of editor
+      const content = cellEditors[0].getValue()
+      const todoMatch = content.match(/# TODO:.*/)
+      if (todoMatch) {
+        const todoIndex = content.indexOf(todoMatch[0])
+        const pos = cellEditors[0].posFromIndex(todoIndex + todoMatch[0].length)
+        cellEditors[0].setCursor(pos)
+      }
+    }
+  }, 50)
 }
 
 // Global execution counter
@@ -682,6 +735,14 @@ function createCodeCell (cell, index, totalCells) {
       },
       extraKeys: {
         'Ctrl-Enter': function () {
+          runCellCode(
+            cellEditor.getValue(),
+            cell.expectedOutput,
+            index,
+            totalCells
+          )
+        },
+        'Shift-Enter': function () {
           runCellCode(
             cellEditor.getValue(),
             cell.expectedOutput,
@@ -877,6 +938,11 @@ function showHint (hintIndex) {
 
 // Run Python code (for single-cell stages) with Colab-style output
 async function runPythonCode (code, solution) {
+  // Dismiss tutorial if showing (user has learned to run code!)
+  if (typeof endTutorial === 'function' && document.getElementById('tutorial-overlay')?.style.display !== 'none') {
+    endTutorial()
+  }
+
   const outputContainer = document.getElementById('single-output-container')
   const outputArea = document.getElementById('single-output-area')
   const outputCounter = document.getElementById('single-output-counter')
@@ -996,6 +1062,11 @@ async function runPythonCode (code, solution) {
 
 // Run code for a specific cell (multi-cell stages) with Colab-style output
 async function runCellCode (code, expectedOutput, cellIndex, totalCells) {
+  // Dismiss tutorial if showing (user has learned to run code!)
+  if (typeof endTutorial === 'function' && document.getElementById('tutorial-overlay')?.style.display !== 'none') {
+    endTutorial()
+  }
+
   const outputContainer = document.getElementById(
     `output-container-${cellIndex}`
   )
@@ -1574,12 +1645,11 @@ function generateSpecificSingleCellFeedback (
             hint.toLowerCase().includes('number')
         )
         .slice(0, 2)
-    } else if (reason.includes('code') || reason.includes('syntax')) {
-      feedback.statusText = 'Code Issue'
+    } else if (reason.includes('Next step') || reason.includes('code') || reason.includes('syntax')) {
+      feedback.statusText = 'In Progress'
       feedback.detailedMessage = `
-        <strong>⚙️ Code structure issue</strong><br>
-        ${validationResult.reason}<br>
-        <em>Review your code logic and syntax.</em>
+        <strong>📝 ${validationResult.reason}</strong><br>
+        <em>Check the TODO comments in the code for guidance.</em>
       `
       feedback.suggestedHints = availableHints
         .filter(
@@ -1723,12 +1793,14 @@ async function validateSolution (code, solution, actualOutput, stage) {
   )
 
   // Check code patterns (structure validation)
-  const codeValidation = validateCodePatterns(code, codePatterns)
+  const codeValidation = validateCodePatterns(code, codePatterns, rules.codePatterns)
   if (!codeValidation.isValid) {
+    // Provide human-readable explanation of what's expected
+    const codeExplanation = explainCodePattern(codeValidation.missingPattern, codeValidation.patternIndex, stage)
     return {
       isCorrect: false,
-      reason: `Code structure issue: ${codeValidation.missingPattern}`,
-      feedback: 'Code structure incorrect',
+      reason: `Next step: ${codeExplanation}`,
+      feedback: 'Keep going!',
       expectedPatterns: rules.codePatterns
     }
   }
@@ -1756,12 +1828,15 @@ async function validateSolution (code, solution, actualOutput, stage) {
 }
 
 // Validate code against required patterns
-function validateCodePatterns (code, patterns) {
-  for (const pattern of patterns) {
+function validateCodePatterns (code, patterns, originalPatterns) {
+  for (let i = 0; i < patterns.length; i++) {
+    const pattern = patterns[i]
     if (!pattern.test(code)) {
       return {
         isValid: false,
-        missingPattern: pattern.source || pattern.toString()
+        missingPattern: pattern.source || pattern.toString(),
+        patternIndex: i,
+        originalPattern: originalPatterns ? originalPatterns[i] : null
       }
     }
   }
@@ -1809,6 +1884,65 @@ function explainOutputPattern (patternStr, patternIndex, stage) {
     .replace(/\\/g, '')
 
   return `Expected pattern: ${readable}. Check that your print statement includes the right text format.`
+}
+
+// Explain code pattern in human-readable terms
+function explainCodePattern (patternStr, patternIndex, stage) {
+  // Stage-specific explanations
+  if (stage.id === 1) {
+    // Stage 1: Manuscript variables
+    if (patternIndex === 0) {
+      return 'Create a variable named "fragment_count" and set it to 23 (e.g., fragment_count = 23)'
+    } else if (patternIndex === 1) {
+      return 'Add a print statement that includes the fragment_count variable'
+    }
+  }
+
+  // Generic explanations based on pattern type
+  // For loop patterns
+  if (/for\\s\+\\w\+\\s\+in/.test(patternStr)) {
+    return 'Your code needs a for loop to iterate through the data (e.g., for item in list:)'
+  }
+
+  // Function definition patterns
+  const funcMatch = patternStr.match(/def\\s\+(\w+)\\s\*\\\(/)
+  if (funcMatch) {
+    const funcName = funcMatch[1].replace(/\\/g, '')
+    return `Define a function named "${funcName}" (e.g., def ${funcName}(...):)`
+  }
+
+  // Variable assignment patterns
+  const varMatch = patternStr.match(/(\w+)\\s\*=/)
+  if (varMatch) {
+    const varName = varMatch[1].replace(/\\/g, '')
+    return `Create or use a variable named "${varName}"`
+  }
+
+  // Method call patterns
+  if (/\\.replace\\s*\(/.test(patternStr)) {
+    return 'Use the .replace() method to substitute text'
+  }
+
+  if (/total_characters\\s*\[\+=\]/.test(patternStr)) {
+    return 'Update the total_characters variable (use += to add to it)'
+  }
+
+  // Generic fallback - try to make regex more readable
+  const readable = patternStr
+    .replace(/\\s\+/g, ' ')
+    .replace(/\\s\*/g, '')
+    .replace(/\\w\+/g, 'word')
+    .replace(/\\\(/g, '(')
+    .replace(/\\\)/g, ')')
+    .replace(/\\/g, '')
+    .replace(/\[\^/g, 'not ')
+    .replace(/\]/g, '')
+    .replace(/\[/g, '')
+    .replace(/\|/g, ' or ')
+    .replace(/\.\*/g, '...')
+    .replace(/\.\+/g, '...')
+
+  return `Your code structure needs: ${readable}. Review the challenge instructions.`
 }
 
 // Normalize output for comparison (remove extra whitespace, etc.)
@@ -2021,6 +2155,141 @@ function showCelebration () {
   }, 5000)
 }
 
+// Stage transition dialogues - narrative-driven messages for story progression
+const stageTransitionDialogues = {
+  0: {
+    character: 'Dr. Rodriguez',
+    avatar: '👩‍🔬',
+    dialogue: "Wonderful! Your terminal is configured and ready. Now let's dive into our first real discovery—the mysterious manuscript fragments I've been analyzing for years.",
+    narrative: "The research terminal hums to life. Somewhere in the Alexandria archives, ancient secrets await..."
+  },
+  1: {
+    character: 'Dr. Rodriguez',
+    avatar: '👩‍🔬',
+    dialogue: "Excellent work cataloging those manuscript details! The fragment reference numbers are now in our system. I've been waiting five years to properly analyze these...",
+    narrative: "The manuscript data is secured. But these 23 fragments are just the beginning of something much larger."
+  },
+  2: {
+    character: 'Jamie Chen',
+    avatar: '🧑‍💻',
+    dialogue: "Nice one! Dr. R was just telling me about your progress. I've been cross-referencing these artifact dates with some anomalies I found in the server logs...",
+    narrative: "The artifact timeline reveals an unexpected pattern. These items span millennia, yet share mysterious connections."
+  },
+  3: {
+    character: 'Dr. Rodriguez',
+    avatar: '👩‍🔬',
+    dialogue: "Your analysis of the patterns is remarkable! We can now process hundreds of fragments automatically. My grandmother's journals mentioned something about 'repeating cycles'...",
+    narrative: "The loop patterns match symbols found in the original Alexandria manuscripts. The Keepers were onto something."
+  },
+  4: {
+    character: 'ARIA',
+    avatar: '🤖',
+    dialogue: "I'm now fully operational. Dr. Rodriguez has granted me access to assist with the investigation. I've detected unusual data signatures in the archives that require further analysis.",
+    narrative: "A new ally joins the investigation. ARIA's computational abilities may prove essential in decoding what lies ahead."
+  },
+  5: {
+    character: 'Jamie Chen',
+    avatar: '🧑‍💻',
+    dialogue: "These analysis functions you've built? They just flagged something weird in sector 7 of the archives. Dr. R is already on her way to check it out.",
+    narrative: "The modular tools reveal hidden connections. Each function brings you closer to understanding the Bridge Builders' methods."
+  },
+  6: {
+    character: 'Dr. Rodriguez',
+    avatar: '👩‍🔬',
+    dialogue: "The structured data you've organized... it matches a cipher my grandmother documented decades ago. The Bridge Builders used similar organizational systems.",
+    narrative: "Ancient and modern merge. The data structures mirror techniques used by scholars thousands of years ago."
+  },
+  7: {
+    character: 'ARIA',
+    avatar: '🤖',
+    dialogue: "I've completed my scan of the extracted files. There are encrypted segments that appear to contain coordinates. Dr. Rodriguez believes they point to a physical location.",
+    narrative: "Digital breadcrumbs lead to physical places. The archives contain more than just text—they contain a map."
+  },
+  8: {
+    character: 'Dr. Rodriguez',
+    avatar: '👩‍🔬',
+    dialogue: "We're so close now. The patterns, the coordinates, the fragments—they're all converging. I can feel my grandmother's presence in this work, guiding us forward.",
+    narrative: "Years of research crystallize into clarity. The final piece of the puzzle awaits."
+  },
+  9: {
+    character: 'Dr. Rodriguez',
+    avatar: '👩‍🔬',
+    dialogue: "You've done it. Together, we've uncovered what the Bridge Builders protected for millennia. This knowledge... it changes everything we thought we knew.",
+    narrative: "The investigation concludes, but the story continues. Some secrets, once revealed, open doors to even greater mysteries.",
+    isFinal: true
+  }
+}
+
+// Show stage transition modal instead of confetti
+function showStageTransition (completedStageId) {
+  const modal = document.getElementById('stage-transition-modal')
+  if (!modal) return
+
+  const nextStageId = completedStageId + 1
+  const nextStage = gameContent.stages.find(s => s.id === nextStageId)
+  const transitionData = stageTransitionDialogues[completedStageId] || {
+    character: 'Dr. Rodriguez',
+    avatar: '👩‍🔬',
+    dialogue: 'Excellent work! You\'ve completed this stage successfully.',
+    summary: ['Stage completed']
+  }
+
+  // Update modal content
+  document.getElementById('stage-badge').textContent = transitionData.isFinal
+    ? '🏆 Investigation Complete!'
+    : `Stage ${completedStageId} Complete!`
+  document.getElementById('transition-avatar').textContent = transitionData.avatar
+  document.getElementById('transition-character-name').textContent = transitionData.character
+  document.getElementById('transition-dialogue').textContent = transitionData.dialogue
+
+  // Build narrative text
+  const summaryEl = document.getElementById('stage-summary')
+  if (transitionData.narrative) {
+    summaryEl.innerHTML = `<p class="narrative-text">${transitionData.narrative}</p>`
+  } else {
+    summaryEl.innerHTML = ''
+  }
+
+  // Update next stage preview
+  const nextPreview = document.getElementById('next-stage-preview')
+  const continueBtn = document.getElementById('continue-to-next-stage')
+
+  if (nextStage && !transitionData.isFinal) {
+    document.getElementById('next-stage-title').textContent = nextStage.title
+    nextPreview.style.display = 'flex'
+    continueBtn.textContent = 'Continue →'
+    continueBtn.onclick = () => {
+      hideStageTransition()
+      loadStage(nextStageId)
+    }
+  } else {
+    // Final stage or no next stage
+    nextPreview.style.display = 'none'
+    continueBtn.textContent = 'Finish'
+    continueBtn.onclick = () => {
+      hideStageTransition()
+      // Show final completion state
+      document.getElementById('story-content').innerHTML = `
+        <h2>🏆 Congratulations!</h2>
+        <p>You've completed all stages of the Digital Archaeology Mystery!</p>
+        <p>You've successfully pieced together the ancient fragments and uncovered the lost knowledge of the Bridge Builders.</p>
+        <p><strong>You are now a certified Digital Archaeologist!</strong></p>
+      `
+    }
+  }
+
+  // Show the modal
+  modal.style.display = 'flex'
+}
+
+// Hide stage transition modal
+function hideStageTransition () {
+  const modal = document.getElementById('stage-transition-modal')
+  if (modal) {
+    modal.style.display = 'none'
+  }
+}
+
 // Set up next button to advance to next stage (moved to DOMContentLoaded)
 function setupNextButton () {
   document.getElementById('next-button').addEventListener('click', function () {
@@ -2028,19 +2297,10 @@ function setupNextButton () {
 
     // Check if there's a next stage
     if (nextStage <= gameContent.gameInfo.totalStages) {
-      showCelebration()
-      loadStage(nextStage)
+      showStageTransition(currentStage)
     } else {
       // Handle game completion
-      document.getElementById('story-content').innerHTML = `
-          <h2>Congratulations!</h2>
-          <p>You've completed all stages of the Digital Archaeology Mystery!</p>
-          <p>You've successfully pieced together the ancient fragments and uncovered the lost knowledge.</p>
-        `
-      document.getElementById('challenge-content').style.display = 'none'
-      document.getElementById('data-content').style.display = 'none'
-      document.getElementById('code-panel').style.display = 'none'
-      showCelebration()
+      showStageTransition(currentStage)
     }
   })
 }
@@ -2166,6 +2426,131 @@ function restartRuntime () {
   }
 }
 
+// Set up chat toggle button for Dr. Rodriguez chat
+function setupChatToggle () {
+  const toggleBtn = document.getElementById('chat-toggle-btn')
+  const chatPanel = document.getElementById('chat-panel')
+  const closeBtn = document.getElementById('chat-panel-close')
+  const chatInput = document.getElementById('chat-input')
+  const chatSend = document.getElementById('chat-send')
+  const chatBody = document.getElementById('chat-panel-body')
+
+  if (!toggleBtn || !chatPanel) return
+
+  // Toggle chat panel visibility
+  toggleBtn.addEventListener('click', () => {
+    const isOpen = chatPanel.style.display === 'flex'
+    chatPanel.style.display = isOpen ? 'none' : 'flex'
+    toggleBtn.classList.toggle('active', !isOpen)
+
+    // Focus input when opening
+    if (!isOpen && chatInput) {
+      setTimeout(() => chatInput.focus(), 100)
+    }
+  })
+
+  // Close button
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      chatPanel.style.display = 'none'
+      toggleBtn.classList.remove('active')
+    })
+  }
+
+  // Send message functionality
+  const sendMessage = async () => {
+    if (!chatInput || !chatBody) return
+
+    const message = chatInput.value.trim()
+    if (!message) return
+
+    // Add user message to chat
+    const userMsg = document.createElement('div')
+    userMsg.className = 'chat-message user-message'
+    userMsg.innerHTML = `<p>${escapeHtml(message)}</p>`
+    userMsg.style.cssText = 'text-align: right; margin: 8px 0; padding: 8px 12px; background: rgba(212, 175, 55, 0.2); border-radius: 12px 12px 0 12px; color: #f5f0e4;'
+    chatBody.appendChild(userMsg)
+
+    // Clear input
+    chatInput.value = ''
+
+    // Scroll to bottom
+    chatBody.scrollTop = chatBody.scrollHeight
+
+    // Check if LLM is available
+    if (window.llmIntegration && window.llmIntegration.isEnabled) {
+      // Add typing indicator
+      const typingIndicator = document.createElement('div')
+      typingIndicator.className = 'chat-typing'
+      typingIndicator.innerHTML = '<p style="color: #8b7355; font-style: italic;">Dr. Rodriguez is typing...</p>'
+      chatBody.appendChild(typingIndicator)
+      chatBody.scrollTop = chatBody.scrollHeight
+
+      try {
+        // Get response from LLM
+        const response = await window.llmIntegration.chat(message)
+
+        // Remove typing indicator
+        typingIndicator.remove()
+
+        // Add Dr. Rodriguez's response
+        const drMsg = document.createElement('div')
+        drMsg.className = 'chat-message dr-message'
+        drMsg.innerHTML = `
+          <div style="display: flex; gap: 8px; align-items: flex-start;">
+            <span style="font-size: 1.5rem;">👩‍🔬</span>
+            <p style="margin: 0; color: #f5f0e4; line-height: 1.5;">${response}</p>
+          </div>
+        `
+        drMsg.style.cssText = 'margin: 8px 0; padding: 12px; background: rgba(50, 40, 30, 0.8); border-radius: 12px 12px 12px 0; border-left: 3px solid #d4af37;'
+        chatBody.appendChild(drMsg)
+      } catch (error) {
+        typingIndicator.remove()
+        const errorMsg = document.createElement('div')
+        errorMsg.innerHTML = '<p style="color: #e74c3c; font-style: italic;">Unable to get response. Please try again.</p>'
+        chatBody.appendChild(errorMsg)
+      }
+    } else {
+      // LLM not available - show helpful message
+      const offlineMsg = document.createElement('div')
+      offlineMsg.className = 'chat-message dr-message'
+      offlineMsg.innerHTML = `
+        <div style="display: flex; gap: 8px; align-items: flex-start;">
+          <span style="font-size: 1.5rem;">👩‍🔬</span>
+          <p style="margin: 0; color: #b8b0a0; font-style: italic;">
+            I'm currently offline. Configure an AI provider in the settings (⚙️ at the bottom) to chat with me!
+          </p>
+        </div>
+      `
+      offlineMsg.style.cssText = 'margin: 8px 0; padding: 12px; background: rgba(50, 40, 30, 0.8); border-radius: 12px 12px 12px 0; border-left: 3px solid #8b7355;'
+      chatBody.appendChild(offlineMsg)
+    }
+
+    chatBody.scrollTop = chatBody.scrollHeight
+  }
+
+  // Send on button click
+  if (chatSend) {
+    chatSend.addEventListener('click', sendMessage)
+  }
+
+  // Send on Enter key
+  if (chatInput) {
+    chatInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        sendMessage()
+      }
+    })
+  }
+}
+
+// Helper function to escape HTML
+function escapeHtml (text) {
+  const div = document.createElement('div')
+  div.textContent = text
+  return div.innerHTML
+}
+
 // Set up restart runtime button event listener
 document.addEventListener('DOMContentLoaded', () => {
   initializeGame()
@@ -2197,6 +2582,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Set up Ollama help modal
   setupOllamaHelpModal()
+
+  // Set up chat toggle button
+  setupChatToggle()
 })
 
 // Additional verification that Skulpt is working
@@ -2275,17 +2663,28 @@ function updateOllamaHelpUrls() {
       corsSection.style.display = 'block';
     }
     ollamaOrigins = `${currentOrigin},http://localhost:*`;
-    
+
     // Update the description to show current domain
     if (corsDescription) {
       corsDescription.innerHTML = `To allow this website (<strong>${currentOrigin}</strong>) to connect to your local Ollama server, you need to set environment variables:`;
     }
-    
+
+    // Update all CORS origin placeholders in the modal
+    const originElements = modal.querySelectorAll('.current-origin');
+    originElements.forEach(el => {
+      el.textContent = currentOrigin;
+    });
+
+    const corsOriginsElements = modal.querySelectorAll('.cors-origins');
+    corsOriginsElements.forEach(el => {
+      el.textContent = ollamaOrigins;
+    });
+
     // Reset step numbers to normal
     const installModelHeading = document.getElementById('install-model-heading');
     const testConnectionHeading = document.getElementById('test-connection-heading');
     const testConnectionDescription = document.getElementById('test-connection-description');
-    
+
     if (installModelHeading) {
       installModelHeading.innerHTML = '🚀 Step 3: Install a Model';
     }
@@ -3438,3 +3837,198 @@ window.gameAPI = {
 };
 
 console.log('🎮 Game API loaded. Access via window.gameAPI');
+
+// ============================================
+// TUTORIAL SYSTEM
+// ============================================
+
+// Stage-specific tutorial steps
+// Stage 0 uses a simple callout, later stages can have feature introductions
+const stageTutorials = {
+  0: [
+    {
+      target: '.cell-number',
+      title: '👆 Click Here to Run!',
+      text: 'Click this play button (or press Shift+Enter) to run the code and see what happens!',
+      arrow: 'left',
+      offset: { x: 10, y: 0 }
+    }
+  ],
+  2: [
+    {
+      target: '#cells-container',
+      title: '📝 Multiple Code Cells',
+      text: 'This stage has multiple code cells! Complete each cell in order. Variables from earlier cells are available in later ones.',
+      arrow: 'top',
+      offset: { x: 0, y: 10 }
+    }
+  ]
+};
+
+let currentTutorialStep = 0;
+let currentTutorialSteps = [];
+let tutorialHighlightedElement = null;
+
+function shouldShowTutorial (stageId) {
+  // Check if this stage's tutorial has been seen
+  const seenTutorials = JSON.parse(localStorage.getItem('aicodepedagogy_tutorials_seen') || '[]');
+  return stageTutorials[stageId] && !seenTutorials.includes(stageId);
+}
+
+let currentTutorialStageId = null;
+
+function startTutorial (stageId) {
+  currentTutorialStageId = stageId;
+  currentTutorialSteps = stageTutorials[stageId] || [];
+  currentTutorialStep = 0;
+
+  if (currentTutorialSteps.length === 0) return;
+
+  showTutorialStep(0);
+  document.getElementById('tutorial-overlay').style.display = 'block';
+}
+
+function endTutorial () {
+  document.getElementById('tutorial-overlay').style.display = 'none';
+
+  // Mark this stage's tutorial as seen
+  if (currentTutorialStageId) {
+    const seenTutorials = JSON.parse(localStorage.getItem('aicodepedagogy_tutorials_seen') || '[]');
+    if (!seenTutorials.includes(currentTutorialStageId)) {
+      seenTutorials.push(currentTutorialStageId);
+      localStorage.setItem('aicodepedagogy_tutorials_seen', JSON.stringify(seenTutorials));
+    }
+  }
+
+  // Remove any highlights
+  if (tutorialHighlightedElement) {
+    tutorialHighlightedElement.classList.remove('tutorial-highlight');
+    tutorialHighlightedElement = null;
+  }
+}
+
+function showTutorialStep (stepIndex) {
+  const step = currentTutorialSteps[stepIndex];
+  if (!step) {
+    endTutorial();
+    return;
+  }
+
+  // Find target element
+  const targetSelectors = step.target.split(', ');
+  let targetElement = null;
+  for (const selector of targetSelectors) {
+    targetElement = document.querySelector(selector);
+    if (targetElement) break;
+  }
+
+  if (!targetElement) {
+    // Skip this step if target not found
+    currentTutorialStep++;
+    showTutorialStep(currentTutorialStep);
+    return;
+  }
+
+  // Remove previous highlight
+  if (tutorialHighlightedElement) {
+    tutorialHighlightedElement.classList.remove('tutorial-highlight');
+  }
+
+  // Add highlight to new target
+  targetElement.classList.add('tutorial-highlight');
+  tutorialHighlightedElement = targetElement;
+
+  // Update tooltip content
+  document.getElementById('tutorial-title').textContent = step.title;
+  document.getElementById('tutorial-text').textContent = step.text;
+  document.getElementById('tutorial-progress').textContent = `${stepIndex + 1} / ${currentTutorialSteps.length}`;
+
+  // Update button text on last step
+  const nextBtn = document.getElementById('tutorial-next');
+  if (stepIndex === currentTutorialSteps.length - 1) {
+    nextBtn.textContent = 'Got it!';
+  } else {
+    nextBtn.textContent = 'Next →';
+  }
+
+  // Position tooltip relative to target
+  positionTooltip(targetElement, step.arrow, step.offset);
+
+  // Update arrow direction
+  const arrow = document.getElementById('tutorial-arrow');
+  arrow.className = 'tutorial-arrow arrow-' + step.arrow;
+}
+
+function positionTooltip (targetElement, arrowDirection, offset) {
+  const tooltip = document.getElementById('tutorial-tooltip');
+  const targetRect = targetElement.getBoundingClientRect();
+  const tooltipRect = tooltip.getBoundingClientRect();
+
+  let top, left;
+
+  switch (arrowDirection) {
+    case 'left':
+      // Tooltip to the right of target
+      left = targetRect.right + 20 + (offset?.x || 0);
+      top = targetRect.top + (targetRect.height / 2) - (tooltipRect.height / 2) + (offset?.y || 0);
+      break;
+    case 'right':
+      // Tooltip to the left of target
+      left = targetRect.left - tooltipRect.width - 20 + (offset?.x || 0);
+      top = targetRect.top + (targetRect.height / 2) - (tooltipRect.height / 2) + (offset?.y || 0);
+      break;
+    case 'top':
+      // Tooltip below target
+      left = targetRect.left + (targetRect.width / 2) - (tooltipRect.width / 2) + (offset?.x || 0);
+      top = targetRect.bottom + 20 + (offset?.y || 0);
+      break;
+    case 'bottom':
+      // Tooltip above target
+      left = targetRect.left + (targetRect.width / 2) - (tooltipRect.width / 2) + (offset?.x || 0);
+      top = targetRect.top - tooltipRect.height - 20 + (offset?.y || 0);
+      break;
+  }
+
+  // Keep tooltip within viewport
+  const padding = 10;
+  left = Math.max(padding, Math.min(left, window.innerWidth - tooltipRect.width - padding));
+  top = Math.max(padding, Math.min(top, window.innerHeight - tooltipRect.height - padding));
+
+  tooltip.style.left = left + 'px';
+  tooltip.style.top = top + 'px';
+}
+
+function setupTutorialEventListeners () {
+  const nextBtn = document.getElementById('tutorial-next');
+  const skipBtn = document.getElementById('tutorial-skip');
+
+  if (nextBtn) {
+    nextBtn.addEventListener('click', () => {
+      currentTutorialStep++;
+      if (currentTutorialStep >= currentTutorialSteps.length) {
+        endTutorial();
+      } else {
+        showTutorialStep(currentTutorialStep);
+      }
+    });
+  }
+
+  if (skipBtn) {
+    skipBtn.addEventListener('click', () => {
+      endTutorial();
+    });
+  }
+}
+
+// Initialize tutorial when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+  setupTutorialEventListeners();
+});
+
+// Export for use in loadStage
+window.checkAndStartTutorial = function (stageId) {
+  if (shouldShowTutorial(stageId)) {
+    // Delay to ensure editor is rendered
+    setTimeout(() => startTutorial(stageId), 500);
+  }
+};

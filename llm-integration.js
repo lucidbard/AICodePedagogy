@@ -19,10 +19,9 @@ class LLMIntegration {
     // WebGPU model configuration
     // Using Qwen2.5-Coder-1.5B with q4f16 quantization (~1.3GB download)
     // Coding-focused model that performed best in our evaluation
-    // Falls back to Hugging Face if not on jtm.io
+    // Transformers.js handles caching automatically via browser Cache API
     this.webgpuConfig = {
       modelId: 'onnx-community/Qwen2.5-Coder-1.5B-Instruct',
-      localModelUrl: 'https://jtm.io/codepedagogy/models/qwen2.5-coder-1.5b',
       modelName: 'Qwen 2.5 Coder 1.5B (In-Browser)',
       device: 'webgpu',
       dtype: 'q4f16'
@@ -56,19 +55,18 @@ class LLMIntegration {
 
     // Set Ollama URL based on current host
     // Ollama URL detection:
-    // - Always try localhost first (user's local Ollama)
-    // - Browsers allow HTTPS pages to fetch from http://localhost (special case)
-    // - For WSL, fall back to Windows host IP
+    // - Always try localhost first - user's local Ollama installation
+    // - Browsers allow http://localhost from any origin (special security exception)
+    // - For WSL development (localhost access), use Windows host IP
     if (this.isBrowserEnvironment()) {
       const currentHost = window.location.hostname;
 
-      // Check if we're in WSL (accessing from localhost but need Windows host)
       if (currentHost === 'localhost' || currentHost === '127.0.0.1') {
-        // Try Windows host IP for WSL compatibility
+        // WSL development: use Windows host IP to reach Ollama on Windows
         this.ollamaBaseUrl = 'http://172.29.16.1:11434';
       } else {
-        // Remote site (jtm.io, github.io, etc.) - user needs local Ollama
-        // Browsers allow http://localhost from HTTPS pages as special case
+        // Any other access (LAN IP, remote site, etc.) - try user's local Ollama
+        // Browsers allow http://localhost from any origin as a special case
         this.ollamaBaseUrl = 'http://localhost:11434';
       }
     } else {
@@ -80,7 +78,7 @@ class LLMIntegration {
     if (this.isBrowserEnvironment()) {
       this.apiKeys = this.loadApiKeys();
       this.loadModelPreferences(); // Restore saved model and provider
-      this.setupEventListeners();
+      // Note: setupEventListeners() is called from init() to ensure DOM is ready
 
       // Show the footer by default (remove hidden class)
       const footer = document.querySelector('.llm-footer');
@@ -202,14 +200,10 @@ class LLMIntegration {
         }
       };
 
-      // Determine model source - use local cache on jtm.io, Hugging Face elsewhere
-      let modelSource = this.webgpuConfig.modelId;
-      if (this.isBrowserEnvironment() && window.location.hostname === 'jtm.io') {
-        modelSource = this.webgpuConfig.localModelUrl;
-        console.log('Using locally cached model from jtm.io server');
-      } else {
-        console.log('Using Hugging Face model (fallback)');
-      }
+      // Always use Hugging Face model ID - transformers.js handles caching automatically
+      // The browser's Cache API stores downloaded model files for subsequent loads
+      const modelSource = this.webgpuConfig.modelId;
+      console.log('Loading model from Hugging Face:', modelSource);
 
       // Create text generation pipeline
       this.webgpuPipeline = await transformers.pipeline(
@@ -540,63 +534,247 @@ class LLMIntegration {
   init() {
     if (!this.isBrowserEnvironment()) return;
 
-    // Hide footer by default
-    const footer = document.querySelector('.llm-footer');
-    // if (footer) footer.classList.add('hidden')
-
     this.setupEventListeners();
 
-    // Restore provider and model selection UI
-    this.restoreUIFromPreferences();
+    // AI is always enabled - auto-detect best provider
+    this.isEnabled = true;
+    this.autoDetectProvider();
+  }
 
-    // Check initial toggle state and initialize if enabled
-    const toggle = document.getElementById('llm-enabled');
-    if (toggle && toggle.checked) {
-      this.toggleLLM(true);
+  async autoDetectProvider() {
+    this.updateStatus('connecting', 'Detecting AI...');
+
+    // Check saved preferences first
+    const prefs = this.loadModelPreferences();
+    if (prefs && prefs.provider && prefs.model) {
+      this.provider = prefs.provider;
+      this.selectedModel = prefs.model;
+
+      // Verify the saved provider still works
+      const works = await this.verifyProvider(prefs.provider);
+      if (works) {
+        this.updateStatus('connected', 'Ready');
+        this.updateModelInfo();
+        this.updateSettingsModal();
+        this.updateHintSystem();
+        return;
+      }
+    }
+
+    // Auto-detect: Try Ollama first (fastest), then WebGPU, then show setup
+    const ollamaWorks = await this.checkOllamaAvailable();
+    if (ollamaWorks) {
+      this.provider = 'ollama';
+      await this.loadModels();
+      if (this.selectedModel) {
+        this.updateStatus('connected', 'Ready');
+        this.updateModelInfo();
+        this.updateSettingsModal();
+        this.updateHintSystem();
+        this.saveModelPreferences();
+        return;
+      }
+    }
+
+    // Check if WebGPU is available and model is cached
+    const webgpuReady = await this.checkWebGPUReady();
+    if (webgpuReady) {
+      this.provider = 'webgpu';
+      this.selectedModel = this.webgpuConfig.modelName;
+      this.updateStatus('connected', 'Ready');
+      this.updateModelInfo();
+      this.updateSettingsModal();
+      this.updateHintSystem();
+      this.saveModelPreferences();
+      return;
+    }
+
+    // No provider available - show setup modal automatically
+    this.updateStatus('setup-needed', 'Setup needed');
+
+    // Check if WebGPU is supported - offer in-browser AI
+    const webgpuSupport = await this.checkWebGPUSupport();
+    if (webgpuSupport.supported) {
+      // WebGPU available but model not cached - show download modal
+      this.showWebGPUDownloadModal();
     } else {
-      this.isEnabled = false;
+      // No WebGPU - show general setup/fallback modal
+      this.showFallbackModal();
+    }
+  }
+
+  async checkOllamaAvailable() {
+    try {
+      const response = await fetch(`${this.ollamaBaseUrl}/api/tags`, {
+        method: 'GET',
+        signal: AbortSignal.timeout(3000)
+      });
+      return response.ok;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  async checkWebGPUReady() {
+    // Check if WebGPU is supported
+    if (!navigator.gpu) return false;
+
+    // Check if model is already cached (simplified check)
+    if (this.webgpuReady && this.webgpuPipeline) return true;
+
+    // Could check cache here, but for now just return false if not initialized
+    return false;
+  }
+
+  async verifyProvider(provider) {
+    switch (provider) {
+      case 'ollama':
+        return await this.checkOllamaAvailable();
+      case 'webgpu':
+        return this.webgpuReady;
+      case 'openai':
+        return !!this.apiKeys.openai;
+      case 'anthropic':
+        return !!this.apiKeys.anthropic;
+      default:
+        return false;
+    }
+  }
+
+  openSettingsModal() {
+    const modal = document.getElementById('ai-settings-modal');
+    if (modal) {
+      modal.style.display = 'flex';
+      this.updateSettingsModal();
+    }
+  }
+
+  closeSettingsModal() {
+    const modal = document.getElementById('ai-settings-modal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  updateSettingsModal() {
+    // Update radio buttons to match current provider
+    const radios = document.querySelectorAll('input[name="ai-provider"]');
+    radios.forEach(radio => {
+      radio.checked = radio.value === this.provider;
+    });
+
+    // Show/hide API key section
+    const apiKeySection = document.getElementById('api-key-section');
+    if (apiKeySection) {
+      apiKeySection.style.display =
+        (this.provider === 'openai' || this.provider === 'anthropic') ? 'block' : 'none';
+    }
+
+    // Show Ollama setup section if Ollama selected but not available
+    const ollamaSetupSection = document.getElementById('ollama-setup-section');
+    if (ollamaSetupSection) {
+      this.checkOllamaAvailable().then(available => {
+        ollamaSetupSection.style.display =
+          (this.provider === 'ollama' && !available) ? 'block' : 'none';
+      });
     }
   }
 
   setupEventListeners() {
     if (!this.isBrowserEnvironment()) return;
-    
-    const toggle = document.getElementById('llm-enabled');
+
+    // Settings button opens modal
+    const settingsBtn = document.getElementById('ai-settings-btn');
+    if (settingsBtn) {
+      settingsBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.openSettingsModal();
+      });
+    }
+
+    // Close settings modal
+    const closeSettingsBtn = document.getElementById('close-ai-settings');
+    if (closeSettingsBtn) {
+      closeSettingsBtn.addEventListener('click', () => this.closeSettingsModal());
+    }
+
+    // Provider radio buttons
+    const providerRadios = document.querySelectorAll('input[name="ai-provider"]');
+    providerRadios.forEach(radio => {
+      radio.addEventListener('change', async (e) => {
+        const newProvider = e.target.value;
+
+        if (newProvider === 'webgpu') {
+          // Show WebGPU download modal
+          this.closeSettingsModal();
+          this.showWebGPUModal();
+        } else {
+          this.provider = newProvider;
+          this.updateSettingsModal();
+
+          if (newProvider === 'ollama') {
+            this.updateStatus('connecting', 'Connecting to Ollama...');
+            await this.loadModels();
+          }
+
+          this.saveModelPreferences();
+        }
+      });
+    });
+
+    // Model select
     const modelSelect = document.getElementById('model-select');
+    if (modelSelect) {
+      modelSelect.addEventListener('change', e => {
+        this.selectedModel = e.target.value;
+        if (this.selectedModel) {
+          this.updateModelInfo();
+          this.updateStatus('connected', 'Ready');
+          this.updateQueryButtonStates();
+          this.updateHintSystem();
+          this.saveModelPreferences();
+        }
+      });
+    }
+
+    // Refresh models button
     const refreshBtn = document.getElementById('refresh-models');
-    const changeModelBtn = document.getElementById('change-model');
-    const providerSelect = document.getElementById('provider-select');
+    if (refreshBtn) {
+      refreshBtn.addEventListener('click', () => this.loadModels());
+    }
 
-    toggle.addEventListener('change', e => {
-      this.toggleLLM(e.target.checked);
-    });
+    // Show Ollama help
+    const showOllamaHelpBtn = document.getElementById('show-ollama-help');
+    if (showOllamaHelpBtn) {
+      showOllamaHelpBtn.addEventListener('click', () => {
+        this.closeSettingsModal();
+        const ollamaModal = document.getElementById('ollama-help-modal');
+        if (ollamaModal) ollamaModal.style.display = 'flex';
+      });
+    }
 
-    modelSelect.addEventListener('change', e => {
-      this.selectedModel = e.target.value;
-      if (this.selectedModel) {
-        this.updateModelInfo();
-        this.updateStatus('connected', `Connected to ${this.selectedModel}`);
-        this.updateQueryButtonStates();
-        this.updateHintSystem();
-        this.hideModelSelection();
-        this.saveModelPreferences(); // Save model selection
-      }
-    });
+    // API key save
+    const saveApiKeyBtn = document.getElementById('save-api-key');
+    const apiKeyInput = document.getElementById('api-key-input');
+    if (saveApiKeyBtn && apiKeyInput) {
+      saveApiKeyBtn.addEventListener('click', () => {
+        const key = apiKeyInput.value.trim();
+        if (key) {
+          if (this.provider === 'openai') {
+            this.apiKeys.openai = key;
+          } else if (this.provider === 'anthropic') {
+            this.apiKeys.anthropic = key;
+          }
+          this.saveApiKeys();
+          this.updateStatus('connected', 'API key saved');
+          apiKeyInput.value = '';
+        }
+      });
+    }
 
-    refreshBtn.addEventListener('click', () => {
-      this.loadModels();
-    });
-
-    changeModelBtn.addEventListener('click', () => {
-      this.showModelSelection();
-    });
-
-    if (providerSelect) {
-      providerSelect.addEventListener('change', e => {
-        this.provider = e.target.value;
-        this.updateProviderUI();
-        this.loadModels();
-        this.saveModelPreferences(); // Save provider selection
+    // Click outside modal to close
+    const settingsModal = document.getElementById('ai-settings-modal');
+    if (settingsModal) {
+      settingsModal.addEventListener('click', (e) => {
+        if (e.target === settingsModal) this.closeSettingsModal();
       });
     }
   }
@@ -627,19 +805,18 @@ class LLMIntegration {
   }
 
   loadModelPreferences() {
-    if (!this.isBrowserEnvironment()) return;
+    if (!this.isBrowserEnvironment()) return null;
 
     try {
       const prefs = localStorage.getItem('aicodepedagogy_model_prefs');
       if (prefs) {
-        const { provider, model, enabled } = JSON.parse(prefs);
-        if (provider) this.provider = provider;
-        if (model) this.selectedModel = model;
-        if (enabled !== undefined) this.isEnabled = enabled;
+        const parsed = JSON.parse(prefs);
+        return parsed;
       }
     } catch (error) {
       console.error('Failed to load model preferences:', error);
     }
+    return null;
   }
 
   saveModelPreferences() {
@@ -875,17 +1052,20 @@ class LLMIntegration {
   /**
    * Select the best default model from available models
    * Prefers smaller/faster models suitable for hints and chat
+   * Based on our evaluation (see docs/LLM_MODEL_EVALUATION.md)
    */
   selectBestDefaultModel(models) {
-    // Preferred models in order of preference (good for hints/chat, fast)
+    // Preferred models in order of preference (based on evaluation results)
+    // qwen2.5:1.5b performed best in our testing for pedagogical responses
     const preferredModels = [
-      'llama3.2:3b', 'llama3.2:1b', 'llama3.2',
+      'qwen2.5:1.5b', 'qwen2.5-coder:1.5b',  // Best in our evaluation
+      'qwen2.5:3b', 'qwen2.5-coder:3b',
+      'qwen2.5:7b', 'qwen2.5-coder:7b', 'qwen2.5',
+      'llama3.2:1b', 'llama3.2:3b', 'llama3.2',
       'llama3.1:8b', 'llama3.1',
-      'llama3:8b', 'llama3',
+      'gemma3:4b', 'gemma3:2b', 'gemma3',
       'mistral:7b', 'mistral',
-      'gemma2:9b', 'gemma2:2b', 'gemma2',
       'phi3:mini', 'phi3',
-      'qwen2.5:7b', 'qwen2.5:3b', 'qwen2.5',
       'codellama:7b', 'codellama',
       'deepseek-coder:6.7b', 'deepseek-coder'
     ];
