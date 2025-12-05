@@ -3850,7 +3850,7 @@ console.log('🎮 Game API loaded. Access via window.gameAPI');
 const stageTutorials = {
   0: [
     {
-      target: '.cell-number',
+      target: '#single-cell-number, .cell-number, .cell-header',
       title: '👆 Click Here to Run!',
       text: 'Click this play button (or press Shift+Enter) to run the code and see what happens!',
       arrow: 'left',
@@ -3859,7 +3859,7 @@ const stageTutorials = {
   ],
   2: [
     {
-      target: '#cells-container',
+      target: '#cells-container, .cells-container',
       title: '📝 Multiple Code Cells',
       text: 'This stage has multiple code cells! Complete each cell in order. Variables from earlier cells are available in later ones.',
       arrow: 'top',
@@ -3965,7 +3965,16 @@ function showTutorialStep (stepIndex) {
 function positionTooltip (targetElement, arrowDirection, offset) {
   const tooltip = document.getElementById('tutorial-tooltip');
   const targetRect = targetElement.getBoundingClientRect();
+
+  // Force tooltip to be visible and get its dimensions
+  tooltip.style.visibility = 'hidden';
+  tooltip.style.display = 'block';
   const tooltipRect = tooltip.getBoundingClientRect();
+  tooltip.style.visibility = 'visible';
+
+  // Use sensible defaults if tooltip hasn't rendered properly
+  const tooltipWidth = tooltipRect.width || 320;
+  const tooltipHeight = tooltipRect.height || 150;
 
   let top, left;
 
@@ -3973,29 +3982,33 @@ function positionTooltip (targetElement, arrowDirection, offset) {
     case 'left':
       // Tooltip to the right of target
       left = targetRect.right + 20 + (offset?.x || 0);
-      top = targetRect.top + (targetRect.height / 2) - (tooltipRect.height / 2) + (offset?.y || 0);
+      top = targetRect.top + (targetRect.height / 2) - (tooltipHeight / 2) + (offset?.y || 0);
       break;
     case 'right':
       // Tooltip to the left of target
-      left = targetRect.left - tooltipRect.width - 20 + (offset?.x || 0);
-      top = targetRect.top + (targetRect.height / 2) - (tooltipRect.height / 2) + (offset?.y || 0);
+      left = targetRect.left - tooltipWidth - 20 + (offset?.x || 0);
+      top = targetRect.top + (targetRect.height / 2) - (tooltipHeight / 2) + (offset?.y || 0);
       break;
     case 'top':
       // Tooltip below target
-      left = targetRect.left + (targetRect.width / 2) - (tooltipRect.width / 2) + (offset?.x || 0);
+      left = targetRect.left + (targetRect.width / 2) - (tooltipWidth / 2) + (offset?.x || 0);
       top = targetRect.bottom + 20 + (offset?.y || 0);
       break;
     case 'bottom':
       // Tooltip above target
-      left = targetRect.left + (targetRect.width / 2) - (tooltipRect.width / 2) + (offset?.x || 0);
-      top = targetRect.top - tooltipRect.height - 20 + (offset?.y || 0);
+      left = targetRect.left + (targetRect.width / 2) - (tooltipWidth / 2) + (offset?.x || 0);
+      top = targetRect.top - tooltipHeight - 20 + (offset?.y || 0);
       break;
+    default:
+      // Default: center in viewport
+      left = (window.innerWidth - tooltipWidth) / 2;
+      top = (window.innerHeight - tooltipHeight) / 2;
   }
 
   // Keep tooltip within viewport
   const padding = 10;
-  left = Math.max(padding, Math.min(left, window.innerWidth - tooltipRect.width - padding));
-  top = Math.max(padding, Math.min(top, window.innerHeight - tooltipRect.height - padding));
+  left = Math.max(padding, Math.min(left, window.innerWidth - tooltipWidth - padding));
+  top = Math.max(padding, Math.min(top, window.innerHeight - tooltipHeight - padding));
 
   tooltip.style.left = left + 'px';
   tooltip.style.top = top + 'px';
@@ -4004,6 +4017,7 @@ function positionTooltip (targetElement, arrowDirection, offset) {
 function setupTutorialEventListeners () {
   const nextBtn = document.getElementById('tutorial-next');
   const skipBtn = document.getElementById('tutorial-skip');
+  const backdrop = document.querySelector('.tutorial-backdrop');
 
   if (nextBtn) {
     nextBtn.addEventListener('click', () => {
@@ -4018,6 +4032,13 @@ function setupTutorialEventListeners () {
 
   if (skipBtn) {
     skipBtn.addEventListener('click', () => {
+      endTutorial();
+    });
+  }
+
+  // Click anywhere on backdrop to dismiss tutorial (fallback if tooltip not visible)
+  if (backdrop) {
+    backdrop.addEventListener('click', () => {
       endTutorial();
     });
   }
