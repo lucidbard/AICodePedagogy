@@ -12,3 +12,6 @@ Thumbs.db
 # Logs
 *.log
 npm-debug.log*
+
+# Deploy script (contains server paths)
+deploy.sh
