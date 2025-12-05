@@ -4,15 +4,20 @@
  * Tests multiple Ollama models against our use cases
  */
 
-const OLLAMA_URL = 'http://host.docker.internal:11434';
+// WSL: Use gateway IP to reach Windows host, or set OLLAMA_URL env var
+const OLLAMA_URL = process.env.OLLAMA_URL || 'http://172.21.144.1:11434';
 
-// Models to test (these have ONNX-web equivalents for browser)
+// Models to test for Ollama recommendations
 const MODELS_TO_TEST = [
-  'llama3.2:1b',      // ~1.3GB in browser
-  'llama3.2:3b',      // ~2GB in browser
-  'qwen2.5:1.5b',     // ~1GB in browser
-  'deepcoder:1.5b',   // Coding-focused
-  'gemma3:latest',    // 4B model for comparison
+  // Primary candidates for recommendation (need to pull these)
+  'qwen2.5-coder:7b',      // Coding-focused, 4.7GB
+  'qwen2.5-coder:1.5b',    // Lightweight coding, 1GB
+  'granite3.1-dense:8b',   // IBM general purpose, 5GB
+  // Currently installed models for comparison
+  'qwen2.5:1.5b',          // Original tested model
+  'llama3.2:3b',           // Previously tested
+  'deepcoder:1.5b',        // Coding-focused
+  'gpt-oss:latest',        // 20B model
 ];
 
 // Test cases based on actual game prompts

@@ -1535,6 +1535,11 @@ Then briefly explain what you changed and why.`;
     // Clean up the response
     let cleanedResponse = response.trim();
 
+    // Remove <think> tags and their content (used by some reasoning models like deepcoder)
+    cleanedResponse = cleanedResponse.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+    // Also handle unclosed think tags (model got cut off)
+    cleanedResponse = cleanedResponse.replace(/<think>[\s\S]*/gi, '').trim();
+
     // Remove any meta-commentary about being an AI
     cleanedResponse = cleanedResponse.replace(/^(As an AI.*?assistant,?\s*|I'm an AI.*?and\s*)/i, '');
 
