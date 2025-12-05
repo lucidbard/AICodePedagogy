@@ -1881,6 +1881,15 @@ body {
   margin-bottom: 12px;
 }
 
+.help-section .warning-note {
+  background: rgba(255, 193, 7, 0.15);
+  border-left: 3px solid #ffc107;
+  padding: 8px 12px;
+  border-radius: 0 4px 4px 0;
+  margin: 12px 0;
+  font-size: 0.9rem;
+}
+
 .help-section ul,
 .help-section ol {
   margin-left: 20px;

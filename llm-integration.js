@@ -663,6 +663,10 @@ class LLMIntegration {
     const ollamaModal = document.getElementById('ollama-help-modal');
     if (ollamaModal) {
       ollamaModal.style.display = 'flex';
+      // Update URLs dynamically based on current origin
+      if (typeof updateOllamaHelpUrls === 'function') {
+        updateOllamaHelpUrls();
+      }
     }
   }
 
