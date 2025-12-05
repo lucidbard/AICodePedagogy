@@ -1881,6 +1881,17 @@ body {
   margin-bottom: 12px;
 }
 
+.help-section.highlight {
+  background: rgba(90, 140, 105, 0.15);
+  border: 1px solid rgba(90, 140, 105, 0.4);
+  border-radius: 8px;
+  padding: 15px;
+}
+
+.help-section.highlight h4 {
+  color: #7ab988;
+}
+
 .help-section .warning-note {
   background: rgba(255, 193, 7, 0.15);
   border-left: 3px solid #ffc107;

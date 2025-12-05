@@ -323,10 +323,26 @@
   <div class="modal-overlay" id="ollama-help-modal" style="display: none;">
     <div class="modal-content">
       <div class="modal-header">
-        <h3>🤖 Setting up Ollama for AI Assistant</h3>
+        <h3>🤖 AI Assistant Setup</h3>
         <button class="modal-close" id="close-ollama-help">&times;</button>
       </div>
       <div class="modal-body">
+        <div class="help-section highlight">
+          <h4>🌐 Option A: In-Browser Model (No Install Required)</h4>
+          <p>The easiest option! Select <strong>"In-Browser (WebGPU)"</strong> in AI Settings to run a model directly in your browser.</p>
+          <ul>
+            <li><strong>Model:</strong> Qwen 2.5 Coder 1.5B (our tested & recommended model)</li>
+            <li><strong>Download:</strong> ~1.3GB one-time download, cached locally</li>
+            <li><strong>Requires:</strong> Modern browser with WebGPU support (Chrome, Edge)</li>
+          </ul>
+          <p><em>Skip to the AI Settings toggle above to try it!</em></p>
+        </div>
+
+        <div class="help-section">
+          <h4>💻 Option B: Local Ollama (Better Performance)</h4>
+          <p>For faster responses and more model choices, install Ollama on your computer.</p>
+        </div>
+
         <div class="help-section">
           <h4>📦 Step 1: Install Ollama</h4>
           <p>Download and install Ollama from <a href="https://ollama.ai" target="_blank">https://ollama.ai</a></p>
@@ -412,10 +428,10 @@
           <h4 id="install-model-heading">🚀 Step 3: Install a Model</h4>
           <p>Download a model suitable for coding assistance:</p>
           <div class="code-block">
-            <strong>Recommended models:</strong><br>
-            <code>ollama pull codellama:7b</code> (good for coding, 4GB)<br>
-            <code>ollama pull llama3.1:8b</code> (general purpose, 5GB)<br>
-            <code>ollama pull qwen2.5-coder:7b</code> (excellent for coding, 4GB)
+            <strong>Recommended (based on our testing):</strong><br>
+            <code>ollama pull qwen2.5-coder:7b</code> (best for coding, 4GB) ⭐<br>
+            <code>ollama pull qwen2.5-coder:1.5b</code> (lightweight, 1GB)<br>
+            <code>ollama pull granite3.1-dense:8b</code> (general purpose, 5GB)
           </div>
         </div>
 
