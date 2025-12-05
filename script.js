@@ -3865,6 +3865,47 @@ const stageTutorials = {
       arrow: 'top',
       offset: { x: 0, y: 10 }
     }
+  ],
+  3: [
+    {
+      target: '.hint-button, #hint-0, .hint-buttons',
+      title: '💡 Stuck? Use Hints!',
+      text: 'Click these hint buttons if you need help. They reveal progressively more guidance without giving away the answer.',
+      arrow: 'top',
+      offset: { x: 0, y: 10 }
+    },
+    {
+      target: '.code-editor, .CodeMirror',
+      title: '🔀 Conditionals: if/else',
+      text: 'This stage introduces conditionals! Use "if" to check conditions and "else" for alternatives. Think: "if this is true, do that."',
+      arrow: 'left',
+      offset: { x: 10, y: 0 }
+    }
+  ],
+  4: [
+    {
+      target: '.code-editor, .CodeMirror',
+      title: '🔄 Loops: Repeat Actions',
+      text: 'Loops let you repeat code! "for item in list:" runs the indented code once for each item. No need to write the same thing multiple times.',
+      arrow: 'left',
+      offset: { x: 10, y: 0 }
+    }
+  ],
+  5: [
+    {
+      target: '#chat-toggle, .chat-toggle',
+      title: '💬 Need Help? Ask Dr. Rodriguez!',
+      text: 'Click here to chat with Dr. Rodriguez (AI assistant). Ask questions about Python or get hints about the current challenge!',
+      arrow: 'bottom',
+      offset: { x: 0, y: -10 }
+    },
+    {
+      target: '.code-editor, .CodeMirror',
+      title: '🔧 Functions: Reusable Code',
+      text: 'Functions bundle code you can reuse! Define with "def name():" and call with "name()". This stage also uses f-strings: f"text {variable}"',
+      arrow: 'left',
+      offset: { x: 10, y: 0 }
+    }
   ]
 };
 
