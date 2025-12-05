@@ -103,7 +103,7 @@ Cell validation also uses `validation.codePatterns` and `validation.outputPatter
 ## Dependencies
 
 All loaded via CDN (no npm install for runtime):
-- Skulpt 0.11.1 (Python interpreter)
+- Skulpt 1.3.0 (Python interpreter with Python 3 syntax)
 - CodeMirror 5.65.16 (code editor)
 - Google Fonts (Roboto)
 
