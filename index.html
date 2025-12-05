@@ -288,6 +288,61 @@
       margin-bottom: 1.5rem;
     }
 
+    /* What's New Section */
+    .whats-new {
+      background: rgba(201, 162, 39, 0.08);
+      border: 1px solid rgba(201, 162, 39, 0.25);
+      border-radius: 16px;
+      padding: 2.5rem;
+      margin: 2rem 0;
+    }
+
+    .whats-new h2 {
+      font-family: 'Crimson Text', Georgia, serif;
+      font-size: 1.8rem;
+      color: var(--color-accent);
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .updates-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .update-item {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      padding: 1rem;
+      background: rgba(0, 0, 0, 0.15);
+      border-radius: 8px;
+    }
+
+    .update-badge {
+      background: var(--color-accent);
+      color: var(--color-ink);
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+
+    .update-content strong {
+      color: var(--color-sand);
+      display: block;
+      margin-bottom: 0.25rem;
+    }
+
+    .update-content p {
+      color: rgba(250, 248, 240, 0.75);
+      font-size: 0.9rem;
+      margin: 0;
+    }
+
     /* Responsive */
     @media (max-width: 600px) {
       .container {
@@ -354,7 +409,7 @@
       <div class="feature-card">
         <div class="icon">🤖</div>
         <h3>AI Coding Assistant</h3>
-        <p>Get hints without answers. The AI teaches you to solve problems yourself, modeling modern AI-assisted development practices.</p>
+        <p>Get pedagogical hints with examples—never exact solutions. Smart filtering shows patterns with different variables so you learn to apply concepts yourself.</p>
       </div>
 
       <div class="feature-card">
@@ -409,6 +464,41 @@
         <div class="stage">
           <div class="stage-number">9</div>
           <div class="stage-title">Final Report</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- What's New -->
+    <section class="whats-new">
+      <h2>What's New (December 2025)</h2>
+      <div class="updates-list">
+        <div class="update-item">
+          <span class="update-badge">AI</span>
+          <div class="update-content">
+            <strong>Smarter Pedagogical Filtering</strong>
+            <p>AI hints now show examples with different variable names to teach patterns without giving away solutions. Challenge-aware filtering blocks exact answers while preserving educational examples.</p>
+          </div>
+        </div>
+        <div class="update-item">
+          <span class="update-badge">UX</span>
+          <div class="update-content">
+            <strong>Improved Interface</strong>
+            <p>Chat panel now has a visible scrollbar for long conversations. "Continue to Next Stage" button moved to fixed footer for easy access. Added help button for AI setup instructions.</p>
+          </div>
+        </div>
+        <div class="update-item">
+          <span class="update-badge">Learn</span>
+          <div class="update-content">
+            <strong>Better Type Conversion Guidance</strong>
+            <p>Stage 1 now includes clearer instruction on str() for mixing text and numbers, with visual examples showing correct vs incorrect approaches.</p>
+          </div>
+        </div>
+        <div class="update-item">
+          <span class="update-badge">Tech</span>
+          <div class="update-content">
+            <strong>Python 3 Support</strong>
+            <p>Upgraded to Skulpt 1.3.0 with Python 3 syntax including f-strings, enabling modern Python teaching.</p>
+          </div>
         </div>
       </div>
     </section>
