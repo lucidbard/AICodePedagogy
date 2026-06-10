@@ -554,6 +554,14 @@ class LLMIntegration {
       this.provider = prefs.provider;
       this.selectedModel = prefs.model;
 
+      // Saved cloud model IDs go stale when providers retire models — remap
+      // anything not in the current predefined list to the current default.
+      const currentModels = this.getPredefinedModels(prefs.provider);
+      if (currentModels && !currentModels.includes(prefs.model)) {
+        this.selectedModel = currentModels[0];
+        this.saveModelPreferences();
+      }
+
       // Verify the saved provider still works
       const works = await this.verifyProvider(prefs.provider);
       if (works) {
@@ -1000,6 +1008,22 @@ class LLMIntegration {
     status.textContent = message;
   }
 
+  /**
+   * Predefined model lists for cloud providers (no key-free listing endpoint).
+   * Keep in sync with current provider offerings — retired IDs return 404.
+   * Anthropic: Sonnet first — best speed/intelligence balance for interactive hints.
+   */
+  getPredefinedModels(provider) {
+    switch (provider) {
+      case 'openai':
+        return ['gpt-4.1', 'gpt-4o', 'gpt-4o-mini'];
+      case 'anthropic':
+        return ['claude-sonnet-4-6', 'claude-opus-4-8', 'claude-haiku-4-5'];
+      default:
+        return null;
+    }
+  }
+
   async loadModels() {
     if (!this.isBrowserEnvironment()) return;
 
@@ -1037,12 +1061,9 @@ class LLMIntegration {
           this.showWebGPUDownloadModal();
           models = [];
         }
-      } else if (this.provider === 'openai') {
-        // OpenAI models are predefined since we can't query them without API call
-        models = ['gpt-4o', 'gpt-4', 'gpt-3.5-turbo'];
-      } else if (this.provider === 'anthropic') {
-        // Anthropic models are predefined
-        models = ['claude-3-5-sonnet-20241022', 'claude-3-haiku-20240307'];
+      } else if (this.provider === 'openai' || this.provider === 'anthropic') {
+        // Cloud provider models are predefined since we can't query them without API call
+        models = this.getPredefinedModels(this.provider);
       }
 
       this.models = models;
