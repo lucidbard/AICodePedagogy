@@ -132,8 +132,10 @@ class LLMIntegration {
     }
 
     try {
-      // Dynamic import of Transformers.js from CDN
-      this.transformersModule = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3');
+      // Dynamic import of Transformers.js from CDN.
+      // Pinned to an exact version: a floating tag can silently pull in
+      // breaking changes (v4 is already out with a different API).
+      this.transformersModule = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1');
       console.log('Transformers.js loaded successfully');
       return this.transformersModule;
     } catch (error) {
@@ -238,7 +240,7 @@ class LLMIntegration {
 
     try {
       const output = await this.webgpuPipeline(messages, {
-        max_new_tokens: 300,
+        max_new_tokens: 500, // match the cloud providers' max_tokens
         do_sample: true,
         temperature: 0.7,
         top_p: 0.9
@@ -1510,11 +1512,18 @@ Then briefly explain what you changed and why.`;
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorData = await response.json().catch(() => null);
+      throw new Error(
+        `OpenAI API error ${response.status}: ${errorData?.error?.message || response.statusText}`
+      );
     }
 
     const data = await response.json();
-    return this.formatResponse(data.choices[0].message.content, type);
+    const text = data.choices?.[0]?.message?.content;
+    if (typeof text !== 'string') {
+      throw new Error('Unexpected OpenAI response format');
+    }
+    return this.formatResponse(text, type);
   }
 
   async queryAnthropic(prompt, type = null) {
@@ -1543,11 +1552,21 @@ Then briefly explain what you changed and why.`;
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorData = await response.json().catch(() => null);
+      throw new Error(
+        `Anthropic API error ${response.status}: ${errorData?.error?.message || response.statusText}`
+      );
     }
 
     const data = await response.json();
-    return this.formatResponse(data.content[0].text, type);
+    // A refusal or error-shaped body may have no text block
+    const text = data.content?.[0]?.text;
+    if (typeof text !== 'string') {
+      throw new Error(
+        `Unexpected Anthropic response (stop_reason: ${data.stop_reason || 'unknown'})`
+      );
+    }
+    return this.formatResponse(text, type);
   }
 
   formatResponse(response, queryType = null) {
