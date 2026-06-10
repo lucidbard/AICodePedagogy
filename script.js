@@ -239,12 +239,14 @@ async function initializeGame () {
         console.warn('Skulpt initialization failed:', error)
       })
 
-    // Initialize LLM integration
+    // Initialize LLM integration in the background (don't block game loading).
+    // Consumers that need provider/model state should await llmIntegration.ready.
     console.log('Initializing LLM integration...')
     ollamaLLM = new EnhancedLLMIntegration()
     window.llmIntegration = ollamaLLM  // Global reference for other modules
-    ollamaLLM.init()
-    console.log('LLM integration initialized')
+    ollamaLLM.init().then(() => {
+      console.log('LLM integration initialized')
+    })
   } catch (error) {
     console.error('Error initializing game:', error)
     const storyElement = document.getElementById('story-content')

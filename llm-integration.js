@@ -536,13 +536,18 @@ class LLMIntegration {
   }
 
   init() {
-    if (!this.isBrowserEnvironment()) return;
+    if (!this.isBrowserEnvironment()) return Promise.resolve();
 
     this.setupEventListeners();
 
     // AI is always enabled - auto-detect best provider
     this.isEnabled = true;
-    this.autoDetectProvider();
+    // Expose the async detection as `ready` so callers can await it
+    // (window.llmIntegration.ready) instead of racing the model list.
+    this.ready = this.autoDetectProvider().catch(error => {
+      console.error('LLM provider detection failed:', error);
+    });
+    return this.ready;
   }
 
   async autoDetectProvider() {
