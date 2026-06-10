@@ -1535,7 +1535,11 @@ Then briefly explain what you changed and why.`;
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': this.apiKeys.anthropic,
-        'anthropic-version': '2023-06-01'
+        'anthropic-version': '2023-06-01',
+        // Required for direct browser (CORS) access. This is a deliberate
+        // bring-your-own-key setup: the key lives in the student's own
+        // browser and is only ever sent to api.anthropic.com.
+        'anthropic-dangerous-direct-browser-access': 'true'
       },
       body: JSON.stringify({
         model: this.selectedModel,
