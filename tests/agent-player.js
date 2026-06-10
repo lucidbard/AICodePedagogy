@@ -9,10 +9,11 @@ const { chromium } = require('playwright');
 const fetch = globalThis.fetch || require('node-fetch');
 
 // Configuration - can be overridden with environment variables
-// WSL: Windows host IP is typically the default gateway (172.29.16.1)
+// From WSL with Ollama on Windows, set OLLAMA_URL to the Windows host
+// (gateway) IP, e.g. http://172.29.16.1:11434
 const CONFIG = {
   gameUrl: process.env.GAME_URL || 'http://localhost:8001',
-  ollamaUrl: process.env.OLLAMA_URL || 'http://172.29.16.1:11434',
+  ollamaUrl: process.env.OLLAMA_URL || 'http://localhost:11434',
   model: process.env.OLLAMA_MODEL || 'llama3:8b', // Available: llama3:8b, gemma3:4b, phi3:3.8b, gemma3:27b
   headless: false, // Set to true for CI
   slowMo: 100, // Slow down for visibility

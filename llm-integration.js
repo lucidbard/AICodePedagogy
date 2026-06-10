@@ -53,26 +53,20 @@ class LLMIntegration {
     // Track the current agency level (for progressive feature unlock)
     this.agencyLevel = 1; // 1=hints only, 2=suggestions, 3=can edit code
 
-    // Set Ollama URL based on current host
-    // Ollama URL detection:
-    // - Always try localhost first - user's local Ollama installation
-    // - Browsers allow http://localhost from any origin (special security exception)
-    // - For WSL development (localhost access), use Windows host IP
-    if (this.isBrowserEnvironment()) {
-      const currentHost = window.location.hostname;
-
-      if (currentHost === 'localhost' || currentHost === '127.0.0.1') {
-        // WSL development: use Windows host IP to reach Ollama on Windows
-        this.ollamaBaseUrl = 'http://172.29.16.1:11434';
-      } else {
-        // Any other access (LAN IP, remote site, etc.) - try user's local Ollama
-        // Browsers allow http://localhost from any origin as a special case
-        this.ollamaBaseUrl = 'http://localhost:11434';
-      }
-    } else {
-      // Node.js: use Windows host IP for WSL compatibility
-      this.ollamaBaseUrl = 'http://172.29.16.1:11434';
-    }
+    // Ollama URL resolution:
+    // - An explicit override wins: localStorage 'aicodepedagogy_ollama_url'
+    //   in the browser, OLLAMA_URL env var in Node.
+    // - Otherwise checkOllamaAvailable() probes candidates in order:
+    //   localhost first (native installs; browsers allow http://localhost
+    //   from any origin as a special case), then the Windows host IP for
+    //   setups where the app is served from WSL but Ollama runs on Windows.
+    const ollamaOverride = this.isBrowserEnvironment()
+      ? localStorage.getItem('aicodepedagogy_ollama_url')
+      : typeof process !== 'undefined' && process.env.OLLAMA_URL;
+    this.ollamaCandidateUrls = ollamaOverride
+      ? [ollamaOverride]
+      : ['http://localhost:11434', 'http://172.29.16.1:11434'];
+    this.ollamaBaseUrl = this.ollamaCandidateUrls[0];
 
     // Only run browser-dependent initialization if in browser environment
     if (this.isBrowserEnvironment()) {
@@ -266,19 +260,26 @@ class LLMIntegration {
   }
 
   /**
-   * Check if Ollama is available
+   * Check if Ollama is available. Probes candidate URLs in order and
+   * locks ollamaBaseUrl to the first one that responds.
    */
   async checkOllamaAvailable() {
-    try {
-      const response = await fetch(`${this.ollamaBaseUrl}/api/tags`, {
-        method: 'GET',
-        signal: AbortSignal.timeout(3000) // 3 second timeout
-      });
-      return response.ok;
-    } catch (error) {
-      console.log('Ollama not available:', error.message);
-      return false;
+    for (const url of this.ollamaCandidateUrls) {
+      try {
+        const response = await fetch(`${url}/api/tags`, {
+          method: 'GET',
+          signal: AbortSignal.timeout(3000) // 3 second timeout
+        });
+        if (response.ok) {
+          this.ollamaBaseUrl = url;
+          return true;
+        }
+      } catch (error) {
+        // Try the next candidate
+      }
     }
+    console.log('Ollama not available on any candidate URL');
+    return false;
   }
 
   /**
@@ -617,18 +618,6 @@ class LLMIntegration {
     } else {
       // No WebGPU - show general setup/fallback modal
       this.showFallbackModal();
-    }
-  }
-
-  async checkOllamaAvailable() {
-    try {
-      const response = await fetch(`${this.ollamaBaseUrl}/api/tags`, {
-        method: 'GET',
-        signal: AbortSignal.timeout(3000)
-      });
-      return response.ok;
-    } catch (error) {
-      return false;
     }
   }
 

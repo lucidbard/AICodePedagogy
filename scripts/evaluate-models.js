@@ -4,8 +4,9 @@
  * Tests multiple Ollama models against our use cases
  */
 
-// WSL: Use gateway IP to reach Windows host, or set OLLAMA_URL env var
-const OLLAMA_URL = process.env.OLLAMA_URL || 'http://172.21.144.1:11434';
+// Defaults to a local Ollama install. From WSL with Ollama on Windows,
+// point OLLAMA_URL at the Windows host (gateway) IP instead.
+const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
 
 // Models to test for Ollama recommendations
 const MODELS_TO_TEST = [
