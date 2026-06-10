@@ -6,7 +6,8 @@
 const { chromium } = require('playwright');
 
 const CONFIG = {
-  gameUrl: process.env.GAME_URL || 'http://localhost:8001',
+  // window.gameAPI lives in app.html — the directory root serves the landing page
+  gameUrl: process.env.GAME_URL || 'http://localhost:8001/app.html',
   headless: process.argv.includes('--headless'),
   timeout: 30000
 };

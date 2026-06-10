@@ -12,7 +12,8 @@ const fetch = globalThis.fetch || require('node-fetch');
 // From WSL with Ollama on Windows, set OLLAMA_URL to the Windows host
 // (gateway) IP, e.g. http://172.29.16.1:11434
 const CONFIG = {
-  gameUrl: process.env.GAME_URL || 'http://localhost:8001',
+  // window.gameAPI lives in app.html — the directory root serves the landing page
+  gameUrl: process.env.GAME_URL || 'http://localhost:8001/app.html',
   ollamaUrl: process.env.OLLAMA_URL || 'http://localhost:11434',
   model: process.env.OLLAMA_MODEL || 'llama3:8b', // Available: llama3:8b, gemma3:4b, phi3:3.8b, gemma3:27b
   headless: false, // Set to true for CI
