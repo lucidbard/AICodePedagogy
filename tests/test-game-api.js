@@ -63,7 +63,8 @@ async function testGetState() {
 
   const state = await page.evaluate(() => window.gameAPI.getState());
 
-  assert(state.currentStage === 1, 'currentStage is 1');
+  // A fresh browser session (no saved state) starts at the tutorial stage
+  assert(state.currentStage === 0, 'currentStage is 0 (tutorial) on fresh load');
   assert(state.totalStages > 0, 'totalStages > 0');
   assert(typeof state.stageTitle === 'string', 'stageTitle is string');
   assert(typeof state.challenge === 'string', 'challenge is string');
